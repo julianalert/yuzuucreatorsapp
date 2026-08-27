@@ -53,12 +53,12 @@ export default async function Home({
           <div>
             <span className="kicker">First 50 creators · free build</span>
             <h1 style={{ marginTop: "1.3rem" }}>
-              You have an audience. You don&apos;t have <em>a product.</em>
+              You have an audience. You don&apos;t have <em>a business.</em>
             </h1>
             <p className="lede" style={{ marginTop: "1.5rem" }}>
-              Paste your Instagram handle. Yuzuu studies your audience, proposes product ideas,
-              and builds the whole thing: quiz, sales page, personalized output. You keep 70% of
-              every sale, and it costs you nothing to build.
+              Yuzuu studies your audience, proposes product ideas,
+              and builds the whole thing: quiz, sales page, personalized output. It costs you nothing and you keep 70% of
+              every sale! 
             </p>
             <div className="hero-actions">
               <Link href="/auth" className="btn">
