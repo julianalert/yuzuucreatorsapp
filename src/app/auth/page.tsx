@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getSignedInUser } from "@/lib/auth";
 import { GoogleButton } from "@/components/GoogleButton";
 import { Wordmark } from "@/components/Wordmark";
-import { devSignIn } from "./actions";
 
 export default async function SignupPage({
   searchParams,
@@ -18,9 +17,9 @@ export default async function SignupPage({
       <div className="hero-center">
         <div className="center" style={{ textAlign: "center" }}>
           <Wordmark size={26} href="/" />
-          <h1 style={{ marginTop: 36 }}>Turn what you know into something people buy.</h1>
+          <h1 style={{ marginTop: 36 }}>Start earning from the audience you&apos;ve already built</h1>
           <p className="lede" style={{ marginInline: "auto" }}>
-            Give us your Instagram handle. We&apos;ll build a personalized product for your
+            We'll turn your Instagram into a personalized product for your
             audience and a page to sell it from.
           </p>
 
@@ -32,32 +31,16 @@ export default async function SignupPage({
               </p>
             ) : null}
             <p className="legal">
-              By continuing you agree to the <a href="#">terms</a> and{" "}
-              <a href="#">privacy policy</a>.
+              By continuing you agree to the{" "}
+              <a href="/terms" target="_blank" rel="noopener noreferrer">
+                terms
+              </a>{" "}
+              and{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                privacy policy
+              </a>
+              .
             </p>
-
-            {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? (
-              <form action={devSignIn} style={{ marginTop: 34, textAlign: "left" }}>
-                <span className="micro">Dev sign-in (local only)</span>
-                <div className="field" style={{ marginTop: 12 }}>
-                  <input type="email" name="email" placeholder="dev@example.com" required />
-                </div>
-                <div className="field" style={{ marginTop: 8 }}>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="password (min 6 chars)"
-                    required
-                  />
-                </div>
-                <button className="btn btn-outline btn-block" type="submit" style={{ marginTop: 10 }}>
-                  Sign in
-                </button>
-                {error === "dev" ? (
-                  <p className="hint">Dev sign-in failed — check the Supabase keys in .env.local.</p>
-                ) : null}
-              </form>
-            ) : null}
           </div>
         </div>
       </div>

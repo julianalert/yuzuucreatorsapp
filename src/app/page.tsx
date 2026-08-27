@@ -585,8 +585,15 @@ You stay in control at the two moments that matter. Everything else is ours.
         <div className="wrap footer-in">
           <Logo small />
           <span>
-            © 2026 · <a href="#">Privacy</a> · <a href="#">Terms</a> ·{" "}
-            <a href="mailto:hello@yuzuu.co">hello@yuzuu.co</a>
+            © 2026 ·{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">
+              Privacy
+            </a>{" "}
+            ·{" "}
+            <a href="/terms" target="_blank" rel="noopener noreferrer">
+              Terms
+            </a>{" "}
+            · hello (at) yuzuu (dot) co
           </span>
         </div>
       </footer>

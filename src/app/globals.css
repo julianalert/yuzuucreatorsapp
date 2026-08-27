@@ -62,14 +62,32 @@ h2 {
 .wordmark {
   font-family: var(--display);
   font-size: 21px;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.03em;
   display: inline-flex;
-  align-items: baseline;
-  gap: 1px;
+  align-items: center;
+  gap: 7px;
   color: var(--ink);
   text-decoration: none;
 }
-.wordmark i { width: 5px; height: 5px; background: var(--zest); border-radius: 1px; transform: translateY(-1px); }
+.wordmark .fruit {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--zest);
+  position: relative;
+  flex: 0 0 auto;
+}
+.wordmark .fruit::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 5px;
+  width: 6px;
+  height: 4px;
+  border-radius: 0 60% 0 60%;
+  background: var(--ink);
+}
 
 /* ── buttons ────────────────────────────────────────────── */
 .btn {
