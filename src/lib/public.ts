@@ -13,7 +13,15 @@ export interface PublicQuizQuestion {
   options: { id: string; label: string; sub?: string }[];
 }
 
-/** Everything a public page needs — never includes knowledge_pack or content_bank. */
+/** Template section info safe for marketing pages. */
+export interface PublicSection {
+  id: string;
+  title: string;
+  description?: string;
+  eyebrow: string;
+}
+
+/** Everything a public page needs — never includes knowledge_pack or the generation prompt. */
 export interface PublicProduct {
   blueprintId: string;
   version: number;
@@ -24,6 +32,7 @@ export interface PublicProduct {
   title: string;
   promise: string;
   durationDays: number | null;
+  sections: PublicSection[];
   sectionTitles: string[];
   questions: PublicQuizQuestion[];
 }
@@ -70,7 +79,13 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
     title: bp.product?.topic_title ?? "",
     promise: bp.product?.promise ?? "",
     durationDays: bp.product?.duration_days ?? null,
-    sectionTitles: (bp.output?.skeleton ?? []).map((s) => s.title),
+    sections: (bp.output?.template?.sections ?? []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      eyebrow: s.eyebrow,
+    })),
+    sectionTitles: (bp.output?.template?.sections ?? []).map((s) => s.title),
     questions,
   };
 }

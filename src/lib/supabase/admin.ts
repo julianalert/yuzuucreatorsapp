@@ -5,7 +5,7 @@ let _admin: SupabaseClient | undefined;
 
 /**
  * Service-role client. Bypasses RLS — server code only. All buyer-facing reads
- * go through this so blueprint IP (content_bank, knowledge_pack) never leaves
+ * go through this so blueprint IP (generation prompt, knowledge_pack) never leaves
  * the server.
  */
 export function supabaseAdmin(): SupabaseClient {

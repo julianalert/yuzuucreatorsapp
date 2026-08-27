@@ -69,7 +69,7 @@ export function CheckoutClient({
             That email doesn&apos;t look right — check it and try again.
           </p>
         ) : (
-          <p className="hint">Your plan arrives here as a PDF, plus a link to the web version.</p>
+          <p className="hint">Your private link arrives here as soon as your plan is written.</p>
         )}
       </div>
 
@@ -87,8 +87,8 @@ export function CheckoutClient({
         {submitting ? "Starting your plan…" : "Pay now"}
       </button>
       <p className="guarantee">
-        If the plan doesn&apos;t fit your situation, reply to the delivery email within 14 days for
-        a full refund.
+        If the plan doesn&apos;t fit your situation, reply to the delivery email within 14 days
+        for a full refund.
       </p>
     </form>
   );

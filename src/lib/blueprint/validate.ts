@@ -1,171 +1,141 @@
 /**
- * Structural validator for blueprints. Ported from validate-blueprint.js —
- * same logic, typed. Deterministic, no model calls.
+ * Structural validators. Deterministic, no model calls.
  *
- * Two gates, not one:
- *   - structural  — runs after stage 4, before the content bank exists
- *   - coverage    — runs after stage 5, proves every (section, archetype) pair is filled
- *
- * Coverage is inferred from status unless forced. A draft blueprint that fails
- * coverage is not broken, it is unfinished.
+ * Two contracts, two gates:
+ *   - validateBlueprint       — the frozen product: template, quiz, prompt
+ *   - validateGeneratedOutput — one buyer's generated document against the
+ *     product's template, run on every generation (build samples and runtime)
  */
 
 import type {
   Blueprint,
-  QuizAnswers,
-  ResolvedArchetype,
+  GeneratedOutput,
+  GeneratedSection,
+  OutputTemplate,
+  SectionComponent,
+  TemplateSection,
   ValidationIssue,
   ValidationResult,
 } from "./types";
 
-const MODIFIER_TARGETS = ["constraints", "voice", "safety", "pacing"];
+const COMPONENTS: SectionComponent[] = [
+  "prose",
+  "cards",
+  "timeline",
+  "table",
+  "rhythm",
+  "checklist",
+  "brief",
+];
 
-export function validateBlueprint(
-  bp: Blueprint,
-  opts: { requireCoverage?: boolean } = {}
-): ValidationResult {
+export function validateBlueprint(bp: Blueprint): ValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: { path: string; issue: string }[] = [];
-  const requireCoverage =
-    opts.requireCoverage ?? ["complete", "approved"].includes(bp.status);
   const err = (path: string, msg: string, fix?: string) =>
     errors.push({ path, issue: msg, fix });
   const warn = (path: string, msg: string) => warnings.push({ path, issue: msg });
 
-  const sections = (bp.output?.skeleton ?? []).map((s) => s.id);
+  const template = bp.output?.template;
+  const sections = template?.sections ?? [];
+  const sectionIds = sections.map((s) => s.id);
   const questions = bp.quiz?.questions ?? [];
-  const rules = bp.quiz?.archetype_rules ?? [];
-  const bank = bp.output?.content_bank ?? {};
 
-  // --- Rule 1: every question drives at least one real section -------------
-  for (const q of questions) {
-    const load = (q.drives?.length ?? 0) + (q.modifies?.length ?? 0);
-    if (load === 0) {
+  // --- Rule 1: the output template is complete -----------------------------
+  if (!template) {
+    err("output.template", "No output template.", "The build must produce one.");
+  } else {
+    if (!template.doc_label?.trim()) err("output.template.doc_label", "Missing doc_label.");
+    if (!template.cover_label?.trim()) err("output.template.cover_label", "Missing cover_label.");
+    if (!template.fingerprint_title?.trim())
+      err("output.template.fingerprint_title", "Missing fingerprint_title.");
+    const axes = template.fingerprint_axes ?? [];
+    if (axes.length < 4 || axes.length > 10) {
       err(
-        `quiz.questions.${q.id}`,
-        "Question drives no output section and modifies nothing.",
-        "Delete the question, or declare what its answer changes."
-      );
-      continue;
-    }
-    for (const d of q.drives ?? []) {
-      if (!sections.includes(d)) {
-        err(
-          `quiz.questions.${q.id}.drives`,
-          `Drives unknown section "${d}".`,
-          MODIFIER_TARGETS.includes(d)
-            ? `"${d}" is a global modifier, not a section — move it to "modifies".`
-            : `Use one of: ${sections.join(", ")}`
-        );
-      }
-    }
-    for (const m of q.modifies ?? []) {
-      if (!MODIFIER_TARGETS.includes(m)) {
-        err(
-          `quiz.questions.${q.id}.modifies`,
-          `Unknown modifier target "${m}".`,
-          `Use one of: ${MODIFIER_TARGETS.join(", ")}`
-        );
-      }
-    }
-  }
-
-  // --- Rule 2: every section is driven by at least one question ------------
-  const driven = new Set(questions.flatMap((q) => q.drives ?? []));
-  for (const s of bp.output?.skeleton ?? []) {
-    if (s.conditional) continue; // conditional sections are triggered by safety rules
-    if (!driven.has(s.id)) {
-      err(
-        `output.skeleton.${s.id}`,
-        "Section is not driven by any quiz question — it will be identical for every buyer.",
-        "Add a question that changes it, or remove the section."
+        "output.template.fingerprint_axes",
+        `${axes.length} fingerprint axes — need 4-10 to read as a profile.`,
+        "Target 5-8 axes the quiz can actually measure."
       );
     }
-  }
-
-  // --- Rule 3: every archetype is reachable --------------------------------
-  const emitted = new Map<string, Set<unknown>>(); // signal -> possible values
-  for (const q of questions) {
-    for (const o of q.options ?? []) {
-      for (const [k, v] of Object.entries(o.signals ?? {})) {
-        if (!emitted.has(k)) emitted.set(k, new Set());
-        emitted.get(k)!.add(v);
-      }
-    }
-  }
-
-  for (const rule of rules) {
-    const conds = rule.match?.all ?? rule.match?.any ?? [];
-    if (!conds.length) {
+    if (sections.length < 4) {
       err(
-        `quiz.archetype_rules.${rule.id}`,
-        "Rule has no match conditions.",
-        "Add at least one signal condition."
+        "output.template.sections",
+        `Only ${sections.length} sections — too thin to justify the price.`,
+        "Target 5-8 sections."
       );
-      continue;
     }
-    for (const c of conds) {
-      const possible = emitted.get(c.signal);
-      if (!possible) {
-        err(
-          `quiz.archetype_rules.${rule.id}`,
-          `Matches on signal "${c.signal}" which no quiz option emits.`,
-          "Add the signal to a quiz option, or drop the condition."
-        );
-        continue;
+    const seen = new Set<string>();
+    for (const s of sections) {
+      const path = `output.template.sections.${s.id}`;
+      if (seen.has(s.id)) err(path, "Duplicate section id.");
+      seen.add(s.id);
+      if (!s.title?.trim()) err(path, "Missing title.");
+      if (!s.eyebrow?.trim()) err(path, "Missing eyebrow.");
+      if (!s.instructions?.trim()) {
+        err(path, "No instructions — the generation model would have to guess.", "State what this section must accomplish and how it personalizes.");
       }
-      const wanted = c.in ?? (c.equals !== undefined ? [c.equals] : []);
-      if (wanted.length && !wanted.some((v) => possible.has(v))) {
-        err(
-          `quiz.archetype_rules.${rule.id}`,
-          `Signal "${c.signal}" can never take ${JSON.stringify(wanted)}.`,
-          `Emitted values: ${[...possible].join(", ")}`
-        );
+      if (!COMPONENTS.includes(s.component)) {
+        err(path, `Unknown component "${s.component}".`, `Use one of: ${COMPONENTS.join(", ")}`);
+      }
+      if (s.component === "table") {
+        const cols = s.table_columns ?? [];
+        if (cols.length < 2 || cols.length > 6) {
+          err(`${path}.table_columns`, `Table needs 2-6 columns, got ${cols.length}.`);
+        }
       }
     }
   }
 
-  // --- Rule 4: content bank coverage ---------------------------------------
-  const archetypeIds = [
-    ...rules.map((r) => r.id),
-    bp.quiz?.fallback_archetype,
-  ].filter(Boolean) as string[];
-  const nonConditional = (bp.output?.skeleton ?? []).filter((s) => !s.conditional);
-
-  const missing: string[] = [];
-  for (const a of archetypeIds) {
-    for (const s of nonConditional) {
-      const key = `${s.id}::${a}`;
-      if (!bank[key]) missing.push(key);
-    }
-  }
-  if (missing.length) {
-    const detail = `${missing.length} of ${archetypeIds.length * nonConditional.length} pairs missing`;
-    if (requireCoverage) {
-      err(
-        "output.content_bank",
-        `Incomplete content bank — ${detail}.`,
-        `Generate: ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ", ..." : ""}`
-      );
-    } else {
-      warn("output.content_bank", `Draft blueprint — ${detail}. Not blocking at this stage.`);
-    }
-  }
-
-  // --- Rule 5: fallback archetype exists and is covered --------------------
-  if (!bp.quiz?.fallback_archetype) {
+  // --- Rule 2: generation prompt exists and has substance ------------------
+  const genPrompt = bp.output?.generation_prompt ?? "";
+  if (genPrompt.trim().length < 200) {
     err(
-      "quiz.fallback_archetype",
-      "No fallback archetype. Unmatched buyers would receive nothing.",
-      "Define a general archetype with full section coverage."
+      "output.generation_prompt",
+      "Generation prompt missing or too thin to constrain the writer.",
+      "It must carry the product-specific rules — specificity tests, personalization requirements, safety constraints."
     );
   }
 
-  // --- Rule 6: quiz length --------------------------------------------------
+  // --- Rule 3: every question changes the output ---------------------------
+  for (const q of questions) {
+    const informs = q.informs ?? [];
+    if (informs.length === 0) {
+      err(
+        `quiz.questions.${q.id}`,
+        "Question informs no template section — its answer would change nothing.",
+        "Delete the question, or declare which sections its answer changes."
+      );
+      continue;
+    }
+    for (const id of informs) {
+      if (!sectionIds.includes(id)) {
+        err(
+          `quiz.questions.${q.id}.informs`,
+          `Informs unknown section "${id}".`,
+          `Use one of: ${sectionIds.join(", ")}`
+        );
+      }
+    }
+    if ((q.options?.length ?? 0) < 2) {
+      err(`quiz.questions.${q.id}.options`, "Fewer than 2 options.");
+    }
+  }
+
+  // --- Rule 4: every section is informed by at least one question ----------
+  const informed = new Set(questions.flatMap((q) => q.informs ?? []));
+  for (const s of sections) {
+    if (!informed.has(s.id)) {
+      warn(
+        `output.template.sections.${s.id}`,
+        "No quiz question informs this section — it will lean on the overall profile only."
+      );
+    }
+  }
+
+  // --- Rule 5: quiz length --------------------------------------------------
   if (questions.length < 6) {
     err(
       "quiz.questions",
-      `Only ${questions.length} questions — archetypes cannot be reliably distinguished.`,
+      `Only ${questions.length} questions — not enough signal to personalize honestly.`,
       "Target 6-12."
     );
   }
@@ -176,44 +146,7 @@ export function validateBlueprint(
     );
   }
 
-  // --- Brief quality checks -------------------------------------------------
-  for (const [key, entry] of Object.entries(bank)) {
-    if (!entry.brief?.trim()) {
-      err(`output.content_bank.${key}`, "Empty brief.", "Regenerate this pair.");
-    }
-    if ((entry.must_include?.length ?? 0) < 2) {
-      err(
-        `output.content_bank.${key}`,
-        "Fewer than 2 must_include points — the writer has too much latitude.",
-        "Add concrete, checkable points."
-      );
-    }
-    const isWeek = key.startsWith("week_");
-    if (isWeek && !entry.week_theme) {
-      warn(`output.content_bank.${key}`, "Week section has no theme.");
-    }
-    if (!entry.mechanism_refs?.length && !key.startsWith("safety_check")) {
-      warn(
-        `output.content_bank.${key}`,
-        "Cites no mechanism — likely to score low on the mechanism rubric."
-      );
-    }
-  }
-
-  // --- Mechanism reference integrity ---------------------------------------
-  const mechIds = new Set((bp.knowledge_pack?.mechanisms ?? []).map((m) => m.id));
-  for (const [key, entry] of Object.entries(bank)) {
-    for (const ref of entry.mechanism_refs ?? []) {
-      if (!mechIds.has(ref)) {
-        err(
-          `output.content_bank.${key}.mechanism_refs`,
-          `Unknown mechanism "${ref}".`,
-          "Reference an id from knowledge_pack.mechanisms."
-        );
-      }
-    }
-  }
-
+  // --- Mechanism quality -----------------------------------------------------
   for (const m of bp.knowledge_pack?.mechanisms ?? []) {
     if (!m.why_it_works?.trim()) {
       err(
@@ -235,15 +168,6 @@ export function validateBlueprint(
       "Add required disclaimers before this blueprint can be approved."
     );
   }
-  for (const t of bp.safety?.escalation_triggers ?? []) {
-    if (t.block_id && !bank[t.block_id]) {
-      err(
-        "safety.escalation_triggers",
-        `Trigger points at missing block "${t.block_id}".`,
-        "Generate the escalation block."
-      );
-    }
-  }
 
   // --- Freeze integrity ------------------------------------------------------
   if (bp.status === "approved") {
@@ -254,8 +178,93 @@ export function validateBlueprint(
         "Approval must be set by the creator gate, never by the pipeline."
       );
     }
-    if (!bp.eval?.golden_samples?.length) {
-      warn("eval.golden_samples", "Approved with no stored samples — nothing to regression-test against.");
+  }
+
+  return { ok: errors.length === 0, errors, warnings };
+}
+
+// ─────────────────────────────────────────── generated output validation
+
+function structuralField(section: TemplateSection, gen: GeneratedSection): boolean {
+  switch (section.component) {
+    case "prose":
+      return (gen.intro?.length ?? 0) > 0;
+    case "cards":
+      return (gen.cards?.length ?? 0) >= 2 && gen.cards!.every((c) => c.title && c.body);
+    case "timeline":
+      return (
+        (gen.timeline?.length ?? 0) >= 2 && gen.timeline!.every((t) => t.title && t.body)
+      );
+    case "table": {
+      const rows = gen.table?.rows ?? [];
+      const width = section.table_columns?.length ?? 0;
+      return rows.length >= 2 && rows.every((r) => (r.cells?.length ?? 0) === width);
+    }
+    case "rhythm":
+      return (gen.rhythm?.length ?? 0) >= 3 && gen.rhythm!.every((r) => r.time && r.title);
+    case "checklist":
+      return (
+        (gen.checklist?.length ?? 0) >= 1 &&
+        gen.checklist!.every((g) => g.label && (g.items?.length ?? 0) >= 2)
+      );
+    case "brief":
+      return (
+        Boolean(gen.brief?.title) &&
+        (gen.brief?.groups?.length ?? 0) >= 2 &&
+        gen.brief!.groups.every((g) => g.label && (g.items?.length ?? 0) >= 1)
+      );
+  }
+}
+
+/** Structural check of one buyer's generated document against the template. */
+export function validateGeneratedOutput(
+  template: OutputTemplate,
+  output: GeneratedOutput
+): ValidationResult {
+  const errors: ValidationIssue[] = [];
+  const warnings: { path: string; issue: string }[] = [];
+  const err = (path: string, msg: string, fix?: string) =>
+    errors.push({ path, issue: msg, fix });
+
+  const cover = output?.cover;
+  if (!cover?.title?.trim()) err("cover.title", "Missing cover title.");
+  if (!cover?.subtitle?.trim()) err("cover.subtitle", "Missing cover subtitle.");
+  const axes = template.fingerprint_axes ?? [];
+  const fp = cover?.fingerprint ?? [];
+  if (fp.length !== axes.length) {
+    err(
+      "cover.fingerprint",
+      `${fp.length} fingerprint values for ${axes.length} axes.`,
+      "Return one 0-10 value per axis, in axis order."
+    );
+  } else if (fp.some((v) => typeof v !== "number" || v < 0 || v > 10)) {
+    err("cover.fingerprint", "Fingerprint values must be numbers 0-10.");
+  }
+
+  const genSections = output?.sections ?? {};
+  for (const section of template.sections) {
+    const gen = genSections[section.id];
+    if (!gen) {
+      err(`sections.${section.id}`, "Section missing from the generated output.");
+      continue;
+    }
+    if (!structuralField(section, gen)) {
+      err(
+        `sections.${section.id}`,
+        `Section content does not satisfy its "${section.component}" shape.`,
+        "Regenerate with the declared structure and minimum item counts."
+      );
+    }
+    if (section.component !== "prose" && !gen.callout?.body) {
+      warnings.push({
+        path: `sections.${section.id}.callout`,
+        issue: "No personalized opening callout.",
+      });
+    }
+  }
+  for (const id of Object.keys(genSections)) {
+    if (!template.sections.some((s) => s.id === id)) {
+      warnings.push({ path: `sections.${id}`, issue: "Unknown section — will not render." });
     }
   }
 
@@ -263,43 +272,31 @@ export function validateBlueprint(
 }
 
 /**
- * Resolve an archetype from quiz answers. Highest priority wins; ties broken by
- * declaration order. Returns the fallback when nothing matches.
+ * Flatten a generated document to plain text per section — feeds the swap
+ * divergence test and the output critic.
  */
-export function resolveArchetype(bp: Blueprint, answers: QuizAnswers): ResolvedArchetype {
-  const signals: Record<string, unknown> = {};
-  for (const q of bp.quiz.questions) {
-    const given = answers[q.id];
-    const chosen = Array.isArray(given) ? given : [given];
-    for (const value of chosen) {
-      const opt = q.options?.find((o) => o.value === value);
-      for (const [k, v] of Object.entries(opt?.signals ?? {})) {
-        if (signals[k] === undefined) signals[k] = v;
-        else if (Array.isArray(signals[k])) (signals[k] as unknown[]).push(v);
-        else signals[k] = [signals[k], v];
-      }
+export function flattenGeneratedOutput(
+  template: OutputTemplate,
+  output: GeneratedOutput
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const section of template.sections) {
+    const gen = output.sections?.[section.id];
+    if (!gen) continue;
+    const parts: string[] = [];
+    if (gen.callout) parts.push(gen.callout.label, gen.callout.body);
+    for (const p of gen.intro ?? []) parts.push(p);
+    for (const c of gen.cards ?? []) parts.push(c.kicker ?? "", c.title, c.body, c.tag ?? "");
+    for (const t of gen.timeline ?? []) parts.push(t.range, t.title, t.body);
+    for (const r of gen.table?.rows ?? []) parts.push(...r.cells);
+    for (const r of gen.rhythm ?? []) parts.push(r.time, r.title, r.desc);
+    for (const g of gen.checklist ?? []) parts.push(g.label, ...g.items);
+    if (gen.brief) {
+      parts.push(gen.brief.title);
+      for (const g of gen.brief.groups) parts.push(g.label, ...g.items);
     }
+    if (gen.outro) parts.push(gen.outro);
+    out[section.id] = parts.filter(Boolean).join("\n");
   }
-
-  const has = (signal: string, wanted: unknown[]) => {
-    const actual = signals[signal];
-    if (actual === undefined) return false;
-    const list = Array.isArray(actual) ? actual : [actual];
-    return wanted.some((w) => list.includes(w));
-  };
-
-  const matches = bp.quiz.archetype_rules
-    .filter((r) => {
-      const conds = r.match.all ?? r.match.any ?? [];
-      const test = (c: { signal: string; in?: unknown[]; equals?: unknown }) =>
-        has(c.signal, c.in ?? [c.equals]);
-      return r.match.all ? conds.every(test) : conds.some(test);
-    })
-    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
-
-  return {
-    archetype: matches[0]?.id ?? bp.quiz.fallback_archetype,
-    signals,
-    matched_rules: matches.map((m) => m.id),
-  };
+  return out;
 }

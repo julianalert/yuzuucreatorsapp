@@ -1,26 +1,32 @@
 /**
- * Pipeline stages, ported from harness/pipeline.mjs. Prompts are verbatim —
- * they were tuned against real runs. Deliberate deviations, per product spec:
+ * Pipeline stages. The audience/topic prompts were tuned against real harness
+ * runs — do not "improve" their wording in passing.
  *
- *   - proposeTopics returns the top 5 (harness returned 4); the creator UI
- *     shows five ideas.
- *
- * Do not "improve" prompt wording in passing.
+ * Downstream of the topic choice, the pipeline builds the per-product
+ * machinery for fully personalized generation: an output template (section
+ * structure + content shapes), a quiz that elicits personalization signal,
+ * and a product-specific generation prompt. There are no segments and no
+ * archetypes anywhere — every buyer's document is written from their own
+ * answers at runtime.
  */
 
 import { ask, type AskOptions } from "./ask";
 import type {
   AudienceCard,
-  ContentBankEntry,
   CreatorInput,
+  GeneratedOutput,
   KnowledgePack,
-  Mechanism,
+  OutputTemplate,
   Quiz,
-  SkeletonSection,
+  QuizAnswers,
+  SampleBuyer,
+  Safety,
+  SectionComponent,
   TopicProposal,
   TopicProposals,
   Voice,
 } from "../blueprint/types";
+import { validateGeneratedOutput } from "../blueprint/validate";
 import { TOPIC_COUNT } from "./constants";
 
 type Ctx = Pick<AskOptions, "usage">;
@@ -60,7 +66,7 @@ export async function proposeTopics(
 
 <audience_card>${JSON.stringify(audienceCard, null, 2)}</audience_card>
 
-The product SHAPE is fixed: a quiz diagnoses the buyer, then they receive a personalized, time-boxed transformation plan as a PDF, priced $20-50.
+The product SHAPE is fixed: a quiz captures the buyer's exact situation, then a personalized, time-boxed transformation plan is written for them individually, priced $20-50.
 
 The TIME HORIZON is yours to choose per topic: 14, 21, 30, 45, 60, or 90 days. Pick the shortest horizon that credibly delivers the promise — a habit reset might be 14 days, a physiological change 60. Do not default every topic to the same length; let each problem dictate its own duration, and don't force a problem into a horizon that's too short to be honest or too long to stay urgent.
 
@@ -82,7 +88,7 @@ Return the top ${TOPIC_COUNT}. If fewer than ${TOPIC_COUNT} survive the rejectio
 
 /**
  * One wild-card idea, generated after the safe transformation proposals.
- * Same delivery machine (quiz → personalized written PDF), different shape.
+ * Same delivery machine (quiz → personalized written document), different shape.
  */
 export async function proposeBonusTopic(
   audienceCard: AudienceCard,
@@ -107,7 +113,7 @@ Break the formula: it must NOT be another "fix problem X in N days" transformati
 
 Hard constraints (the delivery machine is fixed):
 - A short quiz must be able to genuinely personalize it — different buyers get materially different content. If everyone would get the same document, the idea is wrong.
-- Deliverable as a written, sectioned PDF. No video, community, coaching, templates-only or software.
+- Deliverable as a written, sectioned document. No video, community, coaching, templates-only or software.
 - Same audience, and this creator must be credible for it given credibility_basis.
 - Priced $20-50 and honest at that price.
 - Surprising is good; gimmicky is not. It must solve or illuminate something the audience actually feels.
@@ -132,7 +138,7 @@ export async function buildKnowledgePack(
 <topic>${JSON.stringify(topic)}</topic>
 <audience_card>${JSON.stringify(audienceCard)}</audience_card>
 
-SEGMENTS — 6 to 10 slices split by ROOT CAUSE, not symptom severity or demographics.
+ROOT_CAUSES — 6 to 10 distinct root causes of the problem, each with a plain-language explanation. These are context for a writer diagnosing one specific buyer, not categories to sort buyers into. Split by cause, not symptom severity or demographics.
 MECHANISMS — 6 to 12 interventions, each with a why_it_works explaining the causal chain in plain language. "It works because it builds consistency" is not a mechanism. If you cannot state the mechanism, drop the intervention.
 FALSE_BELIEFS — 4 to 6 wrong beliefs with defensible corrections, drawn from the objections where possible.
 GLOSSARY — terms the plan will use, one line each.
@@ -140,109 +146,265 @@ GLOSSARY — terms the plan will use, one line each.
 Rules: no intervention requiring a purchase; flag contested items with "contested":true and state both sides; mark uncertain claims "confidence":"low" rather than omitting them.
 
 Return JSON only:
-{"segments":[{"id":"seg_...","label":"...","prevalence":"high|medium|low","root_cause":"..."}],"mechanisms":[{"id":"mech_...","name":"...","why_it_works":"...","applies_to_segments":[...]}],"false_beliefs":[{"belief":"...","correction":"..."}],"glossary":{"term":"definition"}}`,
+{"root_causes":[{"id":"rc_...","label":"...","prevalence":"high|medium|low","explanation":"..."}],"mechanisms":[{"id":"mech_...","name":"...","why_it_works":"..."}],"false_beliefs":[{"belief":"...","correction":"..."}],"glossary":{"term":"definition"}}`,
+    ctx
+  );
+}
+
+// ─────────────────────────────────────────────── component shape contracts
+
+/** JSON contract per section component — the writer's structural spec. */
+const COMPONENT_SHAPES: Record<SectionComponent, string> = {
+  prose: `"intro":["3-6 body paragraphs carrying the whole section"]`,
+  cards: `"cards":[{"kicker":"short uppercase kicker e.g. MECHANISM 01","title":"...","body":"2-3 sentences","tag":"short label"}] — 3 to 6 cards`,
+  timeline: `"timeline":[{"marker":"1","range":"e.g. Weeks 1-2 · Environment","title":"...","body":"3-5 sentences of concrete steps"}] — 3 to 5 steps in order`,
+  table: `"table":{"rows":[{"cells":["one value per declared column, same order"],"badge":"high|medium|low (optional, renders on the last cell)"}]} — 4 to 8 rows`,
+  rhythm: `"rhythm":[{"time":"e.g. 06:30","title":"...","desc":"1-2 sentences"}] — 6 to 10 time slots in chronological order`,
+  checklist: `"checklist":[{"label":"group name","items":["concrete, checkable items"]}] — 2 to 5 groups`,
+  brief: `"brief":{"title":"...","groups":[{"label":"...","items":["..."]}]} — 3 to 5 groups`,
+};
+
+function sectionContract(s: {
+  id: string;
+  title: string;
+  component: SectionComponent;
+  table_columns?: string[];
+  instructions: string;
+}): string {
+  const cols =
+    s.component === "table" && s.table_columns?.length
+      ? ` Columns, in order: ${s.table_columns.join(" | ")}.`
+      : "";
+  return `"${s.id}" — ${s.title} [${s.component}]
+  Purpose: ${s.instructions}${cols}
+  Shape: {"callout":{"label":"short uppercase label","body":"2-4 sentences addressed to THIS buyer's stated situation"},"intro":["0-3 body paragraphs"],${COMPONENT_SHAPES[s.component]},"outro":"optional closing paragraph"}`;
+}
+
+// ──────────────────────────────────────────────────── build-time stages
+
+export async function designOutputTemplate(
+  topic: TopicProposal,
+  knowledgePack: KnowledgePack,
+  audienceCard: AudienceCard,
+  ctx: Ctx = {}
+): Promise<OutputTemplate> {
+  return ask(
+    "build",
+    `Design the output document template for this product. The template is fixed per product; a writer later fills it for each individual buyer from their quiz answers.
+
+<topic>${JSON.stringify(topic)}</topic>
+<knowledge_pack>${JSON.stringify(knowledgePack)}</knowledge_pack>
+<audience_card>${JSON.stringify(audienceCard)}</audience_card>
+
+Design 5-8 sections that together deliver the promise. Each section declares ONE dominant component:
+- "prose" — flowing explanation (use sparingly, max 1)
+- "cards" — a grid of mechanism/priority/mistake cards
+- "timeline" — phased steps over the plan duration
+- "table" — a prioritized reference table (declare 2-6 column headers)
+- "rhythm" — a time-stamped daily schedule
+- "checklist" — measurable milestone checklists
+- "brief" — a structured summary the buyer hands to someone else (doctor, trainer, partner) — include only when the domain genuinely benefits
+
+A strong document typically opens with a diagnosis-style section (cards explaining what is going on for this buyer and why), moves through the plan (timeline), and ends with something the buyer keeps using (rhythm, checklist or brief).
+
+For each section write "instructions": 2-4 sentences on what it must accomplish FOR ONE SPECIFIC BUYER and which quiz-provided facts it must visibly use. Generic instructions produce generic documents — name the personalization.
+
+Also design the cover:
+- doc_label: a short product wordmark (2-3 words max, title case, no "AI")
+- cover_label: one line, e.g. "Personalized <domain> Plan"
+- fingerprint_title: what the cover bar-chart measures, in the audience's words
+- fingerprint_axes: 5-8 short axis labels the quiz can genuinely measure per buyer (aspects of their situation, severity, constraints)
+
+Return JSON only:
+{"doc_label":"...","cover_label":"...","fingerprint_title":"...","fingerprint_axes":["..."],"sections":[{"id":"snake_case_id","eyebrow":"e.g. Part 01 · Nutrition","title":"...","description":"one line under the title","accent":"zest|sage|amber|rose","component":"prose|cards|timeline|table|rhythm|checklist|brief","table_columns":["only when component is table"],"instructions":"..."}]}`,
     ctx
   );
 }
 
 export async function designQuiz(
+  topic: TopicProposal,
   knowledgePack: KnowledgePack,
   audienceCard: AudienceCard,
-  skeleton: SkeletonSection[],
+  template: OutputTemplate,
   ctx: Ctx = {}
 ): Promise<Quiz> {
   return ask(
     "build",
-    `Design the diagnostic quiz and archetype resolution rules.
+    `Design the intake quiz for this product. Its only job is to gather the material a writer needs to produce a genuinely personalized document for one buyer — their situation, severity, constraints, history, and context.
 
+<topic>${JSON.stringify(topic)}</topic>
 <knowledge_pack>${JSON.stringify(knowledgePack)}</knowledge_pack>
 <audience_card>${JSON.stringify(audienceCard)}</audience_card>
-<sections>${skeleton.map((s) => s.id).join(", ")}</sections>
+<template_sections>${JSON.stringify(
+      template.sections.map((s) => ({ id: s.id, title: s.title, instructions: s.instructions }))
+    )}</template_sections>
+<fingerprint_axes>${JSON.stringify(template.fingerprint_axes)}</fingerprint_axes>
 
-Design in this order. Do not reverse it.
-
-1. ARCHETYPES FIRST. 6-12 buyer identities from the segments. An archetype is a person in a situation, not a category label. Each must lead to a materially different plan.
-2. THEN the signals needed to distinguish them.
-3. THEN the questions that elicit those signals. 6-12 questions.
-
-Constraints, enforced by a validator after you:
-- Every question declares "drives" (sections it changes) and/or "modifies" (one of: constraints, voice, safety, pacing). A question that does neither must be deleted — no exceptions for rapport or intro personalization.
-- Every non-conditional section must be driven by at least one question.
-- Every archetype reachable by at least one valid answer combination.
+Write 6-12 questions. Constraints, enforced by a validator after you:
+- Every question declares "informs": the template section ids its answer materially changes. A question that changes nothing must be deleted — no exceptions for rapport or intro personalization.
+- Every fingerprint axis must be measurable from at least one question.
 - Use the audience's own words from audience_words, not clinical terms.
-- Ask what the buyer observes, not what they diagnose.
+- Ask what the buyer observes, not what they diagnose. "How often does X happen" beats "do you have condition Y".
+- Answer options must cover the realistic range, including an honest "none of these" where relevant.
 - One safety question if the domain has any escalation path.
 - Easy to hard. First question answerable in under two seconds.
+- Prefer "single" type; use "multi" only where combinations genuinely matter.
 
 Return JSON only:
-{"questions":[{"id":"q_...","question":"...","type":"single|multi","required":true,"drives":[...],"modifies":[...],"options":[{"value":"...","label":"...","signals":{"key":"value"}}]}],"archetype_rules":[{"id":"arch_...","label":"...","priority":n,"archetype_rationale":"what makes this plan different","match":{"all":[{"signal":"...","in":[...]}]}}],"fallback_archetype":"arch_general"}`,
+{"questions":[{"id":"q_...","question":"...","type":"single|multi","required":true,"help":"optional clarifier","informs":["section ids"],"options":[{"value":"snake_case","label":"buyer-facing label","sub":"optional detail"}]}]}`,
     ctx
   );
 }
 
-export async function writeBrief(
-  args: {
-    knowledgePack: KnowledgePack;
-    archetype: string;
-    rationale: string;
-    section: SkeletonSection;
-    voice: Voice;
-    earlier: Record<string, string>;
-  },
-  ctx: Ctx = {}
-): Promise<ContentBankEntry> {
-  const { knowledgePack, archetype, rationale, section, voice, earlier } = args;
-  return ask(
-    "build",
-    `Write the content brief for one section of one archetype's plan.
-
-<knowledge_pack>${JSON.stringify(knowledgePack)}</knowledge_pack>
-<archetype>${archetype} — ${rationale}</archetype>
-<section>${section.id}: ${section.title}, target ${section.target_words} words</section>
-<voice>${JSON.stringify(voice)}</voice>
-<already_written>${JSON.stringify(earlier)}</already_written>
-
-You are writing a BRIEF, not prose. The brief tells a writer what must be conveyed for this specific person. The writer produces the actual words later, with the buyer's real details.
-
-Return JSON only:
-{"brief":"2-4 sentences on what this section must accomplish FOR THIS ARCHETYPE. If it would read the same for a different archetype, it is wrong — rewrite it.","must_include":["3-5 points concrete enough that their absence is checkable"],"must_avoid":["2-4 items, including failure modes specific to this archetype"],"mechanism_refs":["ids from the knowledge pack"]${section.id.startsWith("week") ? ',"week_theme":"3-5 words"' : ""}}
-
-${section.id.startsWith("week") ? "Phase sections cover the day range in the section title. They must fit the smallest stated time budget, state what changes from the previous phase and why now, and name one thing the buyer should NOT do yet." : ""}`,
-    { maxTokens: 2000, ...ctx }
-  );
-}
-
-export async function renderSection(
-  args: {
-    entry: ContentBankEntry;
-    mechanisms: Mechanism[];
-    buyer: Record<string, unknown>;
-    voice: Voice;
-    section: SkeletonSection;
-    previousEnding: string;
-  },
+export async function writeGenerationPrompt(
+  topic: TopicProposal,
+  knowledgePack: KnowledgePack,
+  template: OutputTemplate,
+  voice: Voice,
+  safety: Safety,
   ctx: Ctx = {}
 ): Promise<string> {
-  const { entry, mechanisms, buyer, voice, section, previousEnding } = args;
-  return ask(
-    "writer",
-    `Write one section of a personalized plan.
+  const res = await ask(
+    "build",
+    `Write the CRITICAL RULES block for a generation prompt. At runtime, a writer model receives one buyer's full quiz answers plus this rules block, and must produce a personalized document. These rules are what separates a hand-crafted-feeling document from a generic one.
 
-<brief>${entry.brief}</brief>
-<must_include>${JSON.stringify(entry.must_include)}</must_include>
-<must_avoid>${JSON.stringify(entry.must_avoid)}</must_avoid>
-<mechanisms>${JSON.stringify(mechanisms)}</mechanisms>
-<buyer>${JSON.stringify(buyer)}</buyer>
+<topic>${JSON.stringify(topic)}</topic>
+<knowledge_pack>${JSON.stringify(knowledgePack)}</knowledge_pack>
+<sections>${JSON.stringify(template.sections.map((s) => ({ id: s.id, title: s.title })))}</sections>
 <voice>${JSON.stringify(voice)}</voice>
-<previous_section_ending>${previousEnding || "(this is the first section)"}</previous_section_ending>
+<safety>${JSON.stringify(safety)}</safety>
 
-Write ${section.target_words} words. Second person.
+Write 8-12 numbered rules covering:
+1. The specificity rule — every section must visibly use the buyer's stated facts. Include one BAD/GOOD example pair using realistic quiz answers from this domain, so the writer cannot misinterpret it.
+2. How the diagnosis must be derived: pick the root causes from the knowledge pack that this buyer's answers actually point to, and say why in their words. Never present all root causes.
+3. Mechanism honesty: every recommendation cites a mechanism from the knowledge pack; if no mechanism fits, cut the recommendation.
+4. Constraint fidelity: whatever time/budget/context limits the buyer stated are hard limits. Include a concrete example (e.g. if they said 10 minutes a day, no step may need more).
+5. Calibration: severity assessments must vary with the answers — a writer that always lands on "moderate" is broken.
+6. Domain-specific failure modes to avoid (draw from false_beliefs).
+7. Safety behavior for this domain — when to insert a "see a professional" note.
+8. Voice: reading level, person, banned phrases, and 2-3 domain-specific tone notes.
 
-Cover every must_include point. Do not add scope beyond the brief — other sections handle what you might be tempted to include.
+End with a QUALITY CHECKLIST of 5-7 yes/no self-verification questions the writer must pass before returning.
 
-Never use: ${(voice.banned_phrases || []).join(", ")}.
-
-Return prose only. No headings, no preamble, no meta-commentary.`,
-    { json: false, maxTokens: 2000, ...ctx }
+Return JSON only: {"rules":"the full rules block as plain text with numbered rules and the checklist"}`,
+    { maxTokens: 4000, ...ctx }
   );
+  return typeof res === "string" ? res : (res.rules as string);
+}
+
+export async function inventSampleBuyers(
+  quiz: Quiz,
+  audienceCard: AudienceCard,
+  ctx: Ctx = {}
+): Promise<SampleBuyer[]> {
+  const res = await ask(
+    "build",
+    `Invent 3 realistic, deliberately different buyers of this product and answer the quiz as each of them. These synthetic buyers drive the sample documents the creator reviews before launch — if the three feel interchangeable, the review proves nothing.
+
+<audience_card>${JSON.stringify(audienceCard)}</audience_card>
+<quiz>${JSON.stringify(quiz.questions)}</quiz>
+
+Make the three differ on the dimensions that most change the plan: severity, constraints (time, context), and history. Answer every question with valid option "value"s — arrays for "multi" questions, a single value for "single" questions.
+
+Return JSON only:
+{"buyers":[{"label":"6-10 word human label, e.g. 'Exhausted first-time owner, 10 min/day'","summary":"one sentence on who they are","answers":{"q_id":"value or [values]"}}]}`,
+    { maxTokens: 3000, ...ctx }
+  );
+  return (res.buyers ?? res) as SampleBuyer[];
+}
+
+// ─────────────────────────────────────────────── runtime generation
+
+/** Turn raw quiz answers into readable "question → chosen labels" pairs. */
+export function readableAnswers(quiz: Quiz, answers: QuizAnswers): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const q of quiz.questions) {
+    const given = answers[q.id];
+    const values = Array.isArray(given) ? given : given ? [given] : [];
+    const labels = values
+      .map((v) => q.options.find((o) => o.value === v)?.label)
+      .filter(Boolean);
+    if (labels.length) out[q.question] = labels.join("; ");
+  }
+  return out;
+}
+
+export interface GenerateOutputArgs {
+  template: OutputTemplate;
+  generationPrompt: string;
+  knowledgePack: KnowledgePack;
+  voice: Voice;
+  safety: Safety;
+  product: { topic_title: string; promise: string; duration_days?: number };
+  creatorName: string;
+  /** Readable question → answer labels (from readableAnswers). */
+  answers: Record<string, string>;
+}
+
+/**
+ * Deterministic prompt assembly. The product's generation_prompt carries the
+ * tuned rules; this wraps it with the buyer, the knowledge, and the output
+ * contract derived from the template — so the schema can never drift from
+ * what the renderer expects.
+ */
+export function composeGenerationPrompt(args: GenerateOutputArgs): string {
+  const { template, generationPrompt, knowledgePack, voice, safety, product, creatorName } = args;
+  const answersBlock = Object.entries(args.answers)
+    .map(([q, a]) => `- ${q}\n  → ${a}`)
+    .join("\n");
+
+  return `You are writing ONE buyer's personalized document: "${product.topic_title}" by ${creatorName}.
+Promise: ${product.promise}${product.duration_days ? `\nPlan duration: ${product.duration_days} days.` : ""}
+
+This document was paid for by a real person who answered an intake quiz about their exact situation. Everything below must be written for them — not for an average buyer, not for a category.
+
+<buyer_answers>
+${answersBlock}
+</buyer_answers>
+
+<knowledge_pack>${JSON.stringify(knowledgePack)}</knowledge_pack>
+<voice>${JSON.stringify(voice)}</voice>
+<safety>${JSON.stringify(safety)}</safety>
+
+CRITICAL RULES:
+${generationPrompt}
+
+OUTPUT CONTRACT — return JSON only, with exactly this structure:
+{
+  "cover": {
+    "title": "document title",
+    "subtitle": "who this was prepared for, from their answers — never invent a name",
+    "fingerprint": [one number 0-10 per axis, in this order: ${template.fingerprint_axes.join(", ")}],
+    "meta": [up to 4 of {"value":"short stat","label":"what it is"}]
+  },
+  "sections": {
+${template.sections.map((s) => "    " + sectionContract(s).split("\n").join("\n    ")).join(",\n")}
+  }
+}
+
+Every section listed in the contract must be present. Respect each section's declared shape and minimum item counts. Write in the declared voice. No markdown, no preamble — JSON only.`;
+}
+
+export async function generateOutput(
+  args: GenerateOutputArgs,
+  ctx: Ctx = {}
+): Promise<GeneratedOutput> {
+  const prompt = composeGenerationPrompt(args);
+  let lastErrors = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const retryNote = lastErrors
+      ? `\n\nYour previous attempt failed structural validation:\n${lastErrors}\nFix every listed issue and return the full corrected JSON.`
+      : "";
+    const output = (await ask("writer", prompt + retryNote, {
+      maxTokens: 16000,
+      ...ctx,
+    })) as GeneratedOutput;
+    const check = validateGeneratedOutput(args.template, output);
+    if (check.ok) return output;
+    lastErrors = check.errors.map((e) => `- ${e.path}: ${e.issue}`).join("\n");
+    if (attempt === 1) {
+      throw new Error(`Generated output failed structural validation twice:\n${lastErrors}`);
+    }
+  }
+  throw new Error("unreachable");
 }

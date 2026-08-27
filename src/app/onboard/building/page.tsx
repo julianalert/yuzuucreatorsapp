@@ -11,7 +11,6 @@ export default async function BuildingPage() {
   const route = routeForBuild(build);
   if (route !== "/onboard/building") redirect(route);
 
-  const archetypeHint = "one for each kind of buyer your quiz can identify";
   const initial = creator.display_name?.[0] ?? creator.email[0];
 
   return (
@@ -22,8 +21,9 @@ export default async function BuildingPage() {
           <div className="micro">Step 3 of 3 · Building</div>
           <h1 style={{ marginTop: 18 }}>{build.chosen_topic?.topic_title ?? "Building your product"}</h1>
           <p className="lede">
-            This one takes a few minutes. We&apos;re writing several different versions of the
-            plan, {archetypeHint}.
+            This one takes a few minutes. Every buyer&apos;s plan will be written from scratch
+            from their own answers — right now we&apos;re inventing three very different buyers
+            and writing theirs, so you can judge the real thing.
           </p>
 
           <BuildProgress

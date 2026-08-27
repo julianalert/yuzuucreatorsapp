@@ -20,10 +20,10 @@ const PHASES: Record<"scan" | "build", StageItem[]> = {
   ],
   build: [
     { label: "Researching the subject", stages: ["knowledge"] },
-    { label: "Working out who your buyers are", stages: ["quiz"] },
+    { label: "Designing your document", stages: ["template", "prompt"] },
     { label: "Writing the quiz", stages: ["quiz"] },
-    { label: "Writing the plans", stages: ["briefs", "render"] },
-    { label: "Checking them for quality", stages: ["swap_test", "critique"] },
+    { label: "Writing plans for three sample buyers", stages: ["samples"] },
+    { label: "Checking they're genuinely personal", stages: ["swap_test", "critique"] },
     { label: "Samples for you to read", stages: ["gate", "publish"] },
   ],
 };

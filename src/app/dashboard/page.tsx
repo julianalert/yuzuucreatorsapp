@@ -51,9 +51,6 @@ export default async function DashboardPage({
   const earned = orders.reduce((sum, o) => sum + o.amount_cents, 0) / 100;
   const thisWeek = countLastWeek(orders);
 
-  const labelFor = (archetype: string | null) =>
-    bp.quiz.archetype_rules.find((r) => r.id === archetype)?.label ?? "—";
-
   const url = `yuzuu.co/u/${creator.handle}`;
   const initial = creator.display_name?.[0] ?? creator.email[0];
 
@@ -107,14 +104,13 @@ export default async function DashboardPage({
           <span className="micro">Recent buyers</span>
           {orders.length === 0 ? (
             <p style={{ marginTop: 16, fontSize: 14.5, color: "var(--sage)" }}>
-              No buyers yet. Share {url} — every sale shows up here with the buyer&apos;s type.
+              No buyers yet. Share {url} — every sale shows up here.
             </p>
           ) : (
             <table className="tbl" style={{ marginTop: 14 }}>
               <thead>
                 <tr>
                   <th>Buyer</th>
-                  <th>Their type</th>
                   <th>Status</th>
                   <th>When</th>
                 </tr>
@@ -123,7 +119,6 @@ export default async function DashboardPage({
                 {orders.slice(0, 12).map((o) => (
                   <tr key={o.id}>
                     <td>{o.buyer_email}</td>
-                    <td>{labelFor(o.resolved_archetype)}</td>
                     <td className="mono">{o.status}</td>
                     <td className="mono">{new Date(o.created_at).toLocaleDateString()}</td>
                   </tr>

@@ -2,8 +2,11 @@ import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Wordmark } from "@/components/Wordmark";
 import { OrderPoller } from "@/components/OrderPoller";
+import { PlanDocument } from "@/components/plan/PlanDocument";
+import { PrintButton } from "@/components/plan/PrintButton";
 import type { Blueprint } from "@/lib/blueprint/types";
 import type { OrderRow, OutputRow, BlueprintRow } from "@/lib/db/types";
+import "../../plan.css";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +24,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     .eq("id", order.blueprint_id)
     .single();
   const bp = (bpRow as Pick<BlueprintRow, "data" | "creator_id">).data as Blueprint;
+  const creatorName = bp.creator.display_name ?? `@${bp.creator.handle}`;
 
   // ── generating / failed ────────────────────────────────────────────────
   if (order.status !== "delivered") {
@@ -62,7 +66,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  // ── delivered: the web plan ────────────────────────────────────────────
+  // ── delivered: the personalized document ──────────────────────────────
   const { data: outputRow } = await admin
     .from("outputs")
     .select("*")
@@ -71,22 +75,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const output = outputRow as OutputRow | null;
   if (!output) notFound();
 
-  const skeleton = bp.output.skeleton;
-  const orderedSections = skeleton
-    .filter((s) => output.sections[s.id])
-    .map((s) => ({ id: s.id, title: s.title, prose: output.sections[s.id] }));
-
-  const archetypeLabel =
-    bp.quiz.archetype_rules.find((r) => r.id === order.resolved_archetype)?.label ??
-    "Your starting point";
-
-  let pdfUrl: string | null = null;
-  if (output.pdf_path) {
-    const { data: signed } = await admin.storage
-      .from("pdfs")
-      .createSignedUrl(output.pdf_path, 60 * 60 * 24 * 7);
-    pdfUrl = signed?.signedUrl ?? null;
-  }
+  const template = bp.output.template;
 
   return (
     <section>
@@ -94,69 +83,41 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <div className="bar-in wide">
           <div className="who">
             <b>{bp.product.topic_title}</b>
-            <span>
-              by {bp.creator.display_name ?? `@${bp.creator.handle}`} · your copy
-            </span>
+            <span>by {creatorName} · your copy</span>
           </div>
           <div className="right">
-            {pdfUrl ? (
-              <a className="btn btn-outline btn-sm" href={pdfUrl}>
-                Download PDF
-              </a>
-            ) : null}
+            <PrintButton />
             <Wordmark />
           </div>
         </div>
       </header>
 
       <div className="out">
-        <nav className="toc">
+        <nav className="toc pd-noprint">
           <span className="micro">Contents</span>
-          {orderedSections.map((s) => (
-            <a key={s.id} href={`#${s.id}`}>
-              {s.title}
-            </a>
-          ))}
+          {template.sections
+            .filter((s) => output.sections.sections?.[s.id])
+            .map((s) => (
+              <a key={s.id} href={`#${s.id}`}>
+                {s.title}
+              </a>
+            ))}
         </nav>
 
-        <article className="doc">
-          <div className="micro">
-            Personalized ·{bp.product.duration_days ? ` ${bp.product.duration_days} days ·` : ""}{" "}
-            delivered to {order.buyer_email}
-          </div>
-          <div className="verdict">
-            <span className="micro">Your starting point</span>
-            <b>{archetypeLabel}</b>
-            <p>
-              Everything below is written for this situation — the pacing, the order, and what we
-              skip.
-            </p>
-          </div>
-
-          {orderedSections.map((s) => (
-            <div key={s.id} id={s.id}>
-              <h2>{s.title}</h2>
-              {s.prose
-                .split(/\n{2,}/)
-                .map((p) => p.trim())
-                .filter(Boolean)
-                .map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-            </div>
-          ))}
-
-          <div className="dl">
-            {pdfUrl ? (
-              <a className="btn btn-primary" href={pdfUrl}>
-                Download the PDF
-              </a>
-            ) : null}
+        <div>
+          <PlanDocument
+            template={template}
+            output={output.sections}
+            creatorName={creatorName}
+            disclaimers={bp.safety.disclaimers}
+          />
+          <div className="dl pd-noprint" style={{ maxWidth: 880, margin: "0 auto", padding: "0 24px" }}>
             <span style={{ fontSize: 13.5, color: "var(--sage)" }}>
-              Also sent to {order.buyer_email}. This link keeps working.
+              Also sent to {order.buyer_email}. This link keeps working — use Save as PDF for an
+              offline copy.
             </span>
           </div>
-        </article>
+        </div>
       </div>
     </section>
   );

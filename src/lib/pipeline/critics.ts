@@ -1,5 +1,8 @@
 /**
- * Critics, ported verbatim from harness/pipeline.mjs.
+ * Critics. Knowledge and claims critics are ported from harness/pipeline.mjs;
+ * the quiz and output critics are retargeted at the per-buyer generation
+ * contract (no archetypes — the quiz gathers personalization signal, the
+ * output critic scores one whole generated document).
  */
 
 import { ask, type AskOptions } from "./ask";
@@ -7,6 +10,7 @@ import type {
   CriticResult,
   KnowledgePack,
   OutputCriticResult,
+  OutputTemplate,
   Quiz,
   RubricDimension,
 } from "../blueprint/types";
@@ -24,7 +28,7 @@ export async function knowledgeCritic(pack: KnowledgePack, ctx: Ctx = {}): Promi
 
 1. Every mechanism has a real causal explanation, not a restatement of the outcome.
 2. No factual claim that is wrong or materially outdated. Flag specifics.
-3. Segments split by cause, not severity. Two segments that would receive the same plan are one segment.
+3. Root causes split by cause, not severity. Two root causes that would lead to the same advice are one root cause.
 4. Corrections are defensible, not merely contrarian.
 5. Nothing requires a purchase.
 
@@ -37,21 +41,26 @@ ${criticSchema}`,
 
 export async function quizCritic(
   quiz: Quiz,
+  template: OutputTemplate,
   pack: KnowledgePack,
   audienceWords: string[],
   ctx: Ctx = {}
 ): Promise<CriticResult> {
   return ask(
     "critic",
-    `Audit this quiz.
+    `Audit this intake quiz. Its job is to gather everything a writer needs to produce a genuinely personalized document for one buyer.
 
 <quiz>${JSON.stringify(quiz)}</quiz>
+<template_sections>${JSON.stringify(
+      template.sections.map((s) => ({ id: s.id, title: s.title, instructions: s.instructions }))
+    )}</template_sections>
+<fingerprint_axes>${JSON.stringify(template.fingerprint_axes)}</fingerprint_axes>
 <knowledge_pack>${JSON.stringify(pack)}</knowledge_pack>
 <audience_words>${JSON.stringify(audienceWords)}</audience_words>
 
-For EACH question, state which archetypes it separates. If a question separates none, it fails.
+For EACH question, state what it lets the writer personalize. If the answer would not change any section's content, the question fails.
 
-Then check: can a buyer answer every question about themselves without expertise; does any question ask for self-diagnosis rather than observation; are archetypes genuinely distinguishable or do several collapse into one plan; does the language match audience_words; is any archetype unreachable; is the first question answerable in under two seconds.
+Then check: would two realistic buyers with different situations give visibly different answer sets; can every fingerprint axis be scored from the answers; can a buyer answer every question about themselves without expertise; does any question ask for self-diagnosis rather than observation; does the language match audience_words; do the options cover the realistic range; is the first question answerable in under two seconds.
 
 Give exact fixes, not general notes.
 
@@ -61,25 +70,25 @@ ${criticSchema}`,
 }
 
 export async function outputCritic(
-  archetype: string,
-  section: string,
+  buyerContext: string,
+  documentText: string,
   rubric: RubricDimension[],
   ctx: Ctx = {}
 ): Promise<OutputCriticResult> {
   return ask(
     "critic",
-    `Score this plan section against the rubric. You are reviewing a $27 product a real person paid for.
+    `Score this personalized document against the rubric. You are reviewing a $27 product a real person paid for.
 
-<archetype>${archetype}</archetype>
-<section>${section}</section>
+<buyer>${buyerContext}</buyer>
+<document>${documentText}</document>
 <rubric>${JSON.stringify(rubric)}</rubric>
 
-For specificity, apply the test literally: pick any paragraph. Could it be sent unchanged to a buyer of a different archetype? If yes, that paragraph fails and you must quote it.
+For specificity, apply the test literally: pick any paragraph. Could it be sent unchanged to a buyer in a different situation? If yes, that paragraph fails and you must quote it. The document must visibly use the buyer's stated facts.
 
 Score each rubric dimension 1-10 with a one-line justification and at least one quoted example. Scores without quoted evidence are invalid.
 
 Return JSON only: {"pass":true|false,"scores":{"<rubric_id>":{"score":n,"why":"...","evidence":"quoted"}},"weighted":n,"failures":[...]}`,
-    ctx
+    { maxTokens: 4000, ...ctx }
   );
 }
 

@@ -3,22 +3,26 @@ import { supabaseAdmin } from "../supabase/admin";
 import {
   createPipelineApi,
   createUsageTracker,
-  skeletonFor,
+  readableAnswers,
   RUBRIC,
   MIN_SCORE,
   MIN_DIVERGENCE,
-  EVAL_SECTIONS,
+  SAMPLE_BUYER_COUNT,
+  DEFAULT_PRICE_CENTS,
   defaultVoice,
   swapTest,
 } from "../pipeline";
-import { validateBlueprint, resolveArchetype } from "../blueprint/validate";
+import { validateBlueprint, flattenGeneratedOutput } from "../blueprint/validate";
 import type {
   AudienceCard,
   Blueprint,
-  ContentBankEntry,
   CreatorInput,
+  GeneratedOutput,
   KnowledgePack,
+  OutputTemplate,
   Quiz,
+  Safety,
+  SampleBuyer,
   TopicProposal,
 } from "../blueprint/types";
 import type { OrderRow } from "../db/types";
@@ -29,7 +33,6 @@ import {
   sendPlanDelivered,
   sendSamplesReady,
 } from "../email";
-import { renderPlanPdf, sectionsForPdf } from "../pdf";
 
 const db = () => supabaseAdmin();
 
@@ -86,6 +89,29 @@ function mockCreatorInput(handle: string, selfDescription?: string): CreatorInpu
 }
 
 const STAGE_STATUS = { status: "running" } as const;
+
+const DEFAULT_SAFETY: Safety = {
+  domain_risk_tier: "low",
+  disclaimers: [],
+  banned_claims: [],
+  escalation_triggers: [],
+};
+
+/** Buyer description handed to the output critic. */
+function buyerContextFor(label: string, answers: Record<string, string>): string {
+  return `${label}\nQuiz answers:\n${Object.entries(answers)
+    .map(([q, a]) => `- ${q}: ${a}`)
+    .join("\n")}`;
+}
+
+/** One flat text document for divergence/critic checks. */
+function documentTextFor(template: OutputTemplate, output: GeneratedOutput): string {
+  const flat = flattenGeneratedOutput(template, output);
+  return template.sections
+    .filter((s) => flat[s.id])
+    .map((s) => `## ${s.title}\n${flat[s.id]}`)
+    .join("\n\n");
+}
 
 // ============================================================ blueprint.build
 export const blueprintBuild = inngest.createFunction(
@@ -265,7 +291,7 @@ export const blueprintBuild = inngest.createFunction(
         await step.run("decline-topics", () =>
           declined(
             "no_viable_topic",
-            "None of the product angles we found were segmentable enough to personalize honestly."
+            "None of the product angles we found could be personalized honestly enough to sell."
           )
         );
         return { declined: "no_viable_topic" };
@@ -308,7 +334,6 @@ export const blueprintBuild = inngest.createFunction(
     // bonus ideas may have no time component at all; older transformation
     // proposals predate duration_days and default to 30
     const durationDays = topic.duration_days ?? (topic.bonus ? undefined : 30);
-    const skeleton = skeletonFor(durationDays);
     const voice = defaultVoice(audience.tone_notes);
     const criticResults: Record<string, unknown> = {};
 
@@ -345,11 +370,52 @@ export const blueprintBuild = inngest.createFunction(
       );
     }
 
-    // ---- 5-8. quiz → briefs → render → swap, with one full retry on swap fail
+    // ---- 5. output template ---------------------------------------------------
+    const template = (await step.run("template", async () => {
+      await updateBuild(buildId, { ...STAGE_STATUS, stage: "template" });
+      const usage = createUsageTracker();
+      const scoped = createPipelineApi(usage);
+      const t = await scoped.designOutputTemplate(topic, pack, audience);
+      await addCost(buildId, usage.cost_usd);
+      return t;
+    })) as OutputTemplate;
+
+    // ---- 6. product-specific generation prompt --------------------------------
+    const generationPrompt = (await step.run("generation-prompt", async () => {
+      await updateBuild(buildId, { ...STAGE_STATUS, stage: "prompt" });
+      const usage = createUsageTracker();
+      const scoped = createPipelineApi(usage);
+      const rules = await scoped.writeGenerationPrompt(topic, pack, template, voice, DEFAULT_SAFETY);
+      await addCost(buildId, usage.cost_usd);
+      return rules;
+    })) as string;
+
+    const draftBlueprint = (quiz: Quiz): Blueprint => ({
+      blueprint_id: `bp_${creatorId}`,
+      blueprint_version: 0,
+      status: "draft",
+      creator: { handle, audience_card: audience },
+      product: {
+        topic_title: topic.topic_title,
+        promise: topic.promise,
+        duration_days: durationDays,
+        price_usd: DEFAULT_PRICE_CENTS / 100,
+      },
+      knowledge_pack: pack,
+      quiz,
+      output: { template, generation_prompt: generationPrompt, voice },
+      safety: DEFAULT_SAFETY,
+      eval: {
+        rubric: RUBRIC,
+        swap_test: { min_divergence_pct: MIN_DIVERGENCE },
+        thresholds: { min_weighted_score: MIN_SCORE },
+      },
+    });
+
+    // ---- 7-9. quiz → persona samples → swap, with one full retry on swap fail
     let quiz: Quiz | null = null;
-    let contentBank: Record<string, ContentBankEntry> = {};
-    let renders: Record<string, Record<string, string>> = {};
-    let sampleArchetypes: string[] = [];
+    let buyers: SampleBuyer[] = [];
+    let sampleOutputs: GeneratedOutput[] = [];
     let swapPassed = false;
 
     for (let attempt = 1; attempt <= 2 && !swapPassed; attempt++) {
@@ -360,31 +426,15 @@ export const blueprintBuild = inngest.createFunction(
         const scoped = createPipelineApi(usage);
         let lastErrors: unknown[] = [];
         for (let qa = 0; qa < 3; qa++) {
-          const candidate = await scoped.designQuiz(pack, audience, skeleton);
-          const draft: Blueprint = {
-            blueprint_id: `bp_${creatorId}`,
-            blueprint_version: 0,
-            status: "draft",
-            creator: { handle, audience_card: audience },
-            product: {
-              topic_title: topic.topic_title,
-              promise: topic.promise,
-              duration_days: durationDays,
-              price_usd: 27,
-            },
-            knowledge_pack: pack,
-            quiz: candidate,
-            output: { skeleton, content_bank: {}, voice, personalization_tokens: [] },
-            safety: { domain_risk_tier: "low", disclaimers: [], banned_claims: [], escalation_triggers: [] },
-            eval: {
-              rubric: RUBRIC,
-              swap_test: { min_divergence_pct: MIN_DIVERGENCE },
-              thresholds: { min_weighted_score: MIN_SCORE },
-            },
-          };
-          const structural = validateBlueprint(draft);
+          const candidate = await scoped.designQuiz(topic, pack, audience, template);
+          const structural = validateBlueprint(draftBlueprint(candidate));
           if (!structural.errors.length) {
-            const critic = await scoped.quizCritic(candidate, pack, audience.audience_words ?? []);
+            const critic = await scoped.quizCritic(
+              candidate,
+              template,
+              pack,
+              audience.audience_words ?? []
+            );
             await addCost(buildId, usage.cost_usd);
             return { quiz: candidate, structuralErrors: [], critic };
           }
@@ -407,84 +457,58 @@ export const blueprintBuild = inngest.createFunction(
       }
       quiz = quizResult.quiz as Quiz;
       criticResults[`quiz_attempt_${attempt}`] = quizResult.critic;
+      const frozenQuiz = quiz;
 
-      // briefs — full content bank: every (section, archetype) pair incl. fallback
-      const archetypeIds = [
-        ...quiz.archetype_rules.map((r) => r.id),
-        quiz.fallback_archetype,
-      ].filter((v, i, a) => v && a.indexOf(v) === i);
+      // three deliberately different synthetic buyers answer the real quiz
+      buyers = (await step.run(`sample-buyers-${attempt}`, async () => {
+        await updateBuild(buildId, { ...STAGE_STATUS, stage: "samples" });
+        const usage = createUsageTracker();
+        const scoped = createPipelineApi(usage);
+        const invented = await scoped.inventSampleBuyers(frozenQuiz, audience);
+        await addCost(buildId, usage.cost_usd);
+        return invented.slice(0, SAMPLE_BUYER_COUNT);
+      })) as SampleBuyer[];
 
-      contentBank = {};
-      for (const archetypeId of archetypeIds) {
-        const bank = await step.run(`briefs-${attempt}-${archetypeId}`, async () => {
-          await updateBuild(buildId, { ...STAGE_STATUS, stage: "briefs" });
+      // each sample runs the REAL runtime path: one generation per buyer,
+      // one step per buyer to stay under the serverless request timeout
+      sampleOutputs = [];
+      for (let i = 0; i < buyers.length; i++) {
+        const buyer = buyers[i];
+        const output = (await step.run(`sample-${attempt}-${i + 1}`, async () => {
+          await updateBuild(buildId, { ...STAGE_STATUS, stage: "samples" });
           const usage = createUsageTracker();
           const scoped = createPipelineApi(usage);
-          const rule = quiz!.archetype_rules.find((r) => r.id === archetypeId);
-          const rationale = rule?.archetype_rationale ?? "General starting point for unmatched buyers.";
-          const earlier: Record<string, string> = {};
-          const entries: Record<string, ContentBankEntry> = {};
-          for (const section of skeleton) {
-            const entry = await scoped.writeBrief({
-              knowledgePack: pack,
-              archetype: archetypeId,
-              rationale,
-              section,
-              voice,
-              earlier,
-            });
-            entries[`${section.id}::${archetypeId}`] = entry;
-            earlier[section.id] = entry.brief;
-          }
+          const generated = await scoped.generateOutput({
+            template,
+            generationPrompt,
+            knowledgePack: pack,
+            voice,
+            safety: DEFAULT_SAFETY,
+            product: {
+              topic_title: topic.topic_title,
+              promise: topic.promise,
+              duration_days: durationDays,
+            },
+            creatorName: handle,
+            answers: readableAnswers(frozenQuiz, buyer.answers),
+          });
           await addCost(buildId, usage.cost_usd);
-          return entries;
-        });
-        Object.assign(contentBank, bank);
+          return generated;
+        })) as GeneratedOutput;
+        sampleOutputs.push(output);
       }
 
-      // render evaluation samples: up to 4 archetypes × EVAL_SECTIONS
-      sampleArchetypes = quiz.archetype_rules
-        .slice()
-        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-        .slice(0, 4)
-        .map((r) => r.id);
-
-      // one step per archetype so a single invocation stays well under the
-      // serverless request timeout
-      renders = {};
-      for (const archetypeId of sampleArchetypes) {
-        renders[archetypeId] = await step.run(`render-${attempt}-${archetypeId}`, async () => {
-          await updateBuild(buildId, { ...STAGE_STATUS, stage: "render" });
-          const usage = createUsageTracker();
-          const scoped = createPipelineApi(usage);
-          const out: Record<string, string> = {};
-          let prev = "";
-          const label = quiz!.archetype_rules.find((r) => r.id === archetypeId)?.label ?? archetypeId;
-          for (const section of skeleton.filter((s) => EVAL_SECTIONS.includes(s.id))) {
-            const entry = contentBank[`${section.id}::${archetypeId}`];
-            const mechanisms = pack.mechanisms.filter((m) => entry.mechanism_refs?.includes(m.id));
-            const prose = await scoped.renderSection({
-              entry,
-              mechanisms,
-              buyer: { situation: label },
-              voice,
-              section,
-              previousEnding: prev.slice(-200),
-            });
-            out[section.id] = prose;
-            prev = prose;
-          }
-          await addCost(buildId, usage.cost_usd);
-          return out;
-        });
-      }
-
-      // swap test — deterministic and free, runs before the output critic
+      // swap test — deterministic and free: if three different buyers produce
+      // near-identical documents, the personalization is theater
       const swap = await step.run(`swap-${attempt}`, async () => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "swap_test" });
+        const renders: Record<string, Record<string, string>> = {};
+        buyers.forEach((b, i) => {
+          renders[`p${i}`] = flattenGeneratedOutput(template, sampleOutputs[i]);
+        });
         const pairs: [string, string][] = [];
-        for (let i = 0; i + 1 < sampleArchetypes.length; i += 2) {
-          pairs.push([sampleArchetypes[i], sampleArchetypes[i + 1]]);
+        for (let i = 0; i < buyers.length; i++) {
+          for (let j = i + 1; j < buyers.length; j++) pairs.push([`p${i}`, `p${j}`]);
         }
         const result = swapTest(renders, pairs, MIN_DIVERGENCE);
         criticResults[`swap_attempt_${attempt}`] = result;
@@ -498,7 +522,8 @@ export const blueprintBuild = inngest.createFunction(
           updateBuild(buildId, {
             status: "failed",
             halted_at: "swap_test",
-            error: "Archetypes are not materially different — quiz regeneration did not fix it.",
+            error:
+              "Different buyers received near-identical documents — quiz regeneration did not fix it.",
             completed_at: new Date().toISOString(),
           })
         );
@@ -506,22 +531,20 @@ export const blueprintBuild = inngest.createFunction(
       }
     }
 
-    // ---- 9. output critic + quality gate -------------------------------------
+    // ---- 10. output critic + quality gate -------------------------------------
     const gate = await step.run("critique", async () => {
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "critique" });
       const usage = createUsageTracker();
       const scoped = createPipelineApi(usage);
-      const scored: { archetype: string; section: string; weighted: number; scores: unknown }[] = [];
-      for (const archetypeId of sampleArchetypes) {
-        for (const sectionId of EVAL_SECTIONS) {
-          const r = await scoped.outputCritic(archetypeId, renders[archetypeId][sectionId], RUBRIC);
-          scored.push({
-            archetype: archetypeId,
-            section: sectionId,
-            weighted: r.weighted ?? 0,
-            scores: r.scores,
-          });
-        }
+      const scored: { persona: string; weighted: number; scores: unknown }[] = [];
+      for (let i = 0; i < buyers.length; i++) {
+        const context = buyerContextFor(buyers[i].label, readableAnswers(quiz!, buyers[i].answers));
+        const r = await scoped.outputCritic(
+          context,
+          documentTextFor(template, sampleOutputs[i]),
+          RUBRIC
+        );
+        scored.push({ persona: buyers[i].label, weighted: r.weighted ?? 0, scores: r.scores });
       }
       const weighted = scored.reduce((t, s) => t + s.weighted, 0) / (scored.length || 1);
       criticResults.output = scored;
@@ -543,7 +566,7 @@ export const blueprintBuild = inngest.createFunction(
       return { failed: "quality_gate", weighted: gate.weighted };
     }
 
-    // ---- 10. persist blueprint + samples, pause for creator approval ---------
+    // ---- 11. persist blueprint + samples, pause for creator approval ---------
     const blueprintId = await step.run("persist-blueprint", async () => {
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "gate" });
       const { data: prev } = await db()
@@ -558,7 +581,7 @@ export const blueprintBuild = inngest.createFunction(
       const blueprint: Blueprint = {
         blueprint_id: `bp_${handle}_v${version}`,
         blueprint_version: version,
-        archetype_version: "transformation_plan_v1",
+        archetype_version: "personalized_plan_v1",
         status: "complete",
         created_at: new Date().toISOString(),
         creator: {
@@ -572,18 +595,13 @@ export const blueprintBuild = inngest.createFunction(
           promise: topic.promise,
           duration_days: durationDays,
           phase_length_days: durationDays ? Math.round(durationDays / 4) : undefined,
-          price_usd: 27,
-          format: "pdf",
+          price_usd: DEFAULT_PRICE_CENTS / 100,
+          format: "web",
         },
         knowledge_pack: pack,
         quiz: quiz!,
-        output: {
-          skeleton,
-          content_bank: contentBank,
-          personalization_tokens: [],
-          voice,
-        },
-        safety: { domain_risk_tier: "low", disclaimers: [], banned_claims: [], escalation_triggers: [] },
+        output: { template, generation_prompt: generationPrompt, voice },
+        safety: DEFAULT_SAFETY,
         eval: {
           rubric: RUBRIC,
           swap_test: { min_divergence_pct: MIN_DIVERGENCE },
@@ -599,18 +617,17 @@ export const blueprintBuild = inngest.createFunction(
           version,
           status: "complete",
           data: blueprint,
-          price_cents: 2700,
+          price_cents: DEFAULT_PRICE_CENTS,
         })
         .select("id")
         .single();
       if (error) throw new Error(`blueprints insert: ${error.message}`);
 
-      const sampleRows = sampleArchetypes.slice(0, 3).map((archetypeId) => ({
+      const sampleRows = buyers.map((b, i) => ({
         blueprint_id: bpRow.id,
-        archetype: archetypeId,
-        archetype_label:
-          quiz!.archetype_rules.find((r) => r.id === archetypeId)?.label ?? archetypeId,
-        sections: renders[archetypeId],
+        persona: `persona_${i + 1}`,
+        persona_label: b.label,
+        sections: sampleOutputs[i],
       }));
       const { error: sErr } = await db().from("samples").insert(sampleRows);
       if (sErr) throw new Error(`samples insert: ${sErr.message}`);
@@ -670,7 +687,7 @@ export const blueprintBuild = inngest.createFunction(
       return { rejected: true, rebuild: newBuildId };
     }
 
-    // ---- 11. approval: freeze, version, publish -------------------------------
+    // ---- 12. approval: freeze, version, publish -------------------------------
     await step.run("publish", async () => {
       await updateBuild(buildId, { stage: "publish" });
       const { data: creator } = await db()
@@ -748,112 +765,72 @@ export const planGenerate = inngest.createFunction(
         .single();
       if (bErr || !bpRow) throw new Error(`blueprint not found for order ${orderId}`);
 
-      const bp = bpRow.data as Blueprint;
-      const resolved = resolveArchetype(bp, (order as OrderRow).quiz_answers);
-      await db()
-        .from("orders")
-        .update({
-          status: "generating",
-          resolved_archetype: resolved.archetype,
-          resolved_signals: resolved.signals,
-        })
-        .eq("id", orderId);
+      await db().from("orders").update({ status: "generating" }).eq("id", orderId);
       return {
         order: order as OrderRow,
         blueprintRowId: bpRow.id as string,
-        blueprint: bp,
+        blueprint: bpRow.data as Blueprint,
         creatorName:
           (bpRow.creators?.display_name as string) ??
           (bpRow.creators?.handle as string) ??
-          bp.creator.handle,
-        resolved,
+          (bpRow.data as Blueprint).creator.handle,
       };
     });
 
     const bp = ctx.blueprint;
-    const archetypeRule = bp.quiz.archetype_rules.find((r) => r.id === ctx.resolved.archetype);
-    const archetypeLabel = archetypeRule?.label ?? "Your starting point";
-
-    // cache: identical blueprint version + archetype + answers = identical plan
-    const cached = await step.run("cache-check", async () => {
-      const { data: twins } = await db()
-        .from("orders")
-        .select("id, outputs(sections)")
-        .eq("blueprint_id", ctx.order.blueprint_id)
-        .eq("blueprint_version", ctx.order.blueprint_version)
-        .eq("resolved_archetype", ctx.resolved.archetype)
-        .eq("status", "delivered")
-        .neq("id", orderId)
-        .limit(10);
-      const answersKey = JSON.stringify(ctx.order.quiz_answers);
-      type Twin = { id: string; outputs: { sections: unknown } | { sections: unknown }[] | null };
-      for (const t of (twins ?? []) as Twin[]) {
-        const { data: twin } = await db()
-          .from("orders")
-          .select("quiz_answers")
-          .eq("id", t.id)
-          .single();
-        if (JSON.stringify(twin?.quiz_answers) === answersKey) {
-          const sections = Array.isArray(t.outputs) ? t.outputs[0]?.sections : t.outputs?.sections;
-          if (sections) return sections as Record<string, string>;
-        }
-      }
-      return null;
-    });
+    const answers = readableAnswers(bp.quiz, ctx.order.quiz_answers);
+    const generateArgs = {
+      template: bp.output.template,
+      generationPrompt: bp.output.generation_prompt,
+      knowledgePack: bp.knowledge_pack,
+      voice: bp.output.voice,
+      safety: bp.safety,
+      product: {
+        topic_title: bp.product.topic_title,
+        promise: bp.product.promise,
+        duration_days: bp.product.duration_days,
+      },
+      creatorName: ctx.creatorName,
+      answers,
+    };
+    const buyerContext = buyerContextFor(`Buyer ${ctx.order.buyer_email}`, answers);
 
     const t0 = Date.now();
-    let sections: Record<string, string>;
 
-    if (cached) {
-      sections = cached;
-    } else {
-      // readable answers for the writer
-      const readableAnswers: Record<string, string> = {};
-      for (const q of bp.quiz.questions) {
-        const given = ctx.order.quiz_answers[q.id];
-        const values = Array.isArray(given) ? given : [given];
-        const labels = values
-          .map((v) => q.options.find((o) => o.value === v)?.label)
-          .filter(Boolean);
-        if (labels.length) readableAnswers[q.question] = labels.join("; ");
-      }
-      const buyer = {
-        situation: archetypeLabel,
-        archetype_rationale: archetypeRule?.archetype_rationale,
-        signals: ctx.resolved.signals,
-        quiz_answers: readableAnswers,
-      };
+    // ONE model call writes the whole document from the buyer's full answers.
+    // Structural validation (with one internal retry) happens inside
+    // generateOutput; the critic gate below buys one full regeneration. A paid
+    // order must deliver, so if the retry still fails the gate we ship the
+    // better-scoring attempt rather than the order.
+    const minScore = bp.eval.thresholds?.min_weighted_score ?? MIN_SCORE;
+    const attempts: { output: GeneratedOutput; weighted: number; pass: boolean }[] = [];
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const output = (await step.run(`generate-${attempt}`, async () => {
+        const usage = createUsageTracker();
+        const scoped = createPipelineApi(usage);
+        return scoped.generateOutput(generateArgs);
+      })) as GeneratedOutput;
 
-      // all sections in parallel — each its own retriable step
-      const skeleton = bp.output.skeleton.filter((s) => !s.conditional);
-      const rendered = await Promise.all(
-        skeleton.map((section) =>
-          step.run(`render-${section.id}`, async () => {
-            const usage = createUsageTracker();
-            const scoped = createPipelineApi(usage);
-            const entry =
-              bp.output.content_bank[`${section.id}::${ctx.resolved.archetype}`] ??
-              bp.output.content_bank[`${section.id}::${bp.quiz.fallback_archetype}`];
-            if (!entry) throw new Error(`No brief for ${section.id}::${ctx.resolved.archetype}`);
-            const mechanisms = bp.knowledge_pack.mechanisms.filter((m) =>
-              entry.mechanism_refs?.includes(m.id)
-            );
-            const prose = await scoped.renderSection({
-              entry,
-              mechanisms,
-              buyer,
-              voice: bp.output.voice,
-              section,
-              previousEnding: "",
-            });
-            return { id: section.id, prose };
-          })
-        )
-      );
-      sections = Object.fromEntries(rendered.map((r) => [r.id, r.prose]));
+      const critic = await step.run(`critic-${attempt}`, async () => {
+        const usage = createUsageTracker();
+        const scoped = createPipelineApi(usage);
+        return scoped.outputCritic(
+          buyerContext,
+          documentTextFor(bp.output.template, output),
+          bp.eval.rubric
+        );
+      });
+
+      const weighted = critic.weighted ?? 0;
+      attempts.push({ output, weighted, pass: critic.pass || weighted >= minScore });
+      if (attempts[attempts.length - 1].pass) break;
     }
+    const finalOutput = (
+      attempts.find((a) => a.pass) ??
+      attempts.slice().sort((a, b) => b.weighted - a.weighted)[0]
+    ).output;
 
-    const outputId = await step.run("assemble", async () => {
+    await step.run("assemble", async () => {
       const { data: existing } = await db()
         .from("outputs")
         .select("id")
@@ -864,29 +841,13 @@ export const planGenerate = inngest.createFunction(
         .from("outputs")
         .insert({
           order_id: orderId,
-          sections,
+          sections: finalOutput,
           generation_ms: Date.now() - t0,
         })
         .select("id")
         .single();
       if (error) throw new Error(`outputs insert: ${error.message}`);
       return data.id as string;
-    });
-
-    await step.run("pdf", async () => {
-      const pdf = await renderPlanPdf({
-        topicTitle: bp.product.topic_title,
-        creatorName: ctx.creatorName,
-        archetypeLabel,
-        archetypeNote: archetypeRule?.archetype_rationale,
-        sections: sectionsForPdf(bp.output.skeleton, sections),
-      });
-      const path = `orders/${orderId}.pdf`;
-      const { error } = await db()
-        .storage.from("pdfs")
-        .upload(path, pdf, { contentType: "application/pdf", upsert: true });
-      if (error) throw new Error(`pdf upload: ${error.message}`);
-      await db().from("outputs").update({ pdf_path: path }).eq("id", outputId);
     });
 
     await step.run("deliver", async () => {

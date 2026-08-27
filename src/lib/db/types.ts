@@ -1,6 +1,7 @@
 import type {
   AudienceCard,
   Blueprint,
+  GeneratedOutput,
   QuizAnswers,
   TopicProposal,
 } from "../blueprint/types";
@@ -19,9 +20,10 @@ export type BuildStage =
   | "extract"
   | "propose"
   | "knowledge"
+  | "template"
+  | "prompt"
   | "quiz"
-  | "briefs"
-  | "render"
+  | "samples"
   | "swap_test"
   | "critique"
   | "gate"
@@ -76,10 +78,10 @@ export interface BlueprintRow {
 export interface SampleRow {
   id: string;
   blueprint_id: string;
-  archetype: string;
-  archetype_label: string | null;
-  sections: Record<string, string>;
-  pdf_path: string | null;
+  persona: string;
+  persona_label: string | null;
+  /** The full generated document for this synthetic buyer. */
+  sections: GeneratedOutput;
   created_at: string;
 }
 
@@ -91,8 +93,6 @@ export interface OrderRow {
   blueprint_version: number;
   buyer_email: string;
   quiz_answers: QuizAnswers;
-  resolved_archetype: string | null;
-  resolved_signals: Record<string, unknown> | null;
   stripe_payment_intent: string | null;
   amount_cents: number;
   status: OrderStatus;
@@ -102,8 +102,8 @@ export interface OrderRow {
 export interface OutputRow {
   id: string;
   order_id: string;
-  sections: Record<string, string>;
-  pdf_path: string | null;
+  /** The buyer's full generated document. */
+  sections: GeneratedOutput;
   generation_ms: number | null;
   cost_usd: number | null;
   created_at: string;

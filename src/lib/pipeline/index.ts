@@ -8,7 +8,9 @@ export * from "./constants";
 export * from "./swap";
 export { createUsageTracker, parseModelJson, assertPipelineEnabled } from "./ask";
 export type { Usage } from "./ask";
-export type { PipelineApi, WriteBriefArgs, RenderSectionArgs } from "./mock";
+export type { PipelineApi } from "./mock";
+export type { GenerateOutputArgs } from "./stages";
+export { composeGenerationPrompt, readableAnswers } from "./stages";
 export { createMockApi } from "./mock";
 
 /** Real model-backed pipeline API. Pass a usage tracker to accumulate cost. */
@@ -19,13 +21,19 @@ export function createRealApi(usage?: Usage): PipelineApi {
     proposeTopics: (audience) => stages.proposeTopics(audience, ctx),
     proposeBonusTopic: (audience, existing) => stages.proposeBonusTopic(audience, existing, ctx),
     buildKnowledgePack: (topic, audience) => stages.buildKnowledgePack(topic, audience, ctx),
-    designQuiz: (pack, audience, skeleton) => stages.designQuiz(pack, audience, skeleton, ctx),
-    writeBrief: (args) => stages.writeBrief(args, ctx),
-    renderSection: (args) => stages.renderSection(args, ctx),
+    designOutputTemplate: (topic, pack, audience) =>
+      stages.designOutputTemplate(topic, pack, audience, ctx),
+    designQuiz: (topic, pack, audience, template) =>
+      stages.designQuiz(topic, pack, audience, template, ctx),
+    writeGenerationPrompt: (topic, pack, template, voice, safety) =>
+      stages.writeGenerationPrompt(topic, pack, template, voice, safety, ctx),
+    inventSampleBuyers: (quiz, audience) => stages.inventSampleBuyers(quiz, audience, ctx),
+    generateOutput: (args) => stages.generateOutput(args, ctx),
     knowledgeCritic: (pack) => critics.knowledgeCritic(pack, ctx),
-    quizCritic: (quiz, pack, words) => critics.quizCritic(quiz, pack, words, ctx),
-    outputCritic: (archetype, section, rubric) =>
-      critics.outputCritic(archetype, section, rubric, ctx),
+    quizCritic: (quiz, template, pack, words) =>
+      critics.quizCritic(quiz, template, pack, words, ctx),
+    outputCritic: (buyerContext, documentText, rubric) =>
+      critics.outputCritic(buyerContext, documentText, rubric, ctx),
     claimsCritic: (section, domain, banned) => critics.claimsCritic(section, domain, banned, ctx),
   };
 }

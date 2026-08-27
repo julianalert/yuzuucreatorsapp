@@ -551,6 +551,56 @@ table.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
 .sum-foot { padding: 0 26px 26px; }
 .guarantee { margin-top: 14px; font-size: 12.5px; color: var(--sage); text-align: center; line-height: 1.5; }
 
+/* checkout: personalized summary card (mirrors the buyer's answers) */
+.co-brief { background: var(--ink); color: var(--paper); border-radius: var(--r-lg); padding: 26px 28px; margin-bottom: 38px; }
+.co-brief .micro { color: #9aa89f; }
+.co-brief h2 { font-size: 20px; color: var(--paper); margin-top: 10px; }
+.co-brief p.note { margin-top: 8px; font-size: 13.5px; color: #c4cdc6; line-height: 1.55; }
+.co-chips { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.co-chip {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 6px 13px;
+}
+.co-chip b { color: var(--zest); font-weight: 500; }
+
+/* checkout: what's inside rows, driven by the product template */
+.inside { display: flex; flex-direction: column; }
+.inside-row { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.inside-row:last-child { border-bottom: none; }
+.inside-row .n {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--zest);
+  padding-top: 4px;
+}
+.inside-row h3 { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; }
+.inside-row p { margin-top: 3px; font-size: 13.5px; color: var(--sage); line-height: 1.5; }
+
+/* checkout: delivery timeline */
+.co-tl { margin-top: 8px; display: flex; flex-direction: column; }
+.co-tl-step { display: grid; grid-template-columns: 26px 1fr; gap: 14px; padding: 10px 0; position: relative; }
+.co-tl-step .dot {
+  width: 10px; height: 10px; margin: 5px auto 0;
+  background: var(--zest); border-radius: 50%;
+}
+.co-tl-step:not(:last-child)::before {
+  content: ""; position: absolute; left: 12.5px; top: 24px; bottom: -6px; width: 1px; background: var(--line-strong);
+}
+.co-tl-step b { font-size: 14.5px; font-weight: 600; }
+.co-tl-step p { font-size: 13px; color: var(--sage); line-height: 1.5; margin-top: 2px; }
+.co-tl-step .t { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage); }
+
+/* checkout: trust signals under the pay button */
+.trust { margin-top: 18px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.trust span { font-size: 12px; color: var(--sage); display: inline-flex; align-items: center; gap: 6px; }
+.trust span::before { content: ""; width: 6px; height: 6px; background: var(--zest); border-radius: 1px; }
+
 /* ══ buyer: generating ═══════════════════════════════════ */
 .gen { max-width: 560px; margin: 70px auto 0; padding: 0 24px; }
 

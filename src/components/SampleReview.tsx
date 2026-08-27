@@ -1,20 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { PlanDocument } from "./plan/PlanDocument";
+import type { GeneratedOutput, OutputTemplate } from "@/lib/blueprint/types";
 
 export interface SampleView {
-  archetype: string;
+  persona: string;
   label: string;
-  sections: { title: string; prose: string }[];
+  output: GeneratedOutput;
 }
 
 export function SampleReview({
   samples,
+  template,
+  creatorName,
   buildId,
   handle,
   action,
 }: {
   samples: SampleView[];
+  template: OutputTemplate;
+  creatorName: string;
   buildId: string;
   handle: string;
   action: (formData: FormData) => Promise<void>;
@@ -28,27 +34,19 @@ export function SampleReview({
     <>
       <div className="tabs">
         {samples.map((s, i) => (
-          <button key={s.archetype} className={`tab ${i === tab ? "on" : ""}`} onClick={() => setTab(i)}>
+          <button key={s.persona} className={`tab ${i === tab ? "on" : ""}`} onClick={() => setTab(i)}>
             {s.label}
           </button>
         ))}
       </div>
-      <div className="paper">
+      <div style={{ marginTop: 8 }}>
         <span className="micro">
-          Sample {tab + 1} of {samples.length} · what this buyer would receive
+          Sample {tab + 1} of {samples.length} · an invented buyer — this is the exact document
+          they&apos;d receive
         </span>
-        {sample?.sections.map((sec) => (
-          <div key={sec.title} style={{ marginBottom: 28 }}>
-            <h3>{sec.title}</h3>
-            {sec.prose
-              .split(/\n{2,}/)
-              .map((p) => p.trim())
-              .filter(Boolean)
-              .map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-          </div>
-        ))}
+        {sample ? (
+          <PlanDocument template={template} output={sample.output} creatorName={creatorName} />
+        ) : null}
       </div>
 
       <form

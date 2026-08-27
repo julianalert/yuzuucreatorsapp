@@ -4,15 +4,23 @@ import path from "node:path";
 import { createMockApi } from "./mock";
 import { swapTest, divergence } from "./swap";
 import { parseModelJson } from "./ask";
-import { SKELETON, RUBRIC, MIN_SCORE, MIN_DIVERGENCE, EVAL_SECTIONS } from "./constants";
-import { validateBlueprint } from "../blueprint/validate";
-import type { Blueprint, CreatorInput } from "../blueprint/types";
+import { readableAnswers } from "./stages";
+import { RUBRIC, MIN_SCORE, MIN_DIVERGENCE, SAMPLE_BUYER_COUNT, defaultVoice } from "./constants";
+import { validateBlueprint, flattenGeneratedOutput } from "../blueprint/validate";
+import type { Blueprint, CreatorInput, GeneratedOutput, Safety } from "../blueprint/types";
 
 const creators: CreatorInput[] = JSON.parse(
   fs.readFileSync(path.join(__dirname, "../../../harness/creators.json"), "utf8")
 );
 
-/** Mirrors harness/run.mjs gating, using the mock api. */
+const SAFETY: Safety = {
+  domain_risk_tier: "low",
+  disclaimers: [],
+  banned_claims: [],
+  escalation_triggers: [],
+};
+
+/** Mirrors the blueprintBuild gating, using the mock api. */
 async function runCreator(creator: CreatorInput) {
   const api = createMockApi();
   const audience = await api.extractAudience(creator);
@@ -29,19 +37,21 @@ async function runCreator(creator: CreatorInput) {
   const pack = await api.buildKnowledgePack(chosen, audience);
   await api.knowledgeCritic(pack);
 
-  const quiz = await api.designQuiz(pack, audience, SKELETON);
-  const voice = { reading_level: "grade 8", person: "second", banned_phrases: ["unlock"] };
+  const template = await api.designOutputTemplate(chosen, pack, audience);
+  const quiz = await api.designQuiz(chosen, pack, audience, template);
+  const voice = defaultVoice(audience.tone_notes);
+  const generationPrompt = await api.writeGenerationPrompt(chosen, pack, template, voice, SAFETY);
 
   const bp: Blueprint = {
     blueprint_id: `bp_${creator.id}_v1`,
     blueprint_version: 1,
     status: "draft",
     creator: { handle: creator.handle, audience_card: audience },
-    product: { topic_title: chosen.topic_title, promise: chosen.promise, duration_days: 30, price_usd: 27 },
+    product: { topic_title: chosen.topic_title, promise: chosen.promise, duration_days: 21, price_usd: 27 },
     knowledge_pack: pack,
     quiz,
-    output: { skeleton: SKELETON, content_bank: {}, voice, personalization_tokens: [] },
-    safety: { domain_risk_tier: "low", disclaimers: [], banned_claims: [], escalation_triggers: [] },
+    output: { template, generation_prompt: generationPrompt, voice },
+    safety: SAFETY,
     eval: {
       rubric: RUBRIC,
       swap_test: { min_divergence_pct: MIN_DIVERGENCE },
@@ -52,49 +62,44 @@ async function runCreator(creator: CreatorInput) {
   const structural = validateBlueprint(bp);
   if (structural.errors.length) return { halted_at: "structural_validation", errors: structural.errors };
 
-  await api.quizCritic(quiz, pack, audience.audience_words ?? []);
+  await api.quizCritic(quiz, template, pack, audience.audience_words ?? []);
 
-  const archetypes = quiz.archetype_rules.slice(0, 4).map((r) => r.id);
-  for (const a of archetypes) {
-    const rationale = quiz.archetype_rules.find((r) => r.id === a)?.archetype_rationale ?? "";
-    const earlier: Record<string, string> = {};
-    for (const s of SKELETON.filter((s) => EVAL_SECTIONS.includes(s.id))) {
-      const entry = await api.writeBrief({ knowledgePack: pack, archetype: a, rationale, section: s, voice, earlier });
-      bp.output.content_bank[`${s.id}::${a}`] = entry;
-      earlier[s.id] = entry.brief;
-    }
-  }
-
-  const renders: Record<string, Record<string, string>> = {};
-  for (const a of archetypes) {
-    renders[a] = {};
-    let prev = "";
-    for (const s of SKELETON.filter((s) => EVAL_SECTIONS.includes(s.id))) {
-      const entry = bp.output.content_bank[`${s.id}::${a}`];
-      const prose = await api.renderSection({
-        entry,
-        mechanisms: pack.mechanisms ?? [],
-        buyer: { situation: a },
+  // three synthetic buyers run the real runtime path
+  const buyers = (await api.inventSampleBuyers(quiz, audience)).slice(0, SAMPLE_BUYER_COUNT);
+  const outputs: GeneratedOutput[] = [];
+  for (const buyer of buyers) {
+    outputs.push(
+      await api.generateOutput({
+        template,
+        generationPrompt,
+        knowledgePack: pack,
         voice,
-        section: s,
-        previousEnding: prev,
-      });
-      renders[a][s.id] = prose;
-      prev = prose;
-    }
+        safety: SAFETY,
+        product: { topic_title: chosen.topic_title, promise: chosen.promise, duration_days: 21 },
+        creatorName: creator.handle,
+        answers: readableAnswers(quiz, buyer.answers),
+      })
+    );
   }
 
+  // swap test: pairwise divergence between persona documents
+  const renders: Record<string, Record<string, string>> = {};
+  buyers.forEach((_, i) => {
+    renders[`p${i}`] = flattenGeneratedOutput(template, outputs[i]);
+  });
   const pairs: [string, string][] = [];
-  for (let i = 0; i + 1 < archetypes.length; i += 2) pairs.push([archetypes[i], archetypes[i + 1]]);
+  for (let i = 0; i < buyers.length; i++) {
+    for (let j = i + 1; j < buyers.length; j++) pairs.push([`p${i}`, `p${j}`]);
+  }
   const swap = swapTest(renders, pairs, MIN_DIVERGENCE);
   if (!swap.pass) return { halted_at: "swap_test", divergence: swap.overall };
 
   const scored: number[] = [];
-  for (const a of archetypes) {
-    for (const s of EVAL_SECTIONS) {
-      const r = await api.outputCritic(a, renders[a][s], RUBRIC);
-      scored.push(r.weighted ?? 0);
-    }
+  for (let i = 0; i < buyers.length; i++) {
+    const flat = flattenGeneratedOutput(template, outputs[i]);
+    const doc = Object.values(flat).join("\n\n");
+    const r = await api.outputCritic(buyers[i].label, doc, RUBRIC);
+    scored.push(r.weighted ?? 0);
   }
   const weighted = scored.reduce((t, s) => t + s, 0) / (scored.length || 1);
   return { passed: weighted >= MIN_SCORE, weighted: +weighted.toFixed(2) };
@@ -102,13 +107,13 @@ async function runCreator(creator: CreatorInput) {
 
 const byId = (id: string) => creators.find((c) => c.id === id)!;
 
-describe("mock pipeline gating (mirrors harness run.mjs)", () => {
+describe("mock pipeline gating (mirrors blueprintBuild)", () => {
   it("sourdough is refused at topic proposal — the pipeline saying no is a feature", async () => {
     const r = await runCreator(byId("sourdough"));
     expect(r.halted_at).toBe("no_viable_topic");
   });
 
-  it("language_spanish halts at the swap test — archetypes not materially different", async () => {
+  it("language_spanish halts at the swap test — different buyers, same document", async () => {
     const r = await runCreator(byId("language_spanish"));
     expect(r.halted_at).toBe("swap_test");
   });

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 const STEPS = [
   "Reading your answers",
-  "Working out your starting point",
+  "Working out what's going on for you",
   "Writing your plan, section by section",
   "Checking it against the quality bar",
-  "Assembling the PDF",
+  "Publishing your private page",
 ];
 
 export function OrderPoller({ orderId }: { orderId: string }) {

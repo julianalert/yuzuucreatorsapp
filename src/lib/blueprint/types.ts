@@ -2,6 +2,12 @@
  * Core data contract types, mirroring docs/blueprint-schema.md and the harness.
  * The blueprint is generated once at build time, approved by the creator,
  * then frozen and versioned. Runtime reads it and never modifies it.
+ *
+ * No segments, no archetypes: personalization happens at runtime from the
+ * buyer's full quiz answers, not by routing buyers into pre-built buckets.
+ * The blueprint carries a per-product OUTPUT TEMPLATE (section structure +
+ * content shapes) and a per-product GENERATION PROMPT; one model call per
+ * buyer fills the template.
  */
 
 export interface AudienceCard {
@@ -33,6 +39,7 @@ export interface TopicProposal {
     credibility: number;
   };
   why_this_works: string;
+  /** Informational only — shown on the ideas page so the creator can judge fit. */
   segmentation_preview: string[];
   risk: string;
 }
@@ -42,11 +49,15 @@ export interface TopicProposals {
   insufficient?: boolean;
 }
 
-export interface KnowledgeSegment {
+/**
+ * A common root cause in the domain. Pure context for the generation model —
+ * nothing routes on these.
+ */
+export interface RootCause {
   id: string;
   label: string;
   prevalence: "high" | "medium" | "low" | string;
-  root_cause: string;
+  explanation: string;
   [k: string]: unknown;
 }
 
@@ -54,14 +65,13 @@ export interface Mechanism {
   id: string;
   name: string;
   why_it_works: string;
-  applies_to_segments?: string[];
   contested?: boolean;
   confidence?: string;
   [k: string]: unknown;
 }
 
 export interface KnowledgePack {
-  segments: KnowledgeSegment[];
+  root_causes: RootCause[];
   mechanisms: Mechanism[];
   false_beliefs: { belief: string; correction: string }[];
   glossary: Record<string, string>;
@@ -71,7 +81,6 @@ export interface QuizOption {
   value: string;
   label: string;
   sub?: string;
-  signals?: Record<string, string | number | boolean>;
 }
 
 export interface QuizQuestion {
@@ -80,45 +89,153 @@ export interface QuizQuestion {
   type: "single" | "multi";
   required?: boolean;
   help?: string;
-  drives?: string[];
-  modifies?: string[];
+  /** Template section ids this question's answer materially changes. */
+  informs?: string[];
   options: QuizOption[];
-}
-
-export interface ArchetypeMatchCondition {
-  signal: string;
-  in?: (string | number | boolean)[];
-  equals?: string | number | boolean;
-}
-
-export interface ArchetypeRule {
-  id: string;
-  label: string;
-  priority: number;
-  archetype_rationale?: string;
-  match: { all?: ArchetypeMatchCondition[]; any?: ArchetypeMatchCondition[] };
 }
 
 export interface Quiz {
   questions: QuizQuestion[];
-  archetype_rules: ArchetypeRule[];
-  fallback_archetype: string;
 }
 
-export interface SkeletonSection {
+// ─────────────────────────────────────────────────── output template
+
+/** Accents map to the app design system, not to raw colors. */
+export type Accent = "zest" | "sage" | "amber" | "rose";
+
+/**
+ * The dominant content structure of a template section. Each maps to a fixed
+ * JSON shape the generation model must produce (see GeneratedSection) and a
+ * fixed renderer component.
+ */
+export type SectionComponent =
+  | "prose"
+  | "cards"
+  | "timeline"
+  | "table"
+  | "rhythm"
+  | "checklist"
+  | "brief";
+
+export interface TemplateSection {
   id: string;
+  /** e.g. "Protocol 01 · Nutrition" */
+  eyebrow: string;
   title: string;
-  target_words: number;
-  conditional?: boolean;
+  /** One-line subtitle under the title. */
+  description?: string;
+  accent: Accent;
+  component: SectionComponent;
+  /** Column headers, required when component === "table". */
+  table_columns?: string[];
+  /**
+   * What this section must accomplish and how it must be personalized —
+   * consumed by the generation prompt, never shown to the buyer.
+   */
+  instructions: string;
 }
 
-export interface ContentBankEntry {
-  brief: string;
-  must_include: string[];
-  must_avoid: string[];
-  mechanism_refs?: string[];
-  week_theme?: string;
+export interface OutputTemplate {
+  /** Small product wordmark on the cover, e.g. "MenoProtocol". */
+  doc_label: string;
+  /** Cover eyebrow, e.g. "Personalized Menopause Management Protocol". */
+  cover_label: string;
+  /** e.g. "Your symptom fingerprint" — adapted to the product's domain. */
+  fingerprint_title: string;
+  /** 5-8 product-level axes; each buyer gets their own 0-10 value per axis. */
+  fingerprint_axes: string[];
+  sections: TemplateSection[];
 }
+
+// ─────────────────────────────────────────────── generated output shapes
+
+export interface GeneratedCover {
+  /** Document title, e.g. "Your Calm-Walks Plan". */
+  title: string;
+  /** e.g. "Prepared for someone with a 2-year-old Border Collie that pulls". */
+  subtitle: string;
+  /** 0-10 per template fingerprint axis, same order. */
+  fingerprint: number[];
+  /** Up to 4 stat slots, e.g. { value: "Late peri", label: "Stage" }. */
+  meta: { value: string; label: string }[];
+}
+
+export interface CalloutContent {
+  label: string;
+  body: string;
+}
+
+export interface CardItem {
+  kicker?: string;
+  title: string;
+  body: string;
+  tag?: string;
+}
+
+export interface TimelineItem {
+  marker: string;
+  range: string;
+  title: string;
+  body: string;
+}
+
+export interface TableRow {
+  cells: string[];
+  badge?: "high" | "medium" | "low";
+}
+
+export interface RhythmItem {
+  time: string;
+  title: string;
+  desc: string;
+}
+
+export interface ChecklistGroup {
+  label: string;
+  items: string[];
+}
+
+export interface BriefContent {
+  title: string;
+  groups: { label: string; items: string[] }[];
+}
+
+/**
+ * One generated section. `callout` and `intro` are common to every component;
+ * exactly one structural field matches the section's declared component.
+ */
+export interface GeneratedSection {
+  /** Personalized "your situation" callout that opens the section. */
+  callout?: CalloutContent;
+  /** Body paragraphs. */
+  intro?: string[];
+  cards?: CardItem[];
+  timeline?: TimelineItem[];
+  table?: { rows: TableRow[] };
+  rhythm?: RhythmItem[];
+  checklist?: ChecklistGroup[];
+  brief?: BriefContent;
+  /** Closing paragraph. */
+  outro?: string;
+}
+
+export interface GeneratedOutput {
+  cover: GeneratedCover;
+  sections: Record<string, GeneratedSection>;
+}
+
+// ────────────────────────────────────────────────────── build-time review
+
+/** A synthetic buyer invented at build time so the creator can review real outputs. */
+export interface SampleBuyer {
+  /** Short human label, e.g. "First-dog owner, 10 min/day". */
+  label: string;
+  /** One-line persona description. */
+  summary: string;
+  answers: QuizAnswers;
+}
+
+// ─────────────────────────────────────────────────────────── blueprint
 
 export interface Voice {
   reading_level?: string;
@@ -139,7 +256,6 @@ export interface EscalationTrigger {
   signal: string;
   equals?: string | number | boolean;
   action?: string;
-  block_id?: string;
 }
 
 export interface Safety {
@@ -176,9 +292,12 @@ export interface Blueprint {
   knowledge_pack: KnowledgePack;
   quiz: Quiz;
   output: {
-    skeleton: SkeletonSection[];
-    content_bank: Record<string, ContentBankEntry>;
-    personalization_tokens: string[];
+    template: OutputTemplate;
+    /**
+     * Product-specific generation rules written at build time. Wrapped with
+     * the buyer's answers by composeGenerationPrompt at runtime.
+     */
+    generation_prompt: string;
     voice: Voice;
     constraints?: Record<string, unknown>;
   };
@@ -225,10 +344,4 @@ export interface ValidationResult {
   ok: boolean;
   errors: ValidationIssue[];
   warnings: { path: string; issue: string }[];
-}
-
-export interface ResolvedArchetype {
-  archetype: string;
-  signals: Record<string, unknown>;
-  matched_rules: string[];
 }
