@@ -64,6 +64,6 @@ RLS model: creators can only **read** their own rows through the browser key; ev
 4. Verify a Resend domain and set `EMAIL_FROM` to match.
 5. End-to-end check: sign in → run a real handle through onboarding → approve samples → take the quiz at `/u/<handle>` → fake-pay → confirm the plan renders, the PDF downloads, and the delivery email arrives.
 
-Cost controls: `PIPELINE_KILL_SWITCH=true` stops every model call instantly; `DAILY_SPEND_CAP_USD` halts new build stages once the day's tracked spend crosses it; `PER_CREATOR_BUILD_LIMIT` caps builds per account. Per-build spend is tracked on `builds.cost_usd` and shown in `/admin`.
+Cost controls: `PIPELINE_KILL_SWITCH=true` stops every model call instantly; `DAILY_SPEND_CAP_USD` halts new build stages once the day's tracked spend crosses it; `PER_CREATOR_BUILD_LIMIT` caps live/completed builds per account (default 1; failed and declined attempts don't count). Per-build spend is tracked on `builds.cost_usd` and shown in `/admin`.
 
 Stripe is intentionally not wired yet: checkout's **Pay now** creates a `paid` order and triggers generation. `orders.stripe_payment_intent` is already in the schema for when it lands.

@@ -7,7 +7,7 @@ import { startBuild } from "./actions";
 
 const ERRORS: Record<string, string> = {
   handle: "That doesn't look like an Instagram handle — letters, numbers, dots and underscores only.",
-  limit: "You've hit the build limit for this account. Get in touch if you need another run.",
+  limit: "Your product is already built — the free launch includes one build per creator. Get in touch if you need another run.",
   taken: "That handle is already connected to another Yuzuu account.",
 };
 

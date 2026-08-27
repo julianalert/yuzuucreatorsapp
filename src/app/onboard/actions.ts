@@ -16,12 +16,14 @@ export async function startBuild(formData: FormData) {
 
   const admin = supabaseAdmin();
 
-  // per-creator build cap
-  const limit = Number(process.env.PER_CREATOR_BUILD_LIMIT || 5);
+  // per-creator build cap — failed/declined attempts don't burn the quota,
+  // and sample-rejection rebuilds are created by the pipeline, not here
+  const limit = Number(process.env.PER_CREATOR_BUILD_LIMIT || 1);
   const { count } = await admin
     .from("builds")
     .select("id", { count: "exact", head: true })
-    .eq("creator_id", creator.id);
+    .eq("creator_id", creator.id)
+    .not("status", "in", "(failed,declined)");
   if ((count ?? 0) >= limit) redirect("/onboard?error=limit");
 
   // handle is the URL slug — one creator per handle
