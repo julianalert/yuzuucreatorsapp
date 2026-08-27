@@ -41,7 +41,7 @@ export default async function ReviewPage() {
 
   return (
     <section>
-      <AppBar initial={initial} />
+      <AppBar initial={initial} avatarUrl={creator.avatar_url} />
       <div className="wrap">
         <div style={{ maxWidth: 820, margin: "0 auto" }}>
           <div className="micro">Ready for you</div>

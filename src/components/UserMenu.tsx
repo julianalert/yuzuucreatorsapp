@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/lib/auth-actions";
 
-export function UserMenu({ initial }: { initial: string }) {
+export function UserMenu({
+  initial,
+  avatarUrl,
+}: {
+  initial: string;
+  avatarUrl?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -32,7 +38,12 @@ export function UserMenu({ initial }: { initial: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {initial}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar, not worth next/image remote-pattern config
+          <img className="avatar-img" src={avatarUrl} alt="" referrerPolicy="no-referrer" />
+        ) : (
+          initial
+        )}
       </button>
       {open ? (
         <div className="user-menu-panel" role="menu">

@@ -16,7 +16,7 @@ export default async function BuildingPage() {
 
   return (
     <section>
-      <AppBar initial={initial} />
+      <AppBar initial={initial} avatarUrl={creator.avatar_url} />
       <div className="wrap">
         <div style={{ maxWidth: 560, margin: "60px auto 0" }}>
           <div className="micro">Step 3 of 3 · Building</div>

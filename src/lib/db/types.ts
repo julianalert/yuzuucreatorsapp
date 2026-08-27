@@ -32,6 +32,7 @@ export interface CreatorRow {
   user_id: string;
   handle: string | null;
   display_name: string | null;
+  avatar_url: string | null;
   email: string;
   stripe_account_id: string | null;
   stripe_onboarded: boolean;

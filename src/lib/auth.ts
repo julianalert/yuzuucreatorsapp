@@ -15,13 +15,31 @@ export async function requireCreator(): Promise<CreatorRow> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
+  const avatarUrl =
+    (user.user_metadata?.avatar_url as string | undefined) ??
+    (user.user_metadata?.picture as string | undefined) ??
+    null;
+
   const admin = supabaseAdmin();
   const { data: existing } = await admin
     .from("creators")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (existing) return existing as CreatorRow;
+  if (existing) {
+    // Keep the avatar in sync (covers accounts created before this field
+    // existed, and creators who update their Google photo later).
+    if (avatarUrl && avatarUrl !== existing.avatar_url) {
+      const { data: updated } = await admin
+        .from("creators")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", existing.id)
+        .select("*")
+        .single();
+      if (updated) return updated as CreatorRow;
+    }
+    return existing as CreatorRow;
+  }
 
   const { data: created, error } = await admin
     .from("creators")
@@ -32,6 +50,7 @@ export async function requireCreator(): Promise<CreatorRow> {
         (user.user_metadata?.full_name as string | undefined) ??
         (user.user_metadata?.name as string | undefined) ??
         null,
+      avatar_url: avatarUrl,
     })
     .select("*")
     .single();

@@ -17,7 +17,7 @@ export default async function IdeasPage() {
 
   return (
     <section>
-      <AppBar initial={initial} />
+      <AppBar initial={initial} avatarUrl={creator.avatar_url} />
       <div className="wrap">
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div className="micro">Step 2 of 3</div>
