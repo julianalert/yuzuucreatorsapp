@@ -16,7 +16,18 @@ function Logo({ small }: { small?: boolean }) {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  // Fallback for OAuth providers that land the `code` on the bare homepage
+  // instead of /auth/callback (happens when the redirect URL used at
+  // sign-in isn't in Supabase's allow-listed Redirect URLs) — forward it so
+  // sign-in still completes instead of silently failing.
+  const { code } = await searchParams;
+  if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/onboard`);
+
   const user = await getSignedInUser();
   if (user) redirect("/dashboard");
 

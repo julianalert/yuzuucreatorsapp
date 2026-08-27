@@ -1,4 +1,5 @@
 import { Wordmark } from "./Wordmark";
+import { UserMenu } from "./UserMenu";
 
 export function AppBar({ initial, right }: { initial?: string; right?: React.ReactNode }) {
   return (
@@ -7,7 +8,7 @@ export function AppBar({ initial, right }: { initial?: string; right?: React.Rea
         <Wordmark href="/dashboard" />
         <div className="right">
           {right}
-          <div className="avatar">{(initial || "Y").toUpperCase()}</div>
+          <UserMenu initial={(initial || "Y").toUpperCase()} />
         </div>
       </div>
     </header>

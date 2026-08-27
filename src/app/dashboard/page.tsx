@@ -4,7 +4,6 @@ import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AppBar } from "@/components/AppBar";
-import { signOut } from "./actions";
 import type { Blueprint } from "@/lib/blueprint/types";
 import type { BlueprintRow, OrderRow } from "@/lib/db/types";
 
@@ -60,16 +59,7 @@ export default async function DashboardPage({
 
   return (
     <section>
-      <AppBar
-        initial={initial}
-        right={
-          <form action={signOut}>
-            <button className="btn btn-ghost" type="submit" style={{ fontSize: 13.5 }}>
-              Sign out
-            </button>
-          </form>
-        }
-      />
+      <AppBar initial={initial} />
       <div className="wrap wide">
         {published ? (
           <div className="notice" style={{ marginBottom: 26 }}>
