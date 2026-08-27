@@ -16,7 +16,8 @@ export function createRealApi(usage?: Usage): PipelineApi {
   const ctx = { usage };
   return {
     extractAudience: (creator) => stages.extractAudience(creator, ctx),
-    proposeTopics: (audience, duration) => stages.proposeTopics(audience, duration, ctx),
+    proposeTopics: (audience) => stages.proposeTopics(audience, ctx),
+    proposeBonusTopic: (audience, existing) => stages.proposeBonusTopic(audience, existing, ctx),
     buildKnowledgePack: (topic, audience) => stages.buildKnowledgePack(topic, audience, ctx),
     designQuiz: (pack, audience, skeleton) => stages.designQuiz(pack, audience, skeleton, ctx),
     writeBrief: (args) => stages.writeBrief(args, ctx),

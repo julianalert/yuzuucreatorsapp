@@ -3,7 +3,7 @@ import { supabaseAdmin } from "../supabase/admin";
 import {
   createPipelineApi,
   createUsageTracker,
-  SKELETON,
+  skeletonFor,
   RUBRIC,
   MIN_SCORE,
   MIN_DIVERGENCE,
@@ -212,7 +212,7 @@ export const blueprintBuild = inngest.createFunction(
     if (prevChosen) {
       chosen = prevChosen;
     } else {
-      const proposals = await step.run("propose", async () => {
+      let proposals = await step.run("propose", async () => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "propose" });
         const usage = createUsageTracker();
         const scoped = createPipelineApi(usage);
@@ -221,6 +221,24 @@ export const blueprintBuild = inngest.createFunction(
         await addCost(buildId, usage.cost_usd);
         return topics.proposals ?? [];
       });
+
+      if (proposals.length) {
+        // the wild card: one out-of-the-box idea appended after the safe three.
+        // Non-fatal — three good ideas beat a failed build.
+        proposals = await step.run("propose-bonus", async () => {
+          try {
+            const usage = createUsageTracker();
+            const scoped = createPipelineApi(usage);
+            const bonus = await scoped.proposeBonusTopic(audience, proposals);
+            const all = [...proposals, { ...bonus, bonus: true }];
+            await updateBuild(buildId, { topic_proposals: { proposals: all } });
+            await addCost(buildId, usage.cost_usd);
+            return all;
+          } catch {
+            return proposals;
+          }
+        });
+      }
 
       if (!proposals.length) {
         await step.run("decline-topics", () =>
@@ -266,6 +284,10 @@ export const blueprintBuild = inngest.createFunction(
     }
 
     const topic = chosen!;
+    // bonus ideas may have no time component at all; older transformation
+    // proposals predate duration_days and default to 30
+    const durationDays = topic.duration_days ?? (topic.bonus ? undefined : 30);
+    const skeleton = skeletonFor(durationDays);
     const voice = defaultVoice(audience.tone_notes);
     const criticResults: Record<string, unknown> = {};
 
@@ -303,7 +325,7 @@ export const blueprintBuild = inngest.createFunction(
         const scoped = createPipelineApi(usage);
         let lastErrors: unknown[] = [];
         for (let qa = 0; qa < 3; qa++) {
-          const candidate = await scoped.designQuiz(pack, audience, SKELETON);
+          const candidate = await scoped.designQuiz(pack, audience, skeleton);
           const draft: Blueprint = {
             blueprint_id: `bp_${creatorId}`,
             blueprint_version: 0,
@@ -312,12 +334,12 @@ export const blueprintBuild = inngest.createFunction(
             product: {
               topic_title: topic.topic_title,
               promise: topic.promise,
-              duration_days: 30,
+              duration_days: durationDays,
               price_usd: 27,
             },
             knowledge_pack: pack,
             quiz: candidate,
-            output: { skeleton: SKELETON, content_bank: {}, voice, personalization_tokens: [] },
+            output: { skeleton, content_bank: {}, voice, personalization_tokens: [] },
             safety: { domain_risk_tier: "low", disclaimers: [], banned_claims: [], escalation_triggers: [] },
             eval: {
               rubric: RUBRIC,
@@ -367,7 +389,7 @@ export const blueprintBuild = inngest.createFunction(
           const rationale = rule?.archetype_rationale ?? "General starting point for unmatched buyers.";
           const earlier: Record<string, string> = {};
           const entries: Record<string, ContentBankEntry> = {};
-          for (const section of SKELETON) {
+          for (const section of skeleton) {
             const entry = await scoped.writeBrief({
               knowledgePack: pack,
               archetype: archetypeId,
@@ -401,7 +423,7 @@ export const blueprintBuild = inngest.createFunction(
           out[archetypeId] = {};
           let prev = "";
           const label = quiz!.archetype_rules.find((r) => r.id === archetypeId)?.label ?? archetypeId;
-          for (const section of SKELETON.filter((s) => EVAL_SECTIONS.includes(s.id))) {
+          for (const section of skeleton.filter((s) => EVAL_SECTIONS.includes(s.id))) {
             const entry = contentBank[`${section.id}::${archetypeId}`];
             const mechanisms = pack.mechanisms.filter((m) => entry.mechanism_refs?.includes(m.id));
             const prose = await scoped.renderSection({
@@ -511,15 +533,15 @@ export const blueprintBuild = inngest.createFunction(
         product: {
           topic_title: topic.topic_title,
           promise: topic.promise,
-          duration_days: 30,
-          phase_length_days: 7,
+          duration_days: durationDays,
+          phase_length_days: durationDays ? Math.round(durationDays / 4) : undefined,
           price_usd: 27,
           format: "pdf",
         },
         knowledge_pack: pack,
         quiz: quiz!,
         output: {
-          skeleton: SKELETON,
+          skeleton,
           content_bank: contentBank,
           personalization_tokens: [],
           voice,

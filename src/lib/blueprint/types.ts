@@ -19,6 +19,13 @@ export interface AudienceCard {
 export interface TopicProposal {
   topic_title: string;
   promise: string;
+  /**
+   * Model-chosen plan length. Absent on bonus ideas with no natural time
+   * component; older transformation proposals predate this and default to 30.
+   */
+  duration_days?: number;
+  /** The out-of-the-box wild-card idea generated after the main proposals. */
+  bonus?: boolean;
   scores: {
     acuteness: number;
     segmentability: number;
@@ -160,7 +167,8 @@ export interface Blueprint {
   product: {
     topic_title: string;
     promise: string;
-    duration_days: number;
+    /** Absent for non-time-boxed products (bonus ideas). */
+    duration_days?: number;
     phase_length_days?: number;
     price_usd: number;
     format?: string;

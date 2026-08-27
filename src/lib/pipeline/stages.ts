@@ -52,7 +52,6 @@ Return JSON only:
 
 export async function proposeTopics(
   audienceCard: AudienceCard,
-  duration = 30,
   ctx: Ctx = {}
 ): Promise<TopicProposals> {
   return ask(
@@ -61,20 +60,62 @@ export async function proposeTopics(
 
 <audience_card>${JSON.stringify(audienceCard, null, 2)}</audience_card>
 
-The product archetype is fixed: a quiz diagnoses the buyer, then they receive a personalized ${duration}-day transformation plan as a PDF, priced $20-50.
+The product SHAPE is fixed: a quiz diagnoses the buyer, then they receive a personalized, time-boxed transformation plan as a PDF, priced $20-50.
+
+The TIME HORIZON is yours to choose per topic: 14, 21, 30, 45, 60, or 90 days. Pick the shortest horizon that credibly delivers the promise — a habit reset might be 14 days, a physiological change 60. Do not default every topic to the same length; let each problem dictate its own duration, and don't force a problem into a horizon that's too short to be honest or too long to stay urgent.
 
 Generate 8 candidates internally. Score each 1-10 on:
 - acuteness: felt weekly or daily right now? Merely interesting scores 3 or below.
 - segmentability: would two buyers with different situations need genuinely different plans? If one plan serves everyone, personalization is theater — score 3 or below.
-- resolvability: real change in ${duration} days, no purchases, under 20 min/day?
+- resolvability: real change within your chosen duration, no purchases, under 20 min/day?
 - credibility: is this creator obviously the right person, given credibility_basis?
 
 Reject any candidate below 6 on segmentability or below 5 on acuteness regardless of total.
 
 Return JSON only:
-{"proposals":[{"topic_title":"...","promise":"...","scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations needing different plans"],"risk":"..."}]}
+{"proposals":[{"topic_title":"...","promise":"...","duration_days":n,"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations needing different plans"],"risk":"..."}]}
 
 Return the top ${TOPIC_COUNT}. If fewer than ${TOPIC_COUNT} survive the rejection rules, return fewer and add {"insufficient": true}.`,
+    ctx
+  );
+}
+
+/**
+ * One wild-card idea, generated after the safe transformation proposals.
+ * Same delivery machine (quiz → personalized written PDF), different shape.
+ */
+export async function proposeBonusTopic(
+  audienceCard: AudienceCard,
+  existing: TopicProposal[],
+  ctx: Ctx = {}
+): Promise<TopicProposal> {
+  return ask(
+    "build",
+    `You already proposed these safe product ideas for this creator:
+
+<already_proposed>${JSON.stringify(
+      existing.map((p) => ({ topic_title: p.topic_title, promise: p.promise })),
+      null,
+      2
+    )}</already_proposed>
+
+<audience_card>${JSON.stringify(audienceCard, null, 2)}</audience_card>
+
+Now propose ONE bonus idea — the original one. The idea this creator would never think to make, but their audience would instantly want.
+
+Break the formula: it must NOT be another "fix problem X in N days" transformation plan, and it must not be a close cousin of anything in already_proposed. Think sideways: a personalized playbook, a decision system, an audit, a field guide, a ritual, a "which one are you" deep-dive, a contrarian take that reframes the problem, an angle from an adjacent domain the audience doesn't expect.
+
+Hard constraints (the delivery machine is fixed):
+- A short quiz must be able to genuinely personalize it — different buyers get materially different content. If everyone would get the same document, the idea is wrong.
+- Deliverable as a written, sectioned PDF. No video, community, coaching, templates-only or software.
+- Same audience, and this creator must be credible for it given credibility_basis.
+- Priced $20-50 and honest at that price.
+- Surprising is good; gimmicky is not. It must solve or illuminate something the audience actually feels.
+
+Score it 1-10 on the same dimensions (resolvability = "the product can honestly deliver its promise"). If the idea has a natural time component, include duration_days (14-90); if it isn't time-boxed, omit duration_days entirely.
+
+Return JSON only:
+{"topic_title":"...","promise":"...","duration_days":n (optional),"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"one sentence on why this is the unexpected-but-right idea","segmentation_preview":["4-6 buyer situations needing different content"],"risk":"..."}`,
     ctx
   );
 }
@@ -166,7 +207,7 @@ You are writing a BRIEF, not prose. The brief tells a writer what must be convey
 Return JSON only:
 {"brief":"2-4 sentences on what this section must accomplish FOR THIS ARCHETYPE. If it would read the same for a different archetype, it is wrong — rewrite it.","must_include":["3-5 points concrete enough that their absence is checkable"],"must_avoid":["2-4 items, including failure modes specific to this archetype"],"mechanism_refs":["ids from the knowledge pack"]${section.id.startsWith("week") ? ',"week_theme":"3-5 words"' : ""}}
 
-${section.id.startsWith("week") ? "Week sections must fit the smallest stated time budget, state what changes from the previous week and why now, and name one thing the buyer should NOT do yet." : ""}`,
+${section.id.startsWith("week") ? "Phase sections cover the day range in the section title. They must fit the smallest stated time budget, state what changes from the previous phase and why now, and name one thing the buyer should NOT do yet." : ""}`,
     { maxTokens: 2000, ...ctx }
   );
 }

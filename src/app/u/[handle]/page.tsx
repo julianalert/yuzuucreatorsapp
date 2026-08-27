@@ -44,7 +44,8 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
       <div className="wrap">
         <div className="hero">
           <div className="micro">
-            Personalized · {product.durationDays} days · {product.questions.length} questions first
+            Personalized ·{product.durationDays ? ` ${product.durationDays} days ·` : ""}{" "}
+            {product.questions.length} questions first
           </div>
           <h1 style={{ marginTop: 18 }}>{product.title}</h1>
           <p className="lede-strong">{product.promise}</p>

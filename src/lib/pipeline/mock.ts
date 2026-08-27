@@ -45,7 +45,8 @@ export interface RenderSectionArgs {
 
 export interface PipelineApi {
   extractAudience(creator: CreatorInput): Promise<AudienceCard>;
-  proposeTopics(audience: AudienceCard, duration?: number): Promise<TopicProposals>;
+  proposeTopics(audience: AudienceCard): Promise<TopicProposals>;
+  proposeBonusTopic(audience: AudienceCard, existing: TopicProposal[]): Promise<TopicProposal>;
   buildKnowledgePack(topic: TopicProposal, audience: AudienceCard): Promise<KnowledgePack>;
   designQuiz(pack: KnowledgePack, audience: AudienceCard, skeleton: SkeletonSection[]): Promise<Quiz>;
   writeBrief(args: WriteBriefArgs): Promise<ContentBankEntry>;
@@ -80,14 +81,26 @@ export function createMockApi(): PipelineApi {
       return {
         proposals: [
           {
-            topic_title: `The 30-Day ${current?.handle} Reset`,
+            topic_title: `The 21-Day ${current?.handle} Reset`,
             promise: current?.self_description ?? "",
+            duration_days: 21,
             scores: { acuteness: 8, segmentability: seg, resolvability: 7, credibility: 9 },
             why_this_works: "mock",
             segmentation_preview: ["a", "b", "c", "d"],
             risk: "mock",
           },
         ],
+      };
+    },
+
+    async proposeBonusTopic() {
+      return {
+        topic_title: `The ${current?.handle} Field Guide`,
+        promise: "A personalized playbook, not a countdown.",
+        scores: { acuteness: 7, segmentability: 8, resolvability: 8, credibility: 8 },
+        why_this_works: "mock bonus",
+        segmentation_preview: ["a", "b", "c", "d"],
+        risk: "mock",
       };
     },
 

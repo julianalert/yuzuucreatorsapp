@@ -121,7 +121,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 
         <article className="doc">
           <div className="micro">
-            Personalized · {bp.product.duration_days} days · delivered to {order.buyer_email}
+            Personalized ·{bp.product.duration_days ? ` ${bp.product.duration_days} days ·` : ""}{" "}
+            delivered to {order.buyer_email}
           </div>
           <div className="verdict">
             <span className="micro">Your starting point</span>

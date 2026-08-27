@@ -327,12 +327,17 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
   border-radius: 2px;
   padding: 4px 7px;
 }
+.chip-bonus {
+  color: var(--ink);
+  background: var(--accent, #e8d82b);
+  border-color: var(--ink);
+}
 .scores { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .score .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sage); display: block; }
 .score .v { margin-top: 5px; display: flex; align-items: center; gap: 7px; }
 .score .v b { font-family: var(--mono); font-size: 13px; font-weight: 500; }
 .score .v span { flex: 1; height: 2px; background: var(--line); position: relative; overflow: hidden; }
-.score .v span i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.score .v span i { position: absolute; inset: 0 auto 0 0; background: var(--zest); }
 
 /* ── dashboard ──────────────────────────────────────────── */
 .live {

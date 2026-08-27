@@ -6,7 +6,7 @@ import type { TopicProposal } from "@/lib/blueprint/types";
 const SCORE_LABELS: [keyof TopicProposal["scores"], string][] = [
   ["acuteness", "Urgency"],
   ["segmentability", "Fits different people"],
-  ["resolvability", "Works in 30 days"],
+  ["resolvability", "Fixable in the timeframe"],
   ["credibility", "You're credible"],
 ];
 
@@ -48,15 +48,21 @@ export function IdeaPicker({
             <span>
               <h3>{p.topic_title}</h3>
               <span className="promise">{p.promise}</span>
-              {p.segmentation_preview?.length ? (
-                <span className="who-chips">
-                  {p.segmentation_preview.slice(0, 4).map((w) => (
-                    <span key={w} className="chip">
-                      {w}
-                    </span>
-                  ))}
-                </span>
-              ) : null}
+              <span className="who-chips">
+                {p.bonus ? (
+                  <span className="chip chip-bonus">Wild card</span>
+                ) : null}
+                {p.duration_days ? (
+                  <span className="chip">{p.duration_days}-day plan</span>
+                ) : p.bonus ? null : (
+                  <span className="chip">30-day plan</span>
+                )}
+                {(p.segmentation_preview ?? []).slice(0, 4).map((w) => (
+                  <span key={w} className="chip">
+                    {w}
+                  </span>
+                ))}
+              </span>
               <span className="scores">
                 {SCORE_LABELS.map(([key, label]) => {
                   const v = p.scores?.[key] ?? 0;

@@ -23,7 +23,7 @@ export interface PublicProduct {
   credibility?: string;
   title: string;
   promise: string;
-  durationDays: number;
+  durationDays: number | null;
   sectionTitles: string[];
   questions: PublicQuizQuestion[];
 }
@@ -69,7 +69,7 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
     credibility: bp.creator?.credibility_statement,
     title: bp.product?.topic_title ?? "",
     promise: bp.product?.promise ?? "",
-    durationDays: bp.product?.duration_days ?? 30,
+    durationDays: bp.product?.duration_days ?? null,
     sectionTitles: (bp.output?.skeleton ?? []).map((s) => s.title),
     questions,
   };

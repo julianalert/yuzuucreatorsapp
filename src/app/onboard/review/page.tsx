@@ -18,7 +18,7 @@ export default async function ReviewPage() {
   const admin = supabaseAdmin();
   const { data: blueprint } = await admin
     .from("blueprints")
-    .select("id")
+    .select("id, data")
     .eq("build_id", build.id)
     .single();
   const { data: sampleRows } = await admin
@@ -27,7 +27,11 @@ export default async function ReviewPage() {
     .eq("blueprint_id", blueprint?.id ?? "")
     .order("created_at", { ascending: true });
 
-  const titleFor = (id: string) => SKELETON.find((s) => s.id === id)?.title ?? id;
+  // section titles vary with the plan duration, so read them from the blueprint
+  const skeleton =
+    (blueprint?.data as { output?: { skeleton?: typeof SKELETON } } | null)?.output?.skeleton ??
+    SKELETON;
+  const titleFor = (id: string) => skeleton.find((s) => s.id === id)?.title ?? id;
   const samples: SampleView[] = ((sampleRows ?? []) as SampleRow[]).slice(0, 3).map((s) => ({
     archetype: s.archetype,
     label: s.archetype_label ?? s.archetype,
