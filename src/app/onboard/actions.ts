@@ -94,7 +94,14 @@ export async function discardBuild(formData: FormData) {
     redirect("/onboard");
   }
 
-  await inngest.send({ name: "build/discarded", data: { buildId } });
+  // best-effort: cancels the pipeline run parked on the topic wait. If Inngest
+  // is unreachable (e.g. local dev without the dev server) the run just times
+  // out later against the deleted row, which is harmless.
+  try {
+    await inngest.send({ name: "build/discarded", data: { buildId } });
+  } catch (e) {
+    console.error("discardBuild: cancel event failed", e);
+  }
   const { error } = await admin.from("builds").delete().eq("id", buildId);
   if (error) throw new Error(error.message);
 
