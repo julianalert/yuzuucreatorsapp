@@ -53,7 +53,7 @@ export default async function Home({
           <div>
             <span className="kicker">First 50 creators · free build</span>
             <h1 style={{ marginTop: "1.3rem" }}>
-              You have an audience. You don&apos;t have <em>a business.</em>
+              Earn <em>regular income</em> from your audience
             </h1>
             <p className="lede" style={{ marginTop: "1.5rem" }}>
               Yuzuu studies your audience, proposes product ideas,
