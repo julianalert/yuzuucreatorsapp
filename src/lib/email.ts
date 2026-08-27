@@ -109,8 +109,8 @@ export async function sendIdeasReady(to: string, handle: string) {
     to,
     "Your product ideas are ready",
     wrap(`
-      ${paragraph(`We read <strong style="color:${C.ink};font-weight:600;">@${handle}</strong> and found 3 products your audience would buy — plus 1 wild card.`)}
-      ${paragraph("Pick the one that feels most like you — the rest happens automatically.")}
+      ${paragraph(`We read <strong style="color:${C.ink};font-weight:600;">@${handle}</strong> and found 3 products your audience would buy, plus 1 wild card.`)}
+      ${paragraph("Pick the one that feels most like you. The rest happens automatically.")}
       ${button(appUrl("/onboard/ideas"), "See the 3+1 ideas")}
     `)
   );
@@ -121,7 +121,7 @@ export async function sendSamplesReady(to: string, topicTitle: string) {
     to,
     "Three sample plans are ready for you to read",
     wrap(`
-      ${paragraph(`<strong style="color:${C.ink};font-weight:600;">${topicTitle}</strong> is built. Before it goes live, read three sample plans — each one is what a different kind of buyer would receive.`)}
+      ${paragraph(`<strong style="color:${C.ink};font-weight:600;">${topicTitle}</strong> is built. Before it goes live, read three sample plans. Each one is what a different kind of buyer would receive.`)}
       ${paragraph("Nothing is published until you approve.")}
       ${button(appUrl("/onboard/review"), "Read the samples")}
     `)
@@ -134,7 +134,7 @@ export async function sendBuildDeclined(to: string, handle: string, reason: stri
     "We couldn't build a product for your account yet",
     wrap(`
       ${paragraph(`We read <strong style="color:${C.ink};font-weight:600;">@${handle}</strong> but couldn't find a product we'd be confident selling under your name. ${reason}`)}
-      ${paragraph("Shipping something mediocre with your name on it is worse than waiting — you can try again any time.")}
+      ${paragraph("Shipping something mediocre with your name on it is worse than waiting. You can try again any time.")}
       ${button(appUrl("/onboard"), "Try again")}
     `)
   );
@@ -146,7 +146,7 @@ export async function sendPlanDelivered(
 ) {
   await send(
     to,
-    `Your plan is ready — ${args.topicTitle}`,
+    `Your plan is ready: ${args.topicTitle}`,
     wrap(`
       ${paragraph(`Your personalized plan from <strong style="color:${C.ink};font-weight:600;">${args.creatorName}</strong> is ready.`)}
       ${button(appUrl(`/order/${args.orderId}`), "Read your plan")}

@@ -17,6 +17,7 @@ import type {
   Blueprint,
   ContentBankEntry,
   CreatorInput,
+  KnowledgePack,
   Quiz,
   TopicProposal,
 } from "../blueprint/types";
@@ -97,6 +98,22 @@ export const blueprintBuild = inngest.createFunction(
     // wait-topic and the build row is gone, so kill it instead of letting it
     // time out against a deleted row 7 days later
     cancelOn: [{ event: "build/discarded", if: "async.data.buildId == event.data.buildId" }],
+    // if the run exhausts all retries, don't leave the row on "running" forever —
+    // a failed build frees the creator's quota so they can start over
+    onFailure: async ({ event, error }) => {
+      const data = event.data.event.data as Events["build/requested"];
+      if (!data?.buildId) return;
+      await db()
+        .from("builds")
+        .update({
+          status: "failed",
+          halted_at: "pipeline_error",
+          error: String(error?.message ?? error).slice(0, 500),
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", data.buildId)
+        .neq("status", "complete");
+    },
   },
   async ({ event, step }) => {
     const { buildId, creatorId, handle, selfDescription, rebuildOfBuildId } =
@@ -296,23 +313,37 @@ export const blueprintBuild = inngest.createFunction(
     const criticResults: Record<string, unknown> = {};
 
     // ---- 4. knowledge pack + critic, ≤2 retries ------------------------------
-    const pack = await step.run("knowledge", async () => {
-      await updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge" });
-      const usage = createUsageTracker();
-      const scoped = createPipelineApi(usage);
+    // one model call per step: a pack generation alone can run for minutes, and
+    // bundling generation + critic rounds into a single step used to blow past
+    // the serverless request timeout, so Inngest retried the whole thing forever
+    let pack!: KnowledgePack;
+    {
       const attempts: unknown[] = [];
-      let candidate = await scoped.buildKnowledgePack(topic, audience);
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const critic = await scoped.knowledgeCritic(candidate);
+      for (let ka = 1; ka <= 3; ka++) {
+        pack = (await step.run(`knowledge-pack-${ka}`, async () => {
+          await updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge" });
+          const usage = createUsageTracker();
+          const scoped = createPipelineApi(usage);
+          const candidate = await scoped.buildKnowledgePack(topic, audience);
+          await addCost(buildId, usage.cost_usd);
+          return candidate;
+        })) as KnowledgePack;
+        const snapshot = pack;
+        const critic = await step.run(`knowledge-critic-${ka}`, async () => {
+          const usage = createUsageTracker();
+          const scoped = createPipelineApi(usage);
+          const result = await scoped.knowledgeCritic(snapshot);
+          await addCost(buildId, usage.cost_usd);
+          return result;
+        });
         attempts.push(critic);
-        if (critic.pass || attempt === 2) break;
-        candidate = await scoped.buildKnowledgePack(topic, audience);
+        if (critic.pass) break;
       }
-      await addCost(buildId, usage.cost_usd);
       criticResults.knowledge = attempts;
-      await updateBuild(buildId, { critic_results: criticResults });
-      return candidate;
-    });
+      await step.run("knowledge-critics", () =>
+        updateBuild(buildId, { critic_results: criticResults })
+      );
+    }
 
     // ---- 5-8. quiz → briefs → render → swap, with one full retry on swap fail
     let quiz: Quiz | null = null;
@@ -418,13 +449,15 @@ export const blueprintBuild = inngest.createFunction(
         .slice(0, 4)
         .map((r) => r.id);
 
-      renders = await step.run(`render-${attempt}`, async () => {
-        await updateBuild(buildId, { ...STAGE_STATUS, stage: "render" });
-        const usage = createUsageTracker();
-        const scoped = createPipelineApi(usage);
-        const out: Record<string, Record<string, string>> = {};
-        for (const archetypeId of sampleArchetypes) {
-          out[archetypeId] = {};
+      // one step per archetype so a single invocation stays well under the
+      // serverless request timeout
+      renders = {};
+      for (const archetypeId of sampleArchetypes) {
+        renders[archetypeId] = await step.run(`render-${attempt}-${archetypeId}`, async () => {
+          await updateBuild(buildId, { ...STAGE_STATUS, stage: "render" });
+          const usage = createUsageTracker();
+          const scoped = createPipelineApi(usage);
+          const out: Record<string, string> = {};
           let prev = "";
           const label = quiz!.archetype_rules.find((r) => r.id === archetypeId)?.label ?? archetypeId;
           for (const section of skeleton.filter((s) => EVAL_SECTIONS.includes(s.id))) {
@@ -438,13 +471,13 @@ export const blueprintBuild = inngest.createFunction(
               section,
               previousEnding: prev.slice(-200),
             });
-            out[archetypeId][section.id] = prose;
+            out[section.id] = prose;
             prev = prose;
           }
-        }
-        await addCost(buildId, usage.cost_usd);
-        return out;
-      });
+          await addCost(buildId, usage.cost_usd);
+          return out;
+        });
+      }
 
       // swap test — deterministic and free, runs before the output critic
       const swap = await step.run(`swap-${attempt}`, async () => {
