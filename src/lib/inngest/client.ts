@@ -10,6 +10,8 @@ export interface Events {
     rebuildOfBuildId?: string;
   };
   "build/topic.chosen": { buildId: string; topicIndex: number };
+  /** Creator walked away at the idea-picking step; the build row is deleted. */
+  "build/discarded": { buildId: string };
   "build/samples.reviewed": { buildId: string; approved: boolean; reason?: string };
   "order/paid": { orderId: string };
 }

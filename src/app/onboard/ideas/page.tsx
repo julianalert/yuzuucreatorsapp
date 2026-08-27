@@ -3,7 +3,7 @@ import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { AppBar } from "@/components/AppBar";
 import { IdeaPicker } from "@/components/IdeaPicker";
-import { chooseTopic } from "../actions";
+import { chooseTopic, discardBuild } from "../actions";
 
 export default async function IdeasPage() {
   const creator = await requireCreator();
@@ -31,7 +31,12 @@ export default async function IdeasPage() {
             Pick one — the rest happens automatically.
           </p>
 
-          <IdeaPicker proposals={proposals} buildId={build.id} action={chooseTopic} />
+          <IdeaPicker
+            proposals={proposals}
+            buildId={build.id}
+            action={chooseTopic}
+            discardAction={discardBuild}
+          />
         </div>
       </div>
     </section>

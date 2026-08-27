@@ -109,9 +109,9 @@ export async function sendIdeasReady(to: string, handle: string) {
     to,
     "Your product ideas are ready",
     wrap(`
-      ${paragraph(`We read <strong style="color:${C.ink};font-weight:600;">@${handle}</strong> and found five products your audience would buy.`)}
+      ${paragraph(`We read <strong style="color:${C.ink};font-weight:600;">@${handle}</strong> and found 3 products your audience would buy — plus 1 wild card.`)}
       ${paragraph("Pick the one that feels most like you — the rest happens automatically.")}
-      ${button(appUrl("/onboard/ideas"), "See the five ideas")}
+      ${button(appUrl("/onboard/ideas"), "See the 3+1 ideas")}
     `)
   );
 }

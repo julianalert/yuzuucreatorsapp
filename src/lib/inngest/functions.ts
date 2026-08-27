@@ -93,6 +93,10 @@ export const blueprintBuild = inngest.createFunction(
     concurrency: { limit: 3 },
     retries: 2,
     triggers: [{ event: "build/requested" }],
+    // fired when the creator clicks "none of these fit" — the run is parked on
+    // wait-topic and the build row is gone, so kill it instead of letting it
+    // time out against a deleted row 7 days later
+    cancelOn: [{ event: "build/discarded", if: "async.data.buildId == event.data.buildId" }],
   },
   async ({ event, step }) => {
     const { buildId, creatorId, handle, selfDescription, rebuildOfBuildId } =

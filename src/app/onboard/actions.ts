@@ -79,6 +79,28 @@ export async function chooseTopic(formData: FormData) {
   redirect("/onboard/building");
 }
 
+export async function discardBuild(formData: FormData) {
+  const creator = await requireCreator();
+  const buildId = String(formData.get("build_id"));
+
+  const admin = supabaseAdmin();
+  const { data: build } = await admin
+    .from("builds")
+    .select("id, creator_id, status")
+    .eq("id", buildId)
+    .single();
+  // only deletable before anything expensive was built — the ideas step
+  if (!build || build.creator_id !== creator.id || build.status !== "awaiting_topic") {
+    redirect("/onboard");
+  }
+
+  await inngest.send({ name: "build/discarded", data: { buildId } });
+  const { error } = await admin.from("builds").delete().eq("id", buildId);
+  if (error) throw new Error(error.message);
+
+  redirect("/onboard");
+}
+
 export async function reviewSamples(formData: FormData) {
   const creator = await requireCreator();
   const buildId = String(formData.get("build_id"));

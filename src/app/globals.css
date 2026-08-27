@@ -315,7 +315,17 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
 .idea[aria-checked="true"] .tick i { transform: scale(1); }
 .idea h3 { font-family: var(--display); font-weight: 400; font-size: 20px; line-height: 1.25; letter-spacing: -0.012em; }
 .idea .promise { margin-top: 6px; font-size: 14.5px; color: var(--sage); line-height: 1.5; display: block; }
-.idea .who-chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.idea .who-group { margin-top: 14px; display: block; }
+.idea .who-label {
+  display: block;
+  margin-bottom: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+.idea .who-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -332,7 +342,7 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
   background: var(--accent, #e8d82b);
   border-color: var(--ink);
 }
-.scores { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.scores { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .score .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sage); display: block; }
 .score .v { margin-top: 5px; display: flex; align-items: center; gap: 7px; }
 .score .v b { font-family: var(--mono); font-size: 13px; font-weight: 500; }

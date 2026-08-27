@@ -109,7 +109,7 @@ export default async function OnboardPage({
 
             <div style={{ marginTop: 32, display: "flex", gap: 14, alignItems: "center" }}>
               <SubmitButton
-                label="Read my account"
+                label="Get product ideas that fit"
                 pendingLabel="Reading your account…"
                 hint="Takes about a minute"
               />
