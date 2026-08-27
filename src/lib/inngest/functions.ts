@@ -667,7 +667,8 @@ export const blueprintBuild = inngest.createFunction(
 export const planGenerate = inngest.createFunction(
   {
     id: "plan-generate",
-    concurrency: { limit: 10 },
+    // free Inngest plan caps concurrency at 5 — raise this when the plan allows
+    concurrency: { limit: 5 },
     retries: 2,
     triggers: [{ event: "order/paid" }],
   },

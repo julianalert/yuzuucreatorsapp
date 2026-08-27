@@ -92,17 +92,23 @@ export function BuildProgress({
   if (nowIdx === -1) nowIdx = initialStatus === "queued" ? 0 : 0;
 
   return (
-    <ul className="stages" style={{ marginTop: 34 }}>
-      {items.map((it, i) => {
-        const cls = i < nowIdx ? "done" : i === nowIdx ? "now" : "";
-        return (
-          <li key={it.label} className={cls}>
-            <span className="dot" />
-            <span>{it.label}</span>
-            <span className="t">{i < nowIdx ? "✓" : "—"}</span>
-          </li>
-        );
-      })}
-    </ul>
+    <div style={{ marginTop: 34 }}>
+      <div className="live-status" role="status" aria-live="polite">
+        <span className="spinner" aria-hidden="true" />
+        Working — this updates automatically
+      </div>
+      <ul className="stages" style={{ marginTop: 18 }}>
+        {items.map((it, i) => {
+          const cls = i < nowIdx ? "done" : i === nowIdx ? "now" : "";
+          return (
+            <li key={it.label} className={cls}>
+              <span className="dot" />
+              <span>{it.label}</span>
+              <span className="t">{i < nowIdx ? "✓" : "—"}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { AppBar } from "@/components/AppBar";
+import { SubmitButton } from "@/components/SubmitButton";
 import { startBuild } from "./actions";
 
 const ERRORS: Record<string, string> = {
@@ -107,10 +108,11 @@ export default async function OnboardPage({
             </div>
 
             <div style={{ marginTop: 32, display: "flex", gap: 14, alignItems: "center" }}>
-              <button className="btn btn-primary btn-lg" type="submit">
-                Read my account
-              </button>
-              <span style={{ fontSize: 13.5, color: "var(--sage)" }}>Takes about a minute</span>
+              <SubmitButton
+                label="Read my account"
+                pendingLabel="Reading your account…"
+                hint="Takes about a minute"
+              />
             </div>
           </form>
         </div>

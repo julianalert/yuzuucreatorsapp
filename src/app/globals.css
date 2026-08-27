@@ -112,6 +112,26 @@ h2 {
 .btn-ghost { background: none; border: none; color: var(--sage); padding: 10px 2px; }
 .btn-ghost:hover { color: var(--ink); }
 .btn-ghost:disabled { opacity: 0.35; cursor: default; }
+
+.btn-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  padding: 11px 2px;
+}
+.spinner {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--ink);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .btn-lg { padding: 14px 30px; font-size: 16px; }
 .btn-sm { padding: 9px 18px; font-size: 14px; }
 .btn-block { width: 100%; }
@@ -219,6 +239,14 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
 .card + .card { margin-top: 14px; }
 
 /* ── stage list (build progress) ────────────────────────── */
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
 .stages { list-style: none; display: flex; flex-direction: column; gap: 0; }
 .stages li {
   display: grid;
@@ -235,9 +263,22 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
 .stages li.done { color: var(--ink-soft); }
 .stages li.done .dot { background: var(--zest); border-color: var(--zest); }
 .stages li.now { color: var(--ink); font-weight: 500; }
-.stages li.now .dot { border-color: var(--ink); animation: pulse 1.4s ease-in-out infinite; }
+.stages li.now .dot {
+  position: relative;
+  border-color: var(--zest);
+  background: var(--zest);
+  border-radius: 50%;
+}
+.stages li.now .dot::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--zest);
+  animation: ping 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
 .stages .t { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--line-strong); }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes ping { 0% { transform: scale(0.7); opacity: 0.9; } 100% { transform: scale(2.1); opacity: 0; } }
 
 /* ── idea cards ─────────────────────────────────────────── */
 .ideas { display: flex; flex-direction: column; gap: 10px; margin-top: 32px; }
