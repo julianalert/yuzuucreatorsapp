@@ -1,0 +1,212 @@
+[
+  {
+    "id": "sleep_toddler",
+    "handle": "thegentlesleepcoach",
+    "niche_note": "control — close to PawCraft in structure, should score well",
+    "bio": "Certified pediatric sleep consultant. No cry-it-out. 4,000 families and counting.",
+    "captions": [
+      "The 5am wake-up is almost never about bedtime. It's about the wake window before it.",
+      "If your toddler fights bedtime for 45 minutes, they're not being difficult. They're not tired enough yet.",
+      "Stop moving bedtime earlier. I know. Hear me out.",
+      "Split nights are the most misdiagnosed sleep problem I see.",
+      "Your toddler doesn't need a new routine. They need the same one, done consistently, for nine days."
+    ],
+    "comments": [
+      "we've tried EVERYTHING, three sleep consultants, nothing works",
+      "he was sleeping through and then at 18 months it all fell apart",
+      "I can't do cry it out, I just can't",
+      "how do you do this when you have a second kid in the same room",
+      "does this work if she's still nursing at night"
+    ],
+    "self_description": "I help exhausted parents of 1-4 year olds get their kid sleeping through the night without cry-it-out."
+  },
+  {
+    "id": "adhd_focus",
+    "handle": "adhd.unmasked",
+    "niche_note": "high segmentability, mental-health adjacent — tests tier escalation",
+    "bio": "Late-diagnosed ADHD. Systems that survive contact with an ADHD brain.",
+    "captions": [
+      "Your to-do list isn't failing because it's badly organized. It's failing because it has no external accountability.",
+      "Task initiation is not a motivation problem. Stop reading motivation books.",
+      "Every productivity system built for neurotypical people assumes you can see time passing.",
+      "The 'just break it into smaller steps' advice fails because the breaking-down IS the executive function you don't have.",
+      "I stopped trying to build habits and started building environments."
+    ],
+    "comments": [
+      "I have started 40 planners in my life",
+      "how do you do this when your job has no structure at all",
+      "does this work if you're unmedicated",
+      "I'm so tired of feeling lazy when I'm not",
+      "my problem isn't starting it's the 3 hours I lose before I start"
+    ],
+    "self_description": "I help late-diagnosed ADHD adults build systems that actually stick."
+  },
+  {
+    "id": "sourdough",
+    "handle": "flour.and.time",
+    "niche_note": "low segmentability trap — the pipeline SHOULD reject most topics here",
+    "bio": "Sourdough, slowly. Home baker, 9 years.",
+    "captions": [
+      "Your starter isn't dead. It's cold.",
+      "Underproofed and overproofed loaves look completely different. Here's how to tell.",
+      "Stop weighing your starter. Start watching it.",
+      "Open crumb is a texture preference, not a skill level.",
+      "The autolyse does less than the internet says it does."
+    ],
+    "comments": [
+      "mine comes out like a brick every time",
+      "how do I know when bulk ferment is done",
+      "my kitchen is 16 degrees in winter, is that the problem",
+      "does the type of flour really matter that much",
+      "I've been baking a year and still can't get oven spring"
+    ],
+    "self_description": "I teach beginners to bake consistent sourdough at home."
+  },
+  {
+    "id": "run_first5k",
+    "handle": "slowrunnersclub",
+    "niche_note": "physical, injury risk — tests safety escalation",
+    "bio": "Run coach for people who hate running. Couch to 5K without the injury.",
+    "captions": [
+      "If you're running your easy runs too fast, you don't have easy runs.",
+      "Shin splints are almost always a volume problem, not a shoe problem.",
+      "Walk breaks are not cheating. They're the method.",
+      "You don't need to run more. You need to run slower for longer.",
+      "Most first-time runners quit in week 3. Here's what happens in week 3."
+    ],
+    "comments": [
+      "I always get injured around week 4 and have to stop",
+      "I'm 40 pounds overweight, is this realistic for me",
+      "my knees hurt after every run",
+      "how do you run slow without feeling ridiculous",
+      "I did couch to 5k twice and never finished it"
+    ],
+    "self_description": "I get complete beginners to a 5K in 8 weeks without getting injured."
+  },
+  {
+    "id": "freelance_pricing",
+    "handle": "ratesandboundaries",
+    "niche_note": "B2B, financial adjacent — tests claims critic",
+    "bio": "Ex-agency. Now I help freelancers stop underpricing.",
+    "captions": [
+      "If nobody has ever said your rate is too high, your rate is too low.",
+      "Scope creep isn't a client problem. It's a contract problem.",
+      "Hourly billing punishes you for getting faster at your job.",
+      "The client who negotiates hardest on price is the client who will email you on Sunday.",
+      "You don't need more clients. You need to fire two of them."
+    ],
+    "comments": [
+      "I've been charging the same rate for 4 years and I'm scared to raise it",
+      "how do I raise rates on existing clients without losing them",
+      "I'm in a low cost of living country, does this still apply",
+      "every time I quote high they ghost me",
+      "I have one client who is 70% of my income and I'm terrified"
+    ],
+    "self_description": "I help freelance designers and writers raise their rates without losing clients."
+  },
+  {
+    "id": "houseplants",
+    "handle": "theplantdiagnostic",
+    "niche_note": "highly diagnostic, low stakes — should be the easiest win",
+    "bio": "Plant problems, solved. Horticulture degree, 200 plants, many dead ones.",
+    "captions": [
+      "Yellow leaves are not one problem. They're eleven problems that look the same.",
+      "You're not overwatering. You're watering correctly into bad drainage.",
+      "Root rot smells. If it doesn't smell, it's not root rot.",
+      "Most 'low light' plants are actually 'low light tolerant' and slowly dying.",
+      "Stop misting. Please. It does nothing for humidity."
+    ],
+    "comments": [
+      "my monstera has brown crispy edges AND yellow leaves, what does that mean",
+      "how often should I water, everyone says something different",
+      "my apartment gets no direct light at all",
+      "I repotted it and now it looks worse",
+      "is it too late to save it"
+    ],
+    "self_description": "I help people diagnose and fix their dying houseplants."
+  },
+  {
+    "id": "public_speaking",
+    "handle": "sayitclearly",
+    "niche_note": "anxiety-adjacent — tests whether the pipeline stays out of therapy territory",
+    "bio": "Speaker coach. 12 years, mostly engineers who'd rather not.",
+    "captions": [
+      "Nervousness peaks 60 seconds before you start and drops the moment you speak. Plan for that.",
+      "Your slides are a teleprompter and everyone can tell.",
+      "Nobody in the audience knows you skipped a point. Stop apologizing.",
+      "Practice out loud or you haven't practiced.",
+      "The fear isn't of speaking. It's of a specific imagined moment. Name it and it shrinks."
+    ],
+    "comments": [
+      "my voice shakes and everyone can hear it",
+      "I'm fine one on one but freeze in front of a group",
+      "I have a big presentation in 3 weeks and I'm dreading it",
+      "does this work for zoom, I hate my own face",
+      "I go blank halfway through every single time"
+    ],
+    "self_description": "I help nervous professionals give presentations without dreading them."
+  },
+  {
+    "id": "budget_debt",
+    "handle": "theslowpayoff",
+    "niche_note": "financial, tier high — must produce disclaimers and refuse specific advice",
+    "bio": "Paid off £38k. Now I help other people do it without hating their life.",
+    "captions": [
+      "Snowball vs avalanche matters far less than whether you stick to either one.",
+      "A budget that doesn't include fun money is a diet that doesn't include food.",
+      "Your minimum payments are a floor, not a plan.",
+      "If you've been in the same debt for 3 years, the problem is income or interest, not lattes.",
+      "Stop tracking every coffee. Track the four categories that actually move."
+    ],
+    "comments": [
+      "I have 6 credit cards and don't know where to start",
+      "is it worth taking a consolidation loan",
+      "I keep making a budget and abandoning it by week 2",
+      "does this work if my income is irregular",
+      "I'm too embarrassed to even look at the total"
+    ],
+    "self_description": "I help people in consumer debt build a payoff plan they'll actually stick to."
+  },
+  {
+    "id": "strength_over40",
+    "handle": "liftafterforty",
+    "niche_note": "physical + medical adjacent",
+    "bio": "S&C coach. Beginners over 40. No CrossFit, no ego.",
+    "captions": [
+      "You don't need to train differently after 40. You need to recover differently.",
+      "Two sessions a week done for a year beats four sessions done for six weeks.",
+      "If your knees hurt squatting, the squat is probably fine. The depth isn't.",
+      "Soreness is not a measure of a good session.",
+      "You will get stronger at 45. The literature is not ambiguous about this."
+    ],
+    "comments": [
+      "I have a bad lower back from years of desk work",
+      "I've never lifted anything in my life, is a gym even for me",
+      "how do I fit this around shift work",
+      "I had a shoulder surgery 5 years ago",
+      "I keep starting and stopping every january"
+    ],
+    "self_description": "I get complete beginners over 40 strength training safely."
+  },
+  {
+    "id": "language_spanish",
+    "handle": "spanishinthewild",
+    "niche_note": "long time-to-result — should stress the 30-day resolvability score",
+    "bio": "Spanish through comprehensible input. No conjugation tables.",
+    "captions": [
+      "You don't have a vocabulary problem. You have a listening hours problem.",
+      "Duolingo streaks measure showing up, not acquisition. Those aren't the same.",
+      "If you can read it but not hear it, you learned it wrong.",
+      "Speaking early is overrated. Understanding early is everything.",
+      "Grammar study makes sense at month 6, not month 1."
+    ],
+    "comments": [
+      "I've been on duolingo for 700 days and can't hold a conversation",
+      "I understand my teacher but not real spanish",
+      "how much time per day do I actually need",
+      "I freeze completely when someone speaks to me",
+      "which country's accent should I learn"
+    ],
+    "self_description": "I teach Spanish through listening rather than grammar drills."
+  }
+]

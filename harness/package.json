@@ -1,0 +1,19 @@
+{
+  "name": "blueprint-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline quality harness for the creator blueprint pipeline",
+  "scripts": {
+    "scrape": "node scrape.mjs",
+    "ingest": "node ingest.mjs",
+    "test": "node run.mjs --mock",
+    "run": "node run.mjs --input creators.real.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

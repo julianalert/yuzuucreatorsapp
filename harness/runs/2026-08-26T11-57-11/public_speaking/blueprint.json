@@ -1,0 +1,669 @@
+{
+  "blueprint_id": "bp_public_speaking_v1",
+  "blueprint_version": 1,
+  "status": "complete",
+  "creator": {
+    "handle": "sayitclearly",
+    "audience_card": {
+      "who": "Audience of sayitclearly.",
+      "core_promise": "I help nervous professionals give presentations without dreading them.",
+      "vocabulary": [
+        "threshold",
+        "baseline",
+        "consistency"
+      ],
+      "audience_words": [
+        "my voice shakes and everyone can hear it",
+        "I'm fine one on one but freeze in front of a group",
+        "I have a big presentation in 3 weeks and I'm dreading it"
+      ],
+      "objections": [
+        "my voice shakes and everyone can hear it",
+        "I'm fine one on one but freeze in front of a group"
+      ],
+      "tone_notes": "Direct, competent, no fluff.",
+      "credibility_basis": "Speaker coach. 12 years, mostly engineers who'd rather not.",
+      "confidence": {
+        "who": 0.8,
+        "core_promise": 0.85,
+        "objections": 0.7
+      }
+    }
+  },
+  "product": {
+    "topic_title": "The 30-Day sayitclearly Reset",
+    "promise": "I help nervous professionals give presentations without dreading them.",
+    "duration_days": 30,
+    "price_usd": 27
+  },
+  "knowledge_pack": {
+    "segments": [
+      {
+        "id": "seg_0",
+        "label": "Segment 0",
+        "prevalence": "high",
+        "root_cause": "Root cause 0"
+      },
+      {
+        "id": "seg_1",
+        "label": "Segment 1",
+        "prevalence": "high",
+        "root_cause": "Root cause 1"
+      },
+      {
+        "id": "seg_2",
+        "label": "Segment 2",
+        "prevalence": "high",
+        "root_cause": "Root cause 2"
+      },
+      {
+        "id": "seg_3",
+        "label": "Segment 3",
+        "prevalence": "high",
+        "root_cause": "Root cause 3"
+      },
+      {
+        "id": "seg_4",
+        "label": "Segment 4",
+        "prevalence": "high",
+        "root_cause": "Root cause 4"
+      },
+      {
+        "id": "seg_5",
+        "label": "Segment 5",
+        "prevalence": "high",
+        "root_cause": "Root cause 5"
+      },
+      {
+        "id": "seg_6",
+        "label": "Segment 6",
+        "prevalence": "high",
+        "root_cause": "Root cause 6"
+      }
+    ],
+    "mechanisms": [
+      {
+        "id": "mech_0",
+        "name": "Mechanism 0",
+        "why_it_works": "Causal chain 0.",
+        "applies_to_segments": [
+          "seg_0"
+        ]
+      },
+      {
+        "id": "mech_1",
+        "name": "Mechanism 1",
+        "why_it_works": "Causal chain 1.",
+        "applies_to_segments": [
+          "seg_1"
+        ]
+      },
+      {
+        "id": "mech_2",
+        "name": "Mechanism 2",
+        "why_it_works": "Causal chain 2.",
+        "applies_to_segments": [
+          "seg_2"
+        ]
+      },
+      {
+        "id": "mech_3",
+        "name": "Mechanism 3",
+        "why_it_works": "Causal chain 3.",
+        "applies_to_segments": [
+          "seg_3"
+        ]
+      },
+      {
+        "id": "mech_4",
+        "name": "Mechanism 4",
+        "why_it_works": "Causal chain 4.",
+        "applies_to_segments": [
+          "seg_4"
+        ]
+      },
+      {
+        "id": "mech_5",
+        "name": "Mechanism 5",
+        "why_it_works": "Causal chain 5.",
+        "applies_to_segments": [
+          "seg_5"
+        ]
+      }
+    ],
+    "false_beliefs": [
+      {
+        "belief": "x",
+        "correction": "y"
+      }
+    ],
+    "glossary": {
+      "threshold": "the point past which it stops working"
+    }
+  },
+  "quiz": {
+    "questions": [
+      {
+        "id": "q_stage",
+        "question": "Where are you now?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "week_1"
+        ],
+        "modifies": [],
+        "options": [
+          {
+            "value": "early",
+            "label": "Just starting",
+            "signals": {
+              "stage": "early"
+            }
+          },
+          {
+            "value": "stuck",
+            "label": "Been stuck a while",
+            "signals": {
+              "stage": "stuck"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_cause",
+        "question": "What's the main obstacle?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "mechanism",
+          "troubleshooting"
+        ],
+        "modifies": [],
+        "options": [
+          {
+            "value": "time",
+            "label": "No time",
+            "signals": {
+              "cause": "time"
+            }
+          },
+          {
+            "value": "method",
+            "label": "Tried things that failed",
+            "signals": {
+              "cause": "method"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_history",
+        "question": "What have you tried?",
+        "type": "multi",
+        "required": true,
+        "drives": [
+          "mechanism",
+          "regression"
+        ],
+        "modifies": [],
+        "options": [
+          {
+            "value": "nothing",
+            "label": "Nothing structured",
+            "signals": {
+              "tried": "none"
+            }
+          },
+          {
+            "value": "lots",
+            "label": "Several things",
+            "signals": {
+              "tried": "lots"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_budget",
+        "question": "How long per day?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "week_1",
+          "week_2",
+          "week_3",
+          "week_4"
+        ],
+        "modifies": [
+          "constraints",
+          "pacing"
+        ],
+        "options": [
+          {
+            "value": "5",
+            "label": "5 minutes",
+            "signals": {
+              "budget": 5
+            }
+          },
+          {
+            "value": "20",
+            "label": "20 minutes",
+            "signals": {
+              "budget": 20
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_context",
+        "question": "What's your situation?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "week_2",
+          "week_3"
+        ],
+        "modifies": [],
+        "options": [
+          {
+            "value": "solo",
+            "label": "On my own",
+            "signals": {
+              "context": "solo"
+            }
+          },
+          {
+            "value": "shared",
+            "label": "Others involved",
+            "signals": {
+              "context": "shared"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_pressure",
+        "question": "Any deadline?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "week_4",
+          "regression"
+        ],
+        "modifies": [
+          "pacing"
+        ],
+        "options": [
+          {
+            "value": "yes",
+            "label": "Yes",
+            "signals": {
+              "deadline": true
+            }
+          },
+          {
+            "value": "no",
+            "label": "No",
+            "signals": {
+              "deadline": false
+            }
+          }
+        ]
+      }
+    ],
+    "archetype_rules": [
+      {
+        "id": "arch_a",
+        "label": "Archetype 0",
+        "priority": 10,
+        "archetype_rationale": "Differs by 0",
+        "match": {
+          "all": [
+            {
+              "signal": "stage",
+              "in": [
+                "early"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_b",
+        "label": "Archetype 1",
+        "priority": 11,
+        "archetype_rationale": "Differs by 1",
+        "match": {
+          "all": [
+            {
+              "signal": "cause",
+              "in": [
+                "time"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_c",
+        "label": "Archetype 2",
+        "priority": 12,
+        "archetype_rationale": "Differs by 2",
+        "match": {
+          "all": [
+            {
+              "signal": "stage",
+              "in": [
+                "early"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_d",
+        "label": "Archetype 3",
+        "priority": 13,
+        "archetype_rationale": "Differs by 3",
+        "match": {
+          "all": [
+            {
+              "signal": "cause",
+              "in": [
+                "time"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "fallback_archetype": "arch_general"
+  },
+  "output": {
+    "skeleton": [
+      {
+        "id": "diagnosis",
+        "title": "What's actually going on",
+        "target_words": 350
+      },
+      {
+        "id": "mechanism",
+        "title": "Why what you've tried hasn't stuck",
+        "target_words": 300
+      },
+      {
+        "id": "week_1",
+        "title": "Week 1",
+        "target_words": 700
+      },
+      {
+        "id": "week_2",
+        "title": "Week 2",
+        "target_words": 700
+      },
+      {
+        "id": "week_3",
+        "title": "Week 3",
+        "target_words": 700
+      },
+      {
+        "id": "week_4",
+        "title": "Week 4",
+        "target_words": 700
+      },
+      {
+        "id": "troubleshooting",
+        "title": "When it goes sideways",
+        "target_words": 500
+      },
+      {
+        "id": "regression",
+        "title": "If you lose ground",
+        "target_words": 250
+      }
+    ],
+    "content_bank": {
+      "diagnosis::arch_a": {
+        "brief": "Brief for arch_a, section diagnosis.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "week_1::arch_a": {
+        "brief": "Brief for arch_a, section week_1.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ],
+        "week_theme": "mock theme"
+      },
+      "troubleshooting::arch_a": {
+        "brief": "Brief for arch_a, section troubleshooting.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "diagnosis::arch_b": {
+        "brief": "Brief for arch_b, section diagnosis.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "week_1::arch_b": {
+        "brief": "Brief for arch_b, section week_1.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ],
+        "week_theme": "mock theme"
+      },
+      "troubleshooting::arch_b": {
+        "brief": "Brief for arch_b, section troubleshooting.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "diagnosis::arch_c": {
+        "brief": "Brief for arch_c, section diagnosis.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "week_1::arch_c": {
+        "brief": "Brief for arch_c, section week_1.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ],
+        "week_theme": "mock theme"
+      },
+      "troubleshooting::arch_c": {
+        "brief": "Brief for arch_c, section troubleshooting.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "diagnosis::arch_d": {
+        "brief": "Brief for arch_d, section diagnosis.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      },
+      "week_1::arch_d": {
+        "brief": "Brief for arch_d, section week_1.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ],
+        "week_theme": "mock theme"
+      },
+      "troubleshooting::arch_d": {
+        "brief": "Brief for arch_d, section troubleshooting.",
+        "must_include": [
+          "point one",
+          "point two",
+          "point three"
+        ],
+        "must_avoid": [
+          "thing one",
+          "thing two"
+        ],
+        "mechanism_refs": [
+          "mech_0"
+        ]
+      }
+    },
+    "voice": {
+      "reading_level": "grade 8",
+      "person": "second",
+      "banned_phrases": [
+        "unlock",
+        "game-changer",
+        "In today's world",
+        "journey",
+        "dive in"
+      ],
+      "tone_notes": "Direct, competent, no fluff."
+    },
+    "personalization_tokens": []
+  },
+  "safety": {
+    "domain_risk_tier": "low",
+    "disclaimers": [],
+    "banned_claims": [],
+    "escalation_triggers": []
+  },
+  "eval": {
+    "rubric": [
+      {
+        "id": "specificity",
+        "weight": 0.3,
+        "fail_below": 7
+      },
+      {
+        "id": "actionability",
+        "weight": 0.25,
+        "fail_below": 7
+      },
+      {
+        "id": "mechanism",
+        "weight": 0.2,
+        "fail_below": 6
+      },
+      {
+        "id": "voice_match",
+        "weight": 0.15,
+        "fail_below": 6
+      },
+      {
+        "id": "claims_safety",
+        "weight": 0.1,
+        "fail_below": 9
+      }
+    ],
+    "swap_test": {
+      "min_divergence_pct": 40
+    },
+    "thresholds": {
+      "min_weighted_score": 7.5
+    }
+  }
+}

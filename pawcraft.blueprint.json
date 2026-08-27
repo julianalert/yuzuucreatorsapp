@@ -1,0 +1,1665 @@
+{
+  "blueprint_id": "bp_pawcraft_v2",
+  "blueprint_version": 2,
+  "archetype_version": "transformation_plan_v1",
+  "status": "complete",
+  "created_at": "2026-08-25T10:00:00Z",
+  "supersedes": "bp_pawcraft_v1",
+  "creator": {
+    "handle": "mypawcraft",
+    "display_name": "PawCraft",
+    "credibility_statement": "Training plans built on how dogs actually learn, not on dominance myths.",
+    "audience_card": {
+      "who": "First-time and second-time owners of high-drive or adolescent dogs. Mostly suburban, walking their dog alone, embarrassed on the street.",
+      "core_promise": "A dog you can actually walk, in 30 days, without special equipment.",
+      "vocabulary": [
+        "reactivity",
+        "threshold",
+        "loose leash",
+        "marker word",
+        "arousal",
+        "recall",
+        "engagement"
+      ],
+      "objections": [
+        "I've already tried three trainers",
+        "My dog is different / too stubborn",
+        "I don't have an hour a day"
+      ],
+      "tone_notes": "Direct, warm, treats the owner as a competent adult. No baby talk, no shaming, no 'furbaby'."
+    }
+  },
+  "product": {
+    "topic_title": "The 30-Day Loose Leash Reset",
+    "promise": "Walk your dog on a loose leash in 30 days, 15 minutes a day, with the gear you already own.",
+    "duration_days": 30,
+    "phase_length_days": 7,
+    "price_usd": 27,
+    "format": "pdf"
+  },
+  "knowledge_pack": {
+    "segments": [
+      {
+        "id": "seg_adolescent",
+        "label": "Adolescent regression",
+        "prevalence": "high",
+        "root_cause": "Hormonal and neurological change at 6-18 months collapses previously reliable behaviour."
+      },
+      {
+        "id": "seg_understim",
+        "label": "Under-stimulated",
+        "prevalence": "high",
+        "root_cause": "Physical and cognitive needs unmet, so the walk becomes the only outlet and arousal spikes at the door."
+      },
+      {
+        "id": "seg_reactive",
+        "label": "Trigger-reactive",
+        "prevalence": "medium",
+        "root_cause": "Pulling is an attempt to close or increase distance to a specific trigger, not a leash problem."
+      },
+      {
+        "id": "seg_never_taught",
+        "label": "Never actually taught",
+        "prevalence": "high",
+        "root_cause": "The dog has been walked for years but the loose-leash criterion was never trained; pulling has been reinforced by forward motion."
+      },
+      {
+        "id": "seg_anxious",
+        "label": "Environmentally anxious",
+        "prevalence": "medium",
+        "root_cause": "Pulling is escape-motivated; the dog is trying to get home, not get ahead."
+      },
+      {
+        "id": "seg_puppy",
+        "label": "Untrained puppy",
+        "prevalence": "medium",
+        "root_cause": "No foundation yet; nothing to fix, everything to build."
+      }
+    ],
+    "mechanisms": [
+      {
+        "id": "mech_forward_motion",
+        "name": "Forward motion is the reinforcer",
+        "why_it_works": "Every step taken while the leash is tight pays the dog for pulling. Stopping removes the only reward that matters, which is why the technique works without treats.",
+        "applies_to_segments": [
+          "seg_never_taught",
+          "seg_understim",
+          "seg_puppy"
+        ]
+      },
+      {
+        "id": "mech_arousal_threshold",
+        "name": "Working under threshold",
+        "why_it_works": "A dog above its arousal threshold cannot access learned behaviour; the training only sticks when practised at a distance or intensity where the dog can still think.",
+        "applies_to_segments": [
+          "seg_reactive",
+          "seg_anxious",
+          "seg_adolescent"
+        ]
+      },
+      {
+        "id": "mech_pre_walk_drain",
+        "name": "Pre-walk arousal drain",
+        "why_it_works": "Two minutes of sniffing or scatter-feeding before the door lowers the baseline arousal the walk starts from, so the first five minutes stop being the worst five minutes.",
+        "applies_to_segments": [
+          "seg_understim",
+          "seg_adolescent"
+        ]
+      },
+      {
+        "id": "mech_engagement_first",
+        "name": "Buy engagement before asking for behaviour",
+        "why_it_works": "A dog that will not check in with you outdoors has no channel through which to receive instruction. Engagement is trained as a behaviour in its own right before leash criteria are introduced.",
+        "applies_to_segments": [
+          "seg_adolescent",
+          "seg_reactive",
+          "seg_never_taught"
+        ]
+      },
+      {
+        "id": "mech_criteria_split",
+        "name": "Split the criteria",
+        "why_it_works": "Most failures are the owner asking for a behaviour in a harder environment than the dog has ever succeeded in. Progress happens by changing one variable at a time: distance, duration, distraction.",
+        "applies_to_segments": [
+          "seg_adolescent",
+          "seg_reactive",
+          "seg_never_taught",
+          "seg_puppy",
+          "seg_anxious"
+        ]
+      },
+      {
+        "id": "mech_decompression",
+        "name": "Sniff walks are not lazy walks",
+        "why_it_works": "Scent work lowers heart rate and produces more mental fatigue per minute than distance walking, which reduces the arousal that drives pulling on the next structured walk.",
+        "applies_to_segments": [
+          "seg_understim",
+          "seg_anxious",
+          "seg_adolescent"
+        ]
+      }
+    ],
+    "false_beliefs": [
+      {
+        "belief": "My dog pulls because he's trying to be the alpha.",
+        "correction": "Dominance theory was drawn from captive wolf studies that its own author later retracted. Pulling is reinforced behaviour, not a status bid."
+      },
+      {
+        "belief": "He knows he's doing wrong, look at his face.",
+        "correction": "That expression is appeasement in response to your body language, not guilt. It tells you nothing about what the dog learned."
+      },
+      {
+        "belief": "A no-pull harness will fix it.",
+        "correction": "Equipment manages the symptom while it's on and teaches nothing. It's a useful bridge, never the plan."
+      },
+      {
+        "belief": "He's too old to learn this.",
+        "correction": "Acquisition slows slightly with age but the mechanism is unchanged. Long-reinforced habits take longer to compete with, which is a duration problem, not a capacity one."
+      }
+    ],
+    "glossary": {
+      "threshold": "The point past which the dog can no longer respond to known cues.",
+      "marker": "A short sound that means the reward is coming.",
+      "engagement": "The dog voluntarily checking in with you."
+    }
+  },
+  "quiz": {
+    "questions": [
+      {
+        "id": "q_age",
+        "question": "How old is your dog?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "mechanism",
+          "week_1"
+        ],
+        "options": [
+          {
+            "value": "under_6m",
+            "label": "Under 6 months",
+            "signals": {
+              "life_stage": "puppy"
+            }
+          },
+          {
+            "value": "6_18m",
+            "label": "6 to 18 months",
+            "signals": {
+              "life_stage": "adolescent"
+            }
+          },
+          {
+            "value": "18m_7y",
+            "label": "18 months to 7 years",
+            "signals": {
+              "life_stage": "adult"
+            }
+          },
+          {
+            "value": "over_7",
+            "label": "Over 7 years",
+            "signals": {
+              "life_stage": "senior"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_worst_moment",
+        "question": "When is the pulling at its worst?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "week_1",
+          "week_2",
+          "troubleshooting"
+        ],
+        "options": [
+          {
+            "value": "first_minutes",
+            "label": "The first five minutes out the door",
+            "signals": {
+              "arousal_pattern": "anticipatory",
+              "root_cause_hint": "under_stimulation"
+            }
+          },
+          {
+            "value": "sees_trigger",
+            "label": "When another dog or a person appears",
+            "signals": {
+              "arousal_pattern": "trigger_bound",
+              "root_cause_hint": "reactivity"
+            }
+          },
+          {
+            "value": "whole_walk",
+            "label": "The entire walk, consistently",
+            "signals": {
+              "arousal_pattern": "constant",
+              "root_cause_hint": "never_taught"
+            }
+          },
+          {
+            "value": "way_home",
+            "label": "On the way home, or when we turn back",
+            "signals": {
+              "arousal_pattern": "escape",
+              "root_cause_hint": "anxiety"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_trigger_response",
+        "question": "When something sets your dog off, what does it look like?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "week_2",
+          "troubleshooting",
+          "safety_check"
+        ],
+        "options": [
+          {
+            "value": "lunge_bark",
+            "label": "Lunging and barking",
+            "signals": {
+              "intensity": "high",
+              "root_cause_hint": "reactivity"
+            }
+          },
+          {
+            "value": "freeze_stare",
+            "label": "Freezing and staring",
+            "signals": {
+              "intensity": "high",
+              "root_cause_hint": "reactivity"
+            }
+          },
+          {
+            "value": "pull_toward",
+            "label": "Pulling toward it, tail wagging",
+            "signals": {
+              "intensity": "medium",
+              "root_cause_hint": "under_stimulation"
+            }
+          },
+          {
+            "value": "avoid",
+            "label": "Trying to get away or hide",
+            "signals": {
+              "intensity": "medium",
+              "root_cause_hint": "anxiety"
+            }
+          },
+          {
+            "value": "nothing",
+            "label": "Nothing in particular sets him off",
+            "signals": {
+              "intensity": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_exercise",
+        "question": "Roughly how much does your dog get out each day?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "week_1"
+        ],
+        "options": [
+          {
+            "value": "under_30",
+            "label": "Under 30 minutes",
+            "signals": {
+              "exercise_load": "low",
+              "root_cause_hint": "under_stimulation"
+            }
+          },
+          {
+            "value": "30_60",
+            "label": "30 to 60 minutes",
+            "signals": {
+              "exercise_load": "moderate"
+            }
+          },
+          {
+            "value": "over_60",
+            "label": "More than an hour",
+            "signals": {
+              "exercise_load": "high"
+            }
+          }
+        ],
+        "modifies": [
+          "constraints",
+          "pacing"
+        ]
+      },
+      {
+        "id": "q_enrichment",
+        "question": "Does your dog get anything mentally demanding — sniffing time, puzzle feeders, training games?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "diagnosis",
+          "week_1",
+          "week_3"
+        ],
+        "options": [
+          {
+            "value": "none",
+            "label": "Not really",
+            "signals": {
+              "enrichment": "none",
+              "root_cause_hint": "under_stimulation"
+            }
+          },
+          {
+            "value": "some",
+            "label": "Occasionally",
+            "signals": {
+              "enrichment": "low"
+            }
+          },
+          {
+            "value": "daily",
+            "label": "Most days",
+            "signals": {
+              "enrichment": "good"
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_time_budget",
+        "question": "Realistically, how long can you train each day?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "week_1",
+          "week_2",
+          "week_3",
+          "week_4"
+        ],
+        "options": [
+          {
+            "value": "5",
+            "label": "About 5 minutes",
+            "signals": {
+              "time_budget_min": 5
+            }
+          },
+          {
+            "value": "15",
+            "label": "10 to 15 minutes",
+            "signals": {
+              "time_budget_min": 15
+            }
+          },
+          {
+            "value": "30",
+            "label": "30 minutes or more",
+            "signals": {
+              "time_budget_min": 30
+            }
+          }
+        ],
+        "modifies": [
+          "constraints",
+          "pacing"
+        ]
+      },
+      {
+        "id": "q_prior_attempts",
+        "question": "What have you already tried?",
+        "type": "multi",
+        "required": true,
+        "drives": [
+          "mechanism",
+          "troubleshooting",
+          "regression"
+        ],
+        "options": [
+          {
+            "value": "no_pull_harness",
+            "label": "A no-pull harness or head collar",
+            "signals": {
+              "tried_equipment": true
+            }
+          },
+          {
+            "value": "treats",
+            "label": "Treats on walks",
+            "signals": {
+              "tried_luring": true
+            }
+          },
+          {
+            "value": "trainer",
+            "label": "A trainer or group class",
+            "signals": {
+              "tried_professional": true
+            }
+          },
+          {
+            "value": "corrections",
+            "label": "Leash corrections or a prong/e-collar",
+            "signals": {
+              "tried_aversive": true
+            }
+          },
+          {
+            "value": "nothing",
+            "label": "Nothing structured yet",
+            "signals": {
+              "tried_nothing": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "q_bite_history",
+        "question": "Has your dog ever made contact with a person or another dog with their teeth?",
+        "type": "single",
+        "required": true,
+        "drives": [
+          "safety_check",
+          "troubleshooting"
+        ],
+        "options": [
+          {
+            "value": "yes",
+            "label": "Yes",
+            "signals": {
+              "bite_history": true
+            }
+          },
+          {
+            "value": "no",
+            "label": "No",
+            "signals": {
+              "bite_history": false
+            }
+          }
+        ]
+      }
+    ],
+    "archetype_rules": [
+      {
+        "id": "arch_understimulated_adolescent",
+        "label": "The under-exercised adolescent",
+        "priority": 20,
+        "match": {
+          "all": [
+            {
+              "signal": "life_stage",
+              "in": [
+                "adolescent"
+              ]
+            },
+            {
+              "signal": "root_cause_hint",
+              "in": [
+                "under_stimulation"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_reactive_threshold",
+        "label": "The trigger-reactive walker",
+        "priority": 30,
+        "match": {
+          "all": [
+            {
+              "signal": "root_cause_hint",
+              "in": [
+                "reactivity"
+              ]
+            },
+            {
+              "signal": "intensity",
+              "in": [
+                "high"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_anxious_escaper",
+        "label": "The dog who wants to go home",
+        "priority": 25,
+        "match": {
+          "all": [
+            {
+              "signal": "root_cause_hint",
+              "in": [
+                "anxiety"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_never_taught_adult",
+        "label": "The adult who was never actually taught",
+        "priority": 15,
+        "match": {
+          "all": [
+            {
+              "signal": "life_stage",
+              "in": [
+                "adult",
+                "senior"
+              ]
+            },
+            {
+              "signal": "root_cause_hint",
+              "in": [
+                "never_taught"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_foundation_puppy",
+        "label": "The blank-slate puppy",
+        "priority": 18,
+        "match": {
+          "all": [
+            {
+              "signal": "life_stage",
+              "in": [
+                "puppy"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "arch_overtrained_undereffective",
+        "label": "The owner who has tried everything",
+        "priority": 12,
+        "match": {
+          "all": [
+            {
+              "signal": "tried_professional",
+              "equals": true
+            },
+            {
+              "signal": "tried_equipment",
+              "equals": true
+            }
+          ]
+        }
+      }
+    ],
+    "fallback_archetype": "arch_general_puller"
+  },
+  "output": {
+    "skeleton": [
+      {
+        "id": "diagnosis",
+        "title": "What's actually going on with {dog_name}",
+        "target_words": 350
+      },
+      {
+        "id": "mechanism",
+        "title": "Why what you've tried hasn't stuck",
+        "target_words": 300
+      },
+      {
+        "id": "safety_check",
+        "title": "Before you start",
+        "target_words": 150,
+        "conditional": true
+      },
+      {
+        "id": "week_1",
+        "title": "Week 1 — {week_1_theme}",
+        "target_words": 700
+      },
+      {
+        "id": "week_2",
+        "title": "Week 2 — {week_2_theme}",
+        "target_words": 700
+      },
+      {
+        "id": "week_3",
+        "title": "Week 3 — {week_3_theme}",
+        "target_words": 700
+      },
+      {
+        "id": "week_4",
+        "title": "Week 4 — {week_4_theme}",
+        "target_words": 700
+      },
+      {
+        "id": "troubleshooting",
+        "title": "When it goes sideways",
+        "target_words": 500
+      },
+      {
+        "id": "regression",
+        "title": "If you lose ground",
+        "target_words": 250
+      }
+    ],
+    "content_bank": {
+      "diagnosis::arch_understimulated_adolescent": {
+        "brief": "Name the pattern precisely: this is not defiance, it is an adolescent whose needs outgrew its routine while its impulse control temporarily got worse. Tie the door-explosion specifically to the walk being the only interesting event in the day.",
+        "must_include": [
+          "the 6-18 month arousal window, and that it is temporary",
+          "why the first five minutes are worst: arousal peaks at the door, not stubbornness",
+          "explicit permission that previously trained behaviour falling apart is expected"
+        ],
+        "must_avoid": [
+          "blaming the owner",
+          "dominance language, or implying the dog is testing them"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_pre_walk_drain"
+        ]
+      },
+      "mechanism::arch_understimulated_adolescent": {
+        "brief": "Explain why adding more walk has not worked and often made it worse. The walk is both the outlet and the trigger, so more of it raises baseline arousal rather than draining it.",
+        "must_include": [
+          "physical exercise alone raises arousal in a dog with no mental outlet",
+          "why treats on walks stall: luring above threshold teaches nothing",
+          "the plan works on the hours before the walk, not just the walk itself"
+        ],
+        "must_avoid": [
+          "promising the adolescent phase resolves on its own",
+          "recommending equipment as the fix"
+        ],
+        "mechanism_refs": [
+          "mech_decompression",
+          "mech_pre_walk_drain",
+          "mech_criteria_split"
+        ]
+      },
+      "week_1::arch_understimulated_adolescent": {
+        "brief": "Week 1 does not train the leash at all. It lowers baseline arousal so that week 2's leash work has something to build on. Everything fits inside {time_budget_min} minutes.",
+        "must_include": [
+          "a two-minute pre-walk scatter-feed, concrete enough to do tonight",
+          "one decompression sniff walk replacing one structured walk",
+          "explicit permission to have worse walks this week, with the reason"
+        ],
+        "must_avoid": [
+          "introducing any leash criterion",
+          "requiring more than {time_budget_min} minutes"
+        ],
+        "mechanism_refs": [
+          "mech_pre_walk_drain",
+          "mech_decompression"
+        ],
+        "week_theme": "Drop the pressure"
+      },
+      "week_2::arch_understimulated_adolescent": {
+        "brief": "Buy engagement before asking for behaviour. The dog learns that checking in with the owner pays, first indoors, then in the driveway. Still no leash criterion on real walks.",
+        "must_include": [
+          "marker word installed indoors in under five minutes",
+          "the check-in game, and paying every voluntary look",
+          "why this happens in boring environments first"
+        ],
+        "must_avoid": [
+          "expecting engagement on a busy street this week",
+          "asking for heel or formal position"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first",
+          "mech_criteria_split"
+        ],
+        "week_theme": "Buy engagement"
+      },
+      "week_3::arch_understimulated_adolescent": {
+        "brief": "Introduce the stop-start rule, on short, deliberately dull routes. This is the first week the leash itself is trained.",
+        "must_include": [
+          "forward motion stops the instant the leash tightens, every time",
+          "why consistency matters more than duration in this week",
+          "route selection: dull streets, off-peak times, ten minutes maximum"
+        ],
+        "must_avoid": [
+          "using the full walk as the training session",
+          "corrections or leash pops"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "The stop-start rule"
+      },
+      "week_4::arch_understimulated_adolescent": {
+        "brief": "Generalize to the real routes the owner actually needs, changing one variable at a time. Set the expectation that adolescence will still produce bad days after day 30.",
+        "must_include": [
+          "adding distraction, distance, or duration, but only one per session",
+          "keeping the pre-walk routine permanently, not as a temporary crutch",
+          "what a realistic day 30 looks like, honestly stated"
+        ],
+        "must_avoid": [
+          "declaring the problem solved",
+          "adding a new technique in the final week"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_pre_walk_drain"
+        ],
+        "week_theme": "Real walks, real world"
+      },
+      "troubleshooting::arch_understimulated_adolescent": {
+        "brief": "Four failure modes this archetype hits, each with the tell, the cause, and the fix. Written to be scanned, not read.",
+        "must_include": [
+          "the week 3 plateau, why it is normal, and what to change",
+          "regression when a household routine changes",
+          "what to do on days there is genuinely no time"
+        ],
+        "must_avoid": [
+          "generic advice that would apply to any dog"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_arousal_threshold"
+        ]
+      },
+      "regression::arch_understimulated_adolescent": {
+        "brief": "Adolescent dogs regress on a schedule, not at random. Give the owner a specific rollback protocol so a bad week does not become abandonment of the plan.",
+        "must_include": [
+          "the rule: drop back one week, not to the beginning",
+          "hormonal and seasonal triggers specific to adolescence",
+          "when a regression means a vet visit rather than more training"
+        ],
+        "must_avoid": [
+          "framing regression as owner failure"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ]
+      },
+      "diagnosis::arch_reactive_threshold": {
+        "brief": "Reframe pulling as distance-management, not a leash problem. The dog is trying to change how far away the trigger is, and fixing the leash without addressing that will fail.",
+        "must_include": [
+          "pulling here is a symptom; the trigger relationship is the target",
+          "threshold explained in plain language before the term is used",
+          "lunging is usually distance-increasing fear, not aggression, and why that changes the plan"
+        ],
+        "must_avoid": [
+          "labelling the dog aggressive",
+          "suggesting the dog will grow out of it"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_criteria_split"
+        ]
+      },
+      "mechanism::arch_reactive_threshold": {
+        "brief": "Explain why exposure has made it worse. Every walk past threshold is a rehearsal that strengthens the reaction, which is why the owner feels they are going backwards despite effort.",
+        "must_include": [
+          "rehearsal strengthens the behaviour, so avoidance this month is progress",
+          "why no-pull equipment fails here: it manages the leash, not the emotion",
+          "why corrections at the moment of reaction add a second thing to fear"
+        ],
+        "must_avoid": [
+          "recommending flooding or 'letting them work it out'",
+          "criticising named trainers"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_criteria_split"
+        ]
+      },
+      "week_1::arch_reactive_threshold": {
+        "brief": "Week 1 is distance-finding and avoidance. The owner learns to identify the actual threshold distance and restructures routes and timing to stay under it. No leash criteria yet.",
+        "must_include": [
+          "a concrete method for measuring threshold distance in real conditions",
+          "route and timing changes that make under-threshold walks possible this week",
+          "the U-turn, practised before it is needed"
+        ],
+        "must_avoid": [
+          "any deliberate close-range exposure",
+          "corrections at the moment of reaction"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_criteria_split"
+        ],
+        "week_theme": "Find the distance"
+      },
+      "week_2::arch_reactive_threshold": {
+        "brief": "Pattern the trigger. The dog learns that seeing a trigger predicts food from the owner, changing the emotional response rather than suppressing the behaviour.",
+        "must_include": [
+          "mark-and-feed on trigger sighting, before any reaction",
+          "why timing matters: the mark comes at sighting, not after the bark",
+          "keeping every rep under threshold, even if that means fewer reps"
+        ],
+        "must_avoid": [
+          "waiting for a reaction before feeding",
+          "raising criteria because a session went well"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_engagement_first"
+        ],
+        "week_theme": "Pattern the trigger"
+      },
+      "week_3::arch_reactive_threshold": {
+        "brief": "Add movement. The dog practises walking past triggers at threshold distance while the mark-and-feed pattern holds, which is where loose-leash mechanics finally enter.",
+        "must_include": [
+          "walking parallel to a trigger rather than head-on",
+          "the disengage-and-move-away sequence as the default response",
+          "stopping the session at the first missed rep, not the fifth"
+        ],
+        "must_avoid": [
+          "reducing distance and adding movement in the same session"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_forward_motion"
+        ],
+        "week_theme": "Move under threshold"
+      },
+      "week_4::arch_reactive_threshold": {
+        "brief": "Shrink the bubble deliberately and slowly, and set honest expectations: reactivity is managed for life, and day 30 is a working baseline, not a cure.",
+        "must_include": [
+          "a rule for how much distance to close per week after day 30",
+          "which triggers to leave alone indefinitely",
+          "honest framing: this is management plus improvement, not resolution"
+        ],
+        "must_avoid": [
+          "promising the dog will become non-reactive",
+          "encouraging dog park visits"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_arousal_threshold"
+        ],
+        "week_theme": "Shrink the bubble"
+      },
+      "troubleshooting::arch_reactive_threshold": {
+        "brief": "The specific ways reactive plans fall apart, with fixes. Prioritise the surprise-trigger scenario, because it is the one that makes owners quit.",
+        "must_include": [
+          "the trigger that appears around a corner with no warning",
+          "what to do when the dog will not take food (it is over threshold)",
+          "why progress on one trigger does not transfer to another"
+        ],
+        "must_avoid": [
+          "advice that assumes a controlled training environment"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold"
+        ]
+      },
+      "regression::arch_reactive_threshold": {
+        "brief": "Reactive dogs have trigger-stacking days where everything is worse for reasons unrelated to training. Give the owner a way to recognise those days and stop.",
+        "must_include": [
+          "trigger stacking explained, and the 48-72 hour recovery window",
+          "the rule: on a stacked day, cancel the walk without guilt",
+          "when to add distance back rather than push through"
+        ],
+        "must_avoid": [
+          "framing a cancelled walk as failure"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold"
+        ]
+      },
+      "diagnosis::arch_anxious_escaper": {
+        "brief": "This dog is not pulling ahead, it is pulling home. Reframe the whole problem as escape-motivated, which means the usual loose-leash advice would be asking a frightened dog to stand still in a place it wants to leave.",
+        "must_include": [
+          "the direction of the pull is the diagnosis: toward home, not toward the world",
+          "why standard leash training would make this worse",
+          "that shorter walks are the treatment, not a compromise"
+        ],
+        "must_avoid": [
+          "telling the owner to push through it",
+          "framing the dog as untrained rather than uncomfortable"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_decompression"
+        ]
+      },
+      "mechanism::arch_anxious_escaper": {
+        "brief": "Explain agency: dogs that can influence when they leave a situation become less afraid of it. Everything the owner has tried has removed choice, which is why it backfired.",
+        "must_include": [
+          "choice reduces fear; forced exposure increases it",
+          "why treats often fail here (a frightened dog cannot eat)",
+          "why a longer line or a harness helps only if the routes change too"
+        ],
+        "must_avoid": [
+          "recommending desensitisation without a professional if fear is severe"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_decompression",
+          "mech_criteria_split"
+        ]
+      },
+      "week_1::arch_anxious_escaper": {
+        "brief": "Shrink the world deliberately. Walks become very short loops close to home, ending before the dog wants to leave. The goal this week is a single walk the dog does not want to escape from.",
+        "must_include": [
+          "a five-minute loop, ending while the dog is still comfortable",
+          "reading the early signs of wanting to leave, before the pulling starts",
+          "why ending early is the whole technique this week"
+        ],
+        "must_avoid": [
+          "extending a walk because it is going well",
+          "driving somewhere new"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold",
+          "mech_decompression"
+        ],
+        "week_theme": "Shrink the world"
+      },
+      "week_2::arch_anxious_escaper": {
+        "brief": "Give the dog the route. On decompression walks the owner follows rather than leads, which builds the agency that reduces the escape motivation.",
+        "must_include": [
+          "how to let the dog choose direction without losing safety",
+          "sniffing time as the active ingredient, not a break from training",
+          "the turn-for-home rule: the owner offers it, the dog decides"
+        ],
+        "must_avoid": [
+          "structured heel work",
+          "correcting the dog for stopping"
+        ],
+        "mechanism_refs": [
+          "mech_decompression",
+          "mech_arousal_threshold"
+        ],
+        "week_theme": "Let him choose"
+      },
+      "week_3::arch_anxious_escaper": {
+        "brief": "Add duration before adding territory. Same familiar loops, slightly longer, with the loose-leash criterion introduced only on the calm return leg.",
+        "must_include": [
+          "extending time on known routes before adding new ones",
+          "introducing stop-start only where the dog is already comfortable",
+          "a hard rule for aborting the session"
+        ],
+        "must_avoid": [
+          "adding new environments this week"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "Add duration"
+      },
+      "week_4::arch_anxious_escaper": {
+        "brief": "Widen the map one street at a time, and be honest that some dogs stay small-radius dogs and that this is a legitimate outcome, not a failure.",
+        "must_include": [
+          "adding one new street per week, not per walk",
+          "what to do when a new environment goes badly",
+          "honest framing: a happy small-radius dog is a good outcome"
+        ],
+        "must_avoid": [
+          "pushing toward busy environments as the goal",
+          "comparing this dog to confident dogs"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ],
+        "week_theme": "Widen the map"
+      },
+      "troubleshooting::arch_anxious_escaper": {
+        "brief": "The failure modes of anxious walkers, prioritising the freeze — because owners misread it as stubbornness and pull.",
+        "must_include": [
+          "the freeze: what it means and why pulling the leash makes it worse",
+          "refusing food outdoors as a threshold readout",
+          "the dog who is fine one day and not the next"
+        ],
+        "must_avoid": [
+          "interpreting any of these as disobedience"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold"
+        ]
+      },
+      "regression::arch_anxious_escaper": {
+        "brief": "Anxiety regresses after single bad events. Give the owner a rollback that treats one frightening incident as a reason to shrink the map for a fortnight.",
+        "must_include": [
+          "one bad event can cost weeks, and that is normal",
+          "the rollback: return to week 1 loops for two weeks",
+          "when persistent fear warrants a vet or behaviourist rather than more training"
+        ],
+        "must_avoid": [
+          "encouraging the owner to push through after a scare"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold"
+        ]
+      },
+      "diagnosis::arch_never_taught_adult": {
+        "brief": "There is nothing wrong with this dog. It has simply been paid for pulling on every walk of its life, and no one ever told it that a loose leash was the criterion. Relief is the emotional target here.",
+        "must_include": [
+          "years of reinforcement history explains the strength of the habit",
+          "the dog has never been taught the criterion, so it is not disobeying",
+          "age is a duration factor, not a capacity limit"
+        ],
+        "must_avoid": [
+          "implying it is too late",
+          "blaming previous owners or rescue history"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ]
+      },
+      "mechanism::arch_never_taught_adult": {
+        "brief": "Explain the reinforcement math plainly: every step taken on a tight leash pays the dog. This is why stopping works without treats, and why inconsistency is the only thing that breaks it.",
+        "must_include": [
+          "forward motion is the reward, so removing it is the whole technique",
+          "why one inconsistent walk undoes several consistent ones",
+          "why equipment manages but does not teach"
+        ],
+        "must_avoid": [
+          "suggesting the habit will fade with age",
+          "recommending aversives"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ]
+      },
+      "week_1::arch_never_taught_adult": {
+        "brief": "Teach the criterion indoors, where the dog can succeed. Nothing about real walks changes yet, except that the owner uses management gear to stop the daily rehearsal.",
+        "must_include": [
+          "hallway reps where a loose leash is nearly automatic",
+          "using a front-clip harness as pure management during week 1, not as training",
+          "why the real walk is not the training session yet"
+        ],
+        "must_avoid": [
+          "training on the actual walk this week",
+          "removing walks entirely"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "Teach it indoors"
+      },
+      "week_2::arch_never_taught_adult": {
+        "brief": "Move the criterion to the driveway or garden, adding the smallest possible amount of distraction. The dog should still be succeeding most of the time.",
+        "must_include": [
+          "the eight-out-of-ten rule for raising criteria",
+          "adding one distraction variable, not three",
+          "keeping sessions to {time_budget_min} minutes and ending on a good rep"
+        ],
+        "must_avoid": [
+          "moving to the street because the driveway went well once"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_forward_motion"
+        ],
+        "week_theme": "Take it to the driveway"
+      },
+      "week_3::arch_never_taught_adult": {
+        "brief": "The stop-start walk on real but dull routes. This is the week the habit actually starts competing with the new behaviour, and it will feel slow.",
+        "must_include": [
+          "ten-minute training walks separate from the dog's exercise walks",
+          "warning that the first sessions may cover fifty metres, and that this is correct",
+          "why the exercise walk still uses management gear for now"
+        ],
+        "must_avoid": [
+          "merging the training walk and the exercise walk"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "The stop-start walk"
+      },
+      "week_4::arch_never_taught_adult": {
+        "brief": "Merge the training walk into the real walk and start fading the management equipment, with an explicit criterion for when fading is allowed.",
+        "must_include": [
+          "the test that says the harness can come off",
+          "extending the training walk before removing the gear, not simultaneously",
+          "the long game: this habit needs months, not thirty days, to become default"
+        ],
+        "must_avoid": [
+          "declaring the habit fixed at day 30"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_forward_motion"
+        ],
+        "week_theme": "Real routes"
+      },
+      "troubleshooting::arch_never_taught_adult": {
+        "brief": "Failure modes centred on consistency, because that is what breaks this archetype's plan. Include the household-mismatch problem, which is the most common and least discussed.",
+        "must_include": [
+          "when a partner or family member walks the dog differently",
+          "the extinction burst: pulling gets briefly worse before it improves",
+          "rainy-day and rushed-morning protocols"
+        ],
+        "must_avoid": [
+          "assuming the owner is the only handler"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ]
+      },
+      "regression::arch_never_taught_adult": {
+        "brief": "Long-reinforced habits reappear under time pressure. Give a rollback keyed to consistency rather than to skill.",
+        "must_include": [
+          "the rule: if pulling returns, audit consistency before technique",
+          "returning to management gear temporarily is not failure",
+          "the two-week reset protocol"
+        ],
+        "must_avoid": [
+          "framing a return to gear as going backwards"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion"
+        ]
+      },
+      "diagnosis::arch_foundation_puppy": {
+        "brief": "There is no problem to fix here, only a foundation to build, and the owner should be told that plainly. The framing shifts from correcting pulling to preventing the adolescent version of it.",
+        "must_include": [
+          "nothing is broken; this is construction, not repair",
+          "what normal puppy leash behaviour actually looks like, so expectations recalibrate",
+          "a warning that adolescence will test all of this in a few months"
+        ],
+        "must_avoid": [
+          "treating puppy behaviour as early misbehaviour",
+          "urgency or alarm"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first",
+          "mech_criteria_split"
+        ]
+      },
+      "mechanism::arch_foundation_puppy": {
+        "brief": "Explain that puppies learn what pays, and that the owner is training something on every walk whether or not they intend to. Habits formed now cost nothing; habits undone later cost months.",
+        "must_include": [
+          "everything is being learned, including the wrong things, by default",
+          "why engagement is trained before leash mechanics",
+          "the socialisation window and why quality beats quantity"
+        ],
+        "must_avoid": [
+          "recommending equipment",
+          "encouraging long-distance walks for exercise"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first",
+          "mech_criteria_split"
+        ]
+      },
+      "week_1::arch_foundation_puppy": {
+        "brief": "Follow-me games with no leash pressure at all. The puppy learns that staying near the owner is the most rewarding option available.",
+        "must_include": [
+          "indoor and garden follow games, sixty seconds at a time",
+          "the marker word installed through food, not repetition drills",
+          "why the leash is not part of week 1"
+        ],
+        "must_avoid": [
+          "formal heel position",
+          "long walks for physical exercise"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first"
+        ],
+        "week_theme": "Follow-me games"
+      },
+      "week_2::arch_foundation_puppy": {
+        "brief": "The leash becomes furniture: neutral, boring, and never a source of pressure. Pair it with the follow games already learned.",
+        "must_include": [
+          "dragging the leash indoors before holding it",
+          "never letting the puppy learn what leash tension feels like this week",
+          "very short reps, ending before the puppy disengages"
+        ],
+        "must_avoid": [
+          "allowing the puppy to hit the end of the leash",
+          "correcting"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_engagement_first"
+        ],
+        "week_theme": "The leash becomes furniture"
+      },
+      "week_3::arch_foundation_puppy": {
+        "brief": "Short structured walks in quiet places, keeping the puppy under threshold and finishing while it is still engaged.",
+        "must_include": [
+          "five to ten minutes maximum, matched to age",
+          "reading disengagement as the signal to go home",
+          "sniffing time built in rather than fought against"
+        ],
+        "must_avoid": [
+          "distance goals or step counts",
+          "busy environments"
+        ],
+        "mechanism_refs": [
+          "mech_decompression",
+          "mech_arousal_threshold"
+        ],
+        "week_theme": "Short structured walks"
+      },
+      "week_4::arch_foundation_puppy": {
+        "brief": "Proof the foundation in mild distraction and set the owner up explicitly for adolescence, which is the real test of everything built this month.",
+        "must_include": [
+          "adding distraction gradually while keeping sessions short",
+          "an explicit warning about the 6-18 month regression and what to do",
+          "which behaviours to keep paying for life"
+        ],
+        "must_avoid": [
+          "implying the training is finished"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_engagement_first"
+        ],
+        "week_theme": "Proof it before adolescence"
+      },
+      "troubleshooting::arch_foundation_puppy": {
+        "brief": "Puppy-specific problems the owner will actually hit, especially the ones commonly mistaken for defiance.",
+        "must_include": [
+          "the puppy that plants and refuses to move",
+          "leash biting and what it usually means",
+          "why the puppy is worse in the evening"
+        ],
+        "must_avoid": [
+          "any advice framed around obedience or stubbornness"
+        ],
+        "mechanism_refs": [
+          "mech_arousal_threshold"
+        ]
+      },
+      "regression::arch_foundation_puppy": {
+        "brief": "Puppies regress with fear periods and again at adolescence. Frame both as developmental, with a specific response.",
+        "must_include": [
+          "fear periods: what they look like and how to handle them",
+          "the rule: reduce criteria, never add pressure, during a fear period",
+          "what to expect at six months"
+        ],
+        "must_avoid": [
+          "treating a fear period as a training failure"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ]
+      },
+      "diagnosis::arch_overtrained_undereffective": {
+        "brief": "This owner needs to hear why three attempts failed without any of those attempts being called stupid. The common thread is criteria set too high too fast, plus equipment substituting for training.",
+        "must_include": [
+          "equipment manages, it does not teach",
+          "class environments usually sit far above the dog's working threshold",
+          "luring never transfers to the absence of the lure, which is why treats stalled"
+        ],
+        "must_avoid": [
+          "criticising named trainers or methods by brand",
+          "implying the money was wasted"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_engagement_first",
+          "mech_forward_motion"
+        ]
+      },
+      "mechanism::arch_overtrained_undereffective": {
+        "brief": "Explain that the dog has learned that cues are unreliable and that the owner's requests do not predict much. Rebuilding that contract is the real work, and it is why this plan starts easier than they expect.",
+        "must_include": [
+          "poisoned cues: what happens when a cue has predicted both reward and correction",
+          "why starting easier feels like going backwards but is not",
+          "one variable at a time, stated as a rule they will be held to"
+        ],
+        "must_avoid": [
+          "promising this method is different because it is newer"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_engagement_first"
+        ]
+      },
+      "week_1::arch_overtrained_undereffective": {
+        "brief": "Audit and reset. The owner lists everything currently in use, then stops nearly all of it and returns to an environment where the dog can succeed eight times out of ten.",
+        "must_include": [
+          "a concrete audit: gear, cues, and where each is used",
+          "dropping to an environment with a genuine 80 percent success rate",
+          "why aversive tools, if in use, come off before anything else can work"
+        ],
+        "must_avoid": [
+          "running multiple methods in parallel",
+          "shaming past choices"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ],
+        "week_theme": "Audit and reset"
+      },
+      "week_2::arch_overtrained_undereffective": {
+        "brief": "Rebuild engagement with a fresh marker word, deliberately chosen so it carries none of the history of the old cues.",
+        "must_include": [
+          "choosing a new marker word and why the old one is retired",
+          "paying voluntary check-ins with no request attached",
+          "keeping this entirely indoors or in the garden"
+        ],
+        "must_avoid": [
+          "reusing old cues",
+          "testing progress outdoors this week"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first"
+        ],
+        "week_theme": "Rebuild engagement"
+      },
+      "week_3::arch_overtrained_undereffective": {
+        "brief": "Reintroduce the loose-leash criterion in the easiest possible environment, holding the one-variable rule strictly, since impatience is this archetype's defining failure mode.",
+        "must_include": [
+          "stop-start in the driveway before the street",
+          "a written record of what changed each session, to enforce one variable",
+          "how to tell a plateau from a criteria error"
+        ],
+        "must_avoid": [
+          "moving environments because a session went well"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "Reintroduce the criterion"
+      },
+      "week_4::arch_overtrained_undereffective": {
+        "brief": "Fade the management equipment against an explicit test, and give the owner a decision rule for when a professional is genuinely the right call.",
+        "must_include": [
+          "the specific test that permits removing the harness or head collar",
+          "extending duration before removing gear, never both at once",
+          "when to seek a certified behaviourist, stated without hedging"
+        ],
+        "must_avoid": [
+          "implying professional help means this plan failed"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split",
+          "mech_forward_motion"
+        ],
+        "week_theme": "Fade the equipment"
+      },
+      "troubleshooting::arch_overtrained_undereffective": {
+        "brief": "This owner's failure modes are behavioural on their side, not the dog's. Address impatience and method-switching head on, respectfully.",
+        "must_include": [
+          "the urge to add a new technique when progress slows",
+          "how to tell a real plateau from three days of impatience",
+          "what to do when someone recommends a different method mid-plan"
+        ],
+        "must_avoid": [
+          "condescension about the owner's judgement"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ]
+      },
+      "regression::arch_overtrained_undereffective": {
+        "brief": "Give a rollback that names method-switching as the most likely cause of regression, since that is this archetype's pattern.",
+        "must_include": [
+          "the rule: when it regresses, check what changed before changing more",
+          "returning to week 2 rather than to a new method",
+          "a commitment device: one method, ninety days"
+        ],
+        "must_avoid": [
+          "blaming the dog for inconsistency"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ]
+      },
+      "diagnosis::arch_general_puller": {
+        "brief": "The buyer's answers did not point to one dominant cause, so the diagnosis covers the two or three most likely and tells them how to tell which is theirs within a week. Honesty about this is better than a false-confident label.",
+        "must_include": [
+          "the most likely causes, with a distinguishing observation for each",
+          "a week 1 observation task that identifies which applies",
+          "that the plan's first week works regardless of which it turns out to be"
+        ],
+        "must_avoid": [
+          "inventing a confident diagnosis the answers do not support"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_arousal_threshold"
+        ]
+      },
+      "mechanism::arch_general_puller": {
+        "brief": "Cover the two mechanisms that apply to nearly every puller: forward motion as the reinforcer, and arousal as the gate on learning.",
+        "must_include": [
+          "every step on a tight leash pays the dog",
+          "a dog above threshold cannot access what it knows",
+          "why equipment manages the symptom only"
+        ],
+        "must_avoid": [
+          "dominance framing",
+          "aversive methods"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_arousal_threshold"
+        ]
+      },
+      "week_1::arch_general_puller": {
+        "brief": "Establish a baseline and a pre-walk routine while the owner completes the observation task from the diagnosis.",
+        "must_include": [
+          "a simple baseline record: where and when pulling is worst",
+          "the two-minute pre-walk routine",
+          "the observation task, with what each outcome means"
+        ],
+        "must_avoid": [
+          "introducing leash criteria before the baseline exists"
+        ],
+        "mechanism_refs": [
+          "mech_pre_walk_drain",
+          "mech_decompression"
+        ],
+        "week_theme": "Baseline and routine"
+      },
+      "week_2::arch_general_puller": {
+        "brief": "Buy engagement indoors and in the garden, which is the common prerequisite for every path the observation task might have revealed.",
+        "must_include": [
+          "marker word installed indoors",
+          "paying voluntary check-ins",
+          "how the week 1 observation changes what comes next"
+        ],
+        "must_avoid": [
+          "street training this week"
+        ],
+        "mechanism_refs": [
+          "mech_engagement_first"
+        ],
+        "week_theme": "Buy engagement"
+      },
+      "week_3::arch_general_puller": {
+        "brief": "The stop-start rule on short, dull routes, with the pace set by whichever cause the observation task identified.",
+        "must_include": [
+          "forward motion stops the instant the leash tightens",
+          "ten-minute training walks kept separate from exercise walks",
+          "adjusting pace based on the week 1 finding"
+        ],
+        "must_avoid": [
+          "using the full walk as the session"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ],
+        "week_theme": "The stop-start rule"
+      },
+      "week_4::arch_general_puller": {
+        "brief": "Generalize to real routes one variable at a time, and point the owner toward the more specific path their week 1 observation suggested.",
+        "must_include": [
+          "one new variable per session",
+          "an honest picture of day 30",
+          "which more specific approach to pursue next, based on the observation"
+        ],
+        "must_avoid": [
+          "declaring the problem solved"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ],
+        "week_theme": "Generalize"
+      },
+      "troubleshooting::arch_general_puller": {
+        "brief": "Broad failure modes covering all the likely causes, with a pointer telling the reader which subsection applies to them.",
+        "must_include": [
+          "a short router at the top: if X is your situation, read section Y",
+          "the extinction burst",
+          "inconsistency across household members"
+        ],
+        "must_avoid": [
+          "advice so general it fits no one"
+        ],
+        "mechanism_refs": [
+          "mech_forward_motion",
+          "mech_criteria_split"
+        ]
+      },
+      "regression::arch_general_puller": {
+        "brief": "A general rollback protocol, plus guidance on re-taking the quiz if the observation task revealed a clearer cause.",
+        "must_include": [
+          "the rule: drop back one week, not to the beginning",
+          "audit consistency before changing technique",
+          "when a clearer cause has emerged and a more specific plan would help"
+        ],
+        "must_avoid": [
+          "framing regression as failure"
+        ],
+        "mechanism_refs": [
+          "mech_criteria_split"
+        ]
+      },
+      "safety_check::bite_history_true": {
+        "brief": "Short, non-alarming block. Recommend a certified behaviourist alongside this plan, explain plainly why contact history changes the risk calculus, and recommend muzzle conditioning as a welfare tool rather than a punishment.",
+        "must_include": [
+          "referral recommendation",
+          "muzzle framed positively"
+        ],
+        "must_avoid": [
+          "fear-mongering",
+          "suggesting the dog cannot improve"
+        ],
+        "mechanism_refs": []
+      }
+    },
+    "personalization_tokens": [
+      "dog_name",
+      "breed",
+      "age_months",
+      "time_budget_min",
+      "worst_moment"
+    ],
+    "voice": {
+      "reading_level": "grade 8",
+      "person": "second",
+      "banned_phrases": [
+        "furbaby",
+        "fur baby",
+        "unlock",
+        "game-changer",
+        "In today's world",
+        "pack leader",
+        "alpha",
+        "dominance"
+      ],
+      "sentence_rhythm": "Short sentences. Vary length. No stacked subordinate clauses. No rhetorical questions as section openers."
+    },
+    "constraints": {
+      "daily_time_budget_respected": true,
+      "no_equipment_beyond": [
+        "flat collar or Y-front harness",
+        "6ft lead",
+        "treat pouch"
+      ],
+      "no_aversive_methods": true
+    }
+  },
+  "safety": {
+    "domain_risk_tier": "low",
+    "disclaimers": [
+      "This plan is training guidance, not veterinary or behavioural medicine. Sudden behaviour changes warrant a vet visit to rule out pain."
+    ],
+    "banned_claims": [
+      "guarantees results",
+      "replaces veterinary advice",
+      "works for every dog"
+    ],
+    "escalation_triggers": [
+      {
+        "signal": "bite_history",
+        "equals": true,
+        "action": "insert_section",
+        "section_id": "safety_check",
+        "block_id": "safety_check::bite_history_true"
+      }
+    ]
+  },
+  "eval": {
+    "rubric": [
+      {
+        "id": "specificity",
+        "weight": 0.3,
+        "fail_below": 7,
+        "test": "Could this paragraph be sent unchanged to a different archetype? If yes, fail."
+      },
+      {
+        "id": "actionability",
+        "weight": 0.25,
+        "fail_below": 7,
+        "test": "Can the reader do step one today with no purchase and within their stated time budget?"
+      },
+      {
+        "id": "mechanism",
+        "weight": 0.2,
+        "fail_below": 6,
+        "test": "Does it explain why, citing a mechanism from the knowledge pack?"
+      },
+      {
+        "id": "voice_match",
+        "weight": 0.15,
+        "fail_below": 6,
+        "test": "Does it match tone_notes and avoid every banned phrase?"
+      },
+      {
+        "id": "claims_safety",
+        "weight": 0.1,
+        "fail_below": 9,
+        "test": "Any banned claim, any aversive method, any missing disclaimer?"
+      }
+    ],
+    "swap_test": {
+      "persona_pairs": 6,
+      "min_divergence_pct": 40,
+      "pairs": [
+        [
+          "arch_understimulated_adolescent",
+          "arch_never_taught_adult"
+        ],
+        [
+          "arch_reactive_threshold",
+          "arch_anxious_escaper"
+        ],
+        [
+          "arch_foundation_puppy",
+          "arch_overtrained_undereffective"
+        ]
+      ]
+    },
+    "thresholds": {
+      "min_weighted_score": 7.5,
+      "max_regeneration_attempts": 2
+    },
+    "golden_samples": []
+  },
+  "approved_at": null,
+  "approved_by": null
+}

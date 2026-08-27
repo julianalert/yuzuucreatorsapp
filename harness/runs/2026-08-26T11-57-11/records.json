@@ -1,0 +1,470 @@
+[
+  {
+    "id": "sleep_toddler",
+    "handle": "thegentlesleepcoach",
+    "niche_note": "control — close to PawCraft in structure, should score well",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day thegentlesleepcoach Reset"
+        ],
+        "chosen": "The 30-Day thegentlesleepcoach Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "adhd_focus",
+    "handle": "adhd.unmasked",
+    "niche_note": "high segmentability, mental-health adjacent — tests tier escalation",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day adhd.unmasked Reset"
+        ],
+        "chosen": "The 30-Day adhd.unmasked Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "sourdough",
+    "handle": "flour.and.time",
+    "niche_note": "low segmentability trap — the pipeline SHOULD reject most topics here",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 0,
+        "insufficient": true,
+        "best_segmentability": 0,
+        "titles": []
+      }
+    },
+    "halted_at": "no_viable_topic",
+    "note": "Pipeline correctly refused this niche.",
+    "seconds": 0
+  },
+  {
+    "id": "run_first5k",
+    "handle": "slowrunnersclub",
+    "niche_note": "physical, injury risk — tests safety escalation",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day slowrunnersclub Reset"
+        ],
+        "chosen": "The 30-Day slowrunnersclub Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "freelance_pricing",
+    "handle": "ratesandboundaries",
+    "niche_note": "B2B, financial adjacent — tests claims critic",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day ratesandboundaries Reset"
+        ],
+        "chosen": "The 30-Day ratesandboundaries Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "houseplants",
+    "handle": "theplantdiagnostic",
+    "niche_note": "highly diagnostic, low stakes — should be the easiest win",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day theplantdiagnostic Reset"
+        ],
+        "chosen": "The 30-Day theplantdiagnostic Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "public_speaking",
+    "handle": "sayitclearly",
+    "niche_note": "anxiety-adjacent — tests whether the pipeline stays out of therapy territory",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day sayitclearly Reset"
+        ],
+        "chosen": "The 30-Day sayitclearly Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "budget_debt",
+    "handle": "theslowpayoff",
+    "niche_note": "financial, tier high — must produce disclaimers and refuse specific advice",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day theslowpayoff Reset"
+        ],
+        "chosen": "The 30-Day theslowpayoff Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 6.4,
+        "by_dimension": {
+          "specificity": 5.9,
+          "actionability": 6.4,
+          "mechanism": 6.7,
+          "voice_match": 6.6,
+          "claims_safety": 6
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": false,
+    "seconds": 0
+  },
+  {
+    "id": "strength_over40",
+    "handle": "liftafterforty",
+    "niche_note": "physical + medical adjacent",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 8,
+        "titles": [
+          "The 30-Day liftafterforty Reset"
+        ],
+        "chosen": "The 30-Day liftafterforty Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": true,
+        "divergence_pct": 63
+      },
+      "output": {
+        "weighted": 7.9,
+        "by_dimension": {
+          "specificity": 7.4,
+          "actionability": 7.9,
+          "mechanism": 8.2,
+          "voice_match": 8.1,
+          "claims_safety": 9.2
+        },
+        "sections_scored": 12
+      }
+    },
+    "passed": true,
+    "seconds": 0
+  },
+  {
+    "id": "language_spanish",
+    "handle": "spanishinthewild",
+    "niche_note": "long time-to-result — should stress the 30-day resolvability score",
+    "stages": {
+      "audience": {
+        "min_confidence": 0.7
+      },
+      "topics": {
+        "count": 1,
+        "insufficient": false,
+        "best_segmentability": 6,
+        "titles": [
+          "The 30-Day spanishinthewild Reset"
+        ],
+        "chosen": "The 30-Day spanishinthewild Reset"
+      },
+      "knowledge": {
+        "segments": 7,
+        "mechanisms": 6,
+        "critic_score": 8,
+        "critic_pass": true,
+        "failures": 0
+      },
+      "quiz": {
+        "questions": 6,
+        "archetypes": 4,
+        "structural_errors": 0,
+        "structural_sample": [],
+        "critic_score": 7,
+        "critic_pass": true
+      },
+      "swap": {
+        "pass": false,
+        "divergence_pct": 4
+      }
+    },
+    "halted_at": "swap_test",
+    "note": "Archetypes are not materially different — regenerate stage 4, not stage 5.",
+    "seconds": 0
+  }
+]
