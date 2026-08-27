@@ -56,6 +56,11 @@ export function BuildProgress({
     const tick = async () => {
       try {
         const res = await fetch(`/api/build/status?id=${buildId}`, { cache: "no-store" });
+        if (res.status === 401) {
+          // session died mid-build — send them to sign back in, then straight back here
+          router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`);
+          return;
+        }
         if (!res.ok) return;
         const data: { status: string; stage: string | null } = await res.json();
         if (stopped) return;

@@ -8,11 +8,18 @@ export function GoogleButton({ next = "/onboard" }: { next?: string }) {
 
   async function signIn() {
     setBusy(true);
+    // Supabase's redirect URL allow list matches the full URL, query string
+    // included, so redirectTo must stay exactly the bare callback URL that's
+    // allow-listed. Pass `next` via a short-lived cookie instead — the
+    // callback route reads it from there.
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `yz_next=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax${secure}`;
+
     const supabase = supabaseBrowser();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
   }

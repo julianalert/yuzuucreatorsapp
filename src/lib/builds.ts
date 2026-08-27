@@ -19,8 +19,13 @@ const SCAN_STAGES = ["scrape", "extract", "propose"];
 export function routeForBuild(build: BuildRow | null): string {
   if (!build) return "/onboard";
   switch (build.status) {
-    case "queued":
-      return "/onboard/scanning";
+    case "queued": {
+      // the first pipeline step flips status to running within seconds; a build
+      // queued for this long means the event was never picked up (e.g. Inngest
+      // not configured) — don't trap the creator on the scanning screen
+      const ageMs = Date.now() - new Date(build.created_at).getTime();
+      return ageMs > 15 * 60 * 1000 ? "/onboard" : "/onboard/scanning";
+    }
     case "running":
       return SCAN_STAGES.includes(build.stage ?? "scrape")
         ? "/onboard/scanning"
