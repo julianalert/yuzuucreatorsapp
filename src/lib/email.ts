@@ -121,7 +121,7 @@ export async function sendSamplesReady(to: string, topicTitle: string) {
     to,
     "Three sample plans are ready for you to read",
     wrap(`
-      ${paragraph(`<strong style="color:${C.ink};font-weight:600;">${topicTitle}</strong> is built. Before it goes live, read three sample plans. We invented three very different buyers and wrote each of them their own plan — exactly how every real buyer's will be written.`)}
+      ${paragraph(`<strong style="color:${C.ink};font-weight:600;">${topicTitle}</strong> is built. Before it goes live, read three sample plans. We invented three very different buyers and wrote each of them their own plan, exactly how every real buyer's will be written.`)}
       ${paragraph("Nothing is published until you approve.")}
       ${button(appUrl("/onboard/review"), "Read the samples")}
     `)
@@ -148,7 +148,7 @@ export async function sendPlanDelivered(
     to,
     `Your plan is ready: ${args.topicTitle}`,
     wrap(`
-      ${paragraph(`Your personalized plan from <strong style="color:${C.ink};font-weight:600;">${args.creatorName}</strong> is ready — written for you alone, from your answers.`)}
+      ${paragraph(`Your personalized plan from <strong style="color:${C.ink};font-weight:600;">${args.creatorName}</strong> is ready. Written for you alone, from your answers.`)}
       ${button(appUrl(`/order/${args.orderId}`), "Read your plan")}
       ${paragraph(`<span style="font-size:14px;color:${C.sage};">This private link is yours to keep, and you can save the page as a PDF any time.</span>`)}
     `)

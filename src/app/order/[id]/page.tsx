@@ -24,7 +24,16 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     .eq("id", order.blueprint_id)
     .single();
   const bp = (bpRow as Pick<BlueprintRow, "data" | "creator_id">).data as Blueprint;
-  const creatorName = bp.creator.display_name ?? `@${bp.creator.handle}`;
+  // Show the Instagram handle, not the OAuth display name — it's what the
+  // buyer actually recognizes and it's what the product page is built on.
+  const creatorName = `@${bp.creator.handle}`;
+
+  const { data: creatorRow } = await admin
+    .from("creators")
+    .select("avatar_url")
+    .eq("id", (bpRow as Pick<BlueprintRow, "data" | "creator_id">).creator_id)
+    .maybeSingle();
+  const creatorAvatarUrl = (creatorRow as { avatar_url: string | null } | null)?.avatar_url ?? null;
 
   // ── generating / failed ────────────────────────────────────────────────
   if (order.status !== "delivered") {
@@ -33,12 +42,22 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       <section>
         <header className="bar">
           <div className="bar-in">
+            <div className="avatar">
+              {creatorAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar, not worth next/image remote-pattern config
+                <img
+                  className="avatar-img"
+                  src={creatorAvatarUrl}
+                  alt={creatorName}
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                bp.creator.handle[0]?.toUpperCase()
+              )}
+            </div>
             <div className="who">
               <b>{bp.product.topic_title}</b>
               <span>Order {id.slice(0, 8)}</span>
-            </div>
-            <div className="right">
-              <Wordmark />
             </div>
           </div>
         </header>
@@ -55,13 +74,17 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           ) : (
             <>
               <p className="lede">
-                This usually takes about a minute. You can close this page — we&apos;ll email it to{" "}
+                This usually takes about a minute. You can close this page. We&apos;ll email it to{" "}
                 {order.buyer_email} too.
               </p>
               <OrderPoller orderId={id} />
             </>
           )}
         </div>
+        <footer className="powered-by pd-noprint">
+          <span>Powered by</span>
+          <Wordmark size={15} />
+        </footer>
       </section>
     );
   }
@@ -81,13 +104,25 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     <section>
       <header className="bar">
         <div className="bar-in wide">
+          <div className="avatar">
+            {creatorAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar, not worth next/image remote-pattern config
+              <img
+                className="avatar-img"
+                src={creatorAvatarUrl}
+                alt={creatorName}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              bp.creator.handle[0]?.toUpperCase()
+            )}
+          </div>
           <div className="who">
             <b>{bp.product.topic_title}</b>
             <span>by {creatorName} · your copy</span>
           </div>
           <div className="right">
             <PrintButton />
-            <Wordmark />
           </div>
         </div>
       </header>
@@ -113,12 +148,17 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           />
           <div className="dl pd-noprint" style={{ maxWidth: 880, margin: "0 auto", padding: "0 24px" }}>
             <span style={{ fontSize: 13.5, color: "var(--sage)" }}>
-              Also sent to {order.buyer_email}. This link keeps working — use Save as PDF for an
+              Also sent to {order.buyer_email}. This link keeps working. Use Save as PDF for an
               offline copy.
             </span>
           </div>
         </div>
       </div>
+
+      <footer className="powered-by pd-noprint">
+        <span>Powered by</span>
+        <Wordmark size={15} />
+      </footer>
     </section>
   );
 }

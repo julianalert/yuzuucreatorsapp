@@ -24,12 +24,22 @@ export default async function CheckoutPage({
     <section>
       <header className="bar">
         <div className="bar-in">
+          <div className="avatar">
+            {product.creatorAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar, not worth next/image remote-pattern config
+              <img
+                className="avatar-img"
+                src={product.creatorAvatarUrl}
+                alt={product.creatorName}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              product.creatorName[0]?.toUpperCase()
+            )}
+          </div>
           <div className="who">
             <b>{product.title}</b>
             <span>by {product.creatorName}</span>
-          </div>
-          <div className="right">
-            <Wordmark href={`/u/${product.handle}`} />
           </div>
         </div>
       </header>
@@ -125,6 +135,11 @@ export default async function CheckoutPage({
           </div>
         </aside>
       </div>
+
+      <footer className="powered-by">
+        <span>Powered by</span>
+        <Wordmark size={15} />
+      </footer>
     </section>
   );
 }

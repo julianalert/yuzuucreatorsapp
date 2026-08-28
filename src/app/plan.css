@@ -24,6 +24,11 @@
    lines up with the heading/lede/tabs above it instead of sitting inset. */
 .sample-doc .pd { max-width: none; padding-left: 0; padding-right: 0; }
 
+/* Order page: the content column is already narrower than .pd's own cap, so
+   the extra side padding just insets the document from the "Save as PDF"
+   button above it — drop it so the right edges line up. */
+.out .pd { max-width: none; padding-left: 0; padding-right: 0; }
+
 /* accent variants set per section */
 .pd-acc-zest { --pd-acc: #7a8917; --pd-acc-wash: #eff3d9; }
 .pd-acc-sage { --pd-acc: #5c6f63; --pd-acc-wash: #e6ece6; }

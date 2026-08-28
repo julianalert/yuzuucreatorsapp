@@ -448,6 +448,22 @@ table.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
 .legal { margin-top: 22px; font-size: 12.5px; color: var(--sage); line-height: 1.55; text-align: center; }
 .legal a { color: var(--ink-soft); }
 
+/* pin the footer to the bottom of the viewport on short pages, while still
+   flowing after the content normally once it's taller than the screen */
+section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direction: column; }
+.powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 24px;
+  background: var(--ink);
+  font-size: 13px;
+  color: #8fa398;
+}
+.powered-by .wordmark { font-size: 15px; color: var(--paper); }
+
 /* ── error / notice ─────────────────────────────────────── */
 .notice { background: var(--raised); border: 1px solid var(--line); border-left: 3px solid var(--zest); border-radius: var(--r-md); padding: 16px 20px; font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; }
 .notice.warn { border-left-color: #c96f2f; }
@@ -476,7 +492,7 @@ table.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
 
 /* ══ buyer: quiz ═════════════════════════════════════════ */
 .quizwrap {
-  max-width: 1140px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 56px 32px 96px;
   display: grid;

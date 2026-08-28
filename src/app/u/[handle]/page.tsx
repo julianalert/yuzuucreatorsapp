@@ -47,9 +47,6 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
             <b>{product.creatorName}</b>
             <span>@{product.handle} · built from their audience</span>
           </div>
-          <div className="right">
-            <Wordmark />
-          </div>
         </div>
       </header>
 
@@ -105,6 +102,11 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
           </Link>
         </div>
       </div>
+
+      <footer className="powered-by">
+        <span>Powered by</span>
+        <Wordmark size={15} />
+      </footer>
     </section>
   );
 }
