@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { publishedProductByHandle } from "@/lib/public";
 import { Wordmark } from "@/components/Wordmark";
+import { JsonLd } from "@/components/JsonLd";
+import { absoluteUrl, canonical, noIndex } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -11,10 +13,24 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { handle } = await params;
   const product = await publishedProductByHandle(handle);
-  if (!product) return { title: "Yuzuu" };
+  if (!product) return { title: "Yuzuu", ...noIndex };
+  const title = `${product.title} — ${product.creatorName}`;
+  const path = `/u/${product.handle}`;
   return {
-    title: `${product.title} — ${product.creatorName}`,
+    title,
     description: product.promise,
+    ...canonical(path),
+    openGraph: {
+      ...canonical(path).openGraph,
+      title,
+      description: product.promise,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: product.promise,
+    },
   };
 }
 
@@ -25,9 +41,27 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
 
   const price = (product.priceCents / 100).toFixed(0);
   const covers = product.sectionTitles.filter((t) => !/disclaimer|safety/i.test(t)).slice(0, 3);
+  const path = `/u/${product.handle}`;
 
   return (
     <section>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: product.title,
+          description: product.promise,
+          url: absoluteUrl(path),
+          brand: { "@type": "Brand", name: product.creatorName },
+          offers: {
+            "@type": "Offer",
+            price,
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: absoluteUrl(path),
+          },
+        }}
+      />
       <header className="bar">
         <div className="bar-in">
           <div className="avatar">
@@ -50,7 +84,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
         </div>
       </header>
 
-      <div className="wrap">
+      <main className="wrap">
         <div className="hero">
           <div className="micro">
             Personalized ·{product.durationDays ? ` ${product.durationDays} days ·` : ""}{" "}
@@ -92,7 +126,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
             Take the quiz
           </Link>
         </div>
-      </div>
+      </main>
 
       <footer className="powered-by">
         <span>Powered by</span>

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { canonical } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Yuzuu",
+  description:
+    "Terms for using Yuzuu: who can join, how builds and payouts work, ownership, buyer purchases, and leaving.",
+  ...canonical("/terms"),
 };
 
 export default function TermsPage() {
@@ -12,14 +17,14 @@ export default function TermsPage() {
         <div className="bar-in">
           <Wordmark href="/" />
           <div className="right">
-            <a className="btn btn-ghost btn-sm" href="/">
+            <Link className="btn btn-ghost btn-sm" href="/">
               Back to home
-            </a>
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="wrap">
+      <main className="wrap">
         <div className="doc">
           <span className="micro">Legal</span>
           <h1 style={{ marginTop: 14 }}>Terms of Service</h1>
@@ -137,7 +142,7 @@ export default function TermsPage() {
             hello (at) yuzuu (dot) co.
           </p>
         </div>
-      </div>
+      </main>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 AI-built digital products for creators. A creator signs in with Google, gives their Instagram handle, picks one of five AI-generated product ideas, approves three sample plans, and gets a live quiz-to-personalized-plan product page at `yuzuu.co/u/<handle>`. Buyers take the quiz, pay, and receive a personalized plan — web, PDF, and email.
 
-The marketing landing page lives in a **separate repo**. This repo is the app only: `/` redirects to `/dashboard` (signed in) or `/signup`.
+The marketing landing page lives at `/` in this repo (signed-in visitors go to `/dashboard`). Sign-in is `/auth`.
 
 ## Stack
 

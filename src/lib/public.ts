@@ -91,3 +91,27 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
     questions,
   };
 }
+
+export async function listPublishedHandles(): Promise<
+  { handle: string; lastModified: Date }[]
+> {
+  const admin = supabaseAdmin();
+  const { data, error } = await admin
+    .from("blueprints")
+    .select("approved_at, created_at, creators!inner(handle)")
+    .eq("published", true);
+
+  if (error || !data) return [];
+
+  const seen = new Set<string>();
+  const out: { handle: string; lastModified: Date }[] = [];
+  for (const row of data) {
+    const creator = row.creators as { handle: string | null } | { handle: string | null }[] | null;
+    const handle = Array.isArray(creator) ? creator[0]?.handle : creator?.handle;
+    if (!handle || seen.has(handle)) continue;
+    seen.add(handle);
+    const stamp = row.approved_at ?? row.created_at;
+    out.push({ handle, lastModified: stamp ? new Date(stamp) : new Date() });
+  }
+  return out;
+}

@@ -1,20 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Bricolage_Grotesque, DM_Mono } from "next/font/google";
 import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
+import { JsonLd } from "@/components/JsonLd";
 import {
   HandleForm,
   HandleProvider,
   LiveHandle,
   RiseObserve,
 } from "@/components/landing/HandleSync";
+import { LANDING_FAQ, faqPageJsonLd } from "@/lib/landing-faq";
+import { CREATOR_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
 import "./landing.css";
 
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-dm-mono",
+});
+
 export const metadata: Metadata = {
-  title: "Yuzuu — we build the product your audience keeps asking for",
-  description:
-    "Hand us your Instagram handle. We build the whole product — sales page, quiz, and a plan written for each buyer. You show up twice. About 20 minutes of your time.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  ...canonical("/"),
 };
 
 export default async function Home({
@@ -33,7 +48,8 @@ export default async function Home({
   if (user) redirect("/dashboard");
 
   return (
-    <div className="peel">
+    <div className={`peel ${bricolage.variable} ${dmMono.variable}`}>
+      <JsonLd data={faqPageJsonLd()} />
       <HandleProvider>
         <RiseObserve />
 
@@ -54,6 +70,7 @@ export default async function Home({
           </div>
         </nav>
 
+        <main>
         <header className="hero" id="top">
           <div className="wrap hero-grid">
             <div>
@@ -63,8 +80,8 @@ export default async function Home({
               </h1>
               <p className="hero-sub">
                 Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
-                quiz, sales page, personalized output. It costs you nothing and you keep 70% of
-                every sale!
+                quiz, sales page, personalized output. It costs you nothing and you keep{" "}
+                {CREATOR_KEEP_PCT}% of every sale!
               </p>
               <HandleForm id="start" inputId="handle-hero" />
             </div>
@@ -87,7 +104,7 @@ export default async function Home({
                     by @
                     <LiveHandle />
                   </p>
-                  <h3 className="pv-title">The 30-Day Sleep Reset, written for your nights</h3>
+                  <p className="pv-title">The 30-Day Sleep Reset, written for your nights</p>
                   <p className="pv-p">
                     Six questions about how you actually sleep. Then a day-by-day plan built
                     around your answers — not a PDF with your name at the top.
@@ -371,7 +388,7 @@ export default async function Home({
                 </div>
                 <div className="row">
                   <span className="k">You keep, per sale</span>
-                  <span className="v">75%</span>
+                  <span className="v">{CREATOR_KEEP_PCT}%</span>
                 </div>
                 <div className="row">
                   <span className="k">We keep</span>
@@ -447,57 +464,12 @@ export default async function Home({
               <h2>Straight answers.</h2>
             </div>
             <div className="faq rise">
-              <details>
-                <summary>How much of my time is this, really?</summary>
-                <p>
-                  About twenty minutes, split across two sittings a few hours apart. Two minutes to
-                  hand over your handle, five to pick the idea, and roughly fifteen to read three
-                  sample plans properly. If you skim the samples, don&apos;t do this.
-                </p>
-              </details>
-              <details>
-                <summary>Do you post as me, or touch my account?</summary>
-                <p>
-                  No. We read your public posts and comments. We never log in as you, never message
-                  anyone, never publish anything on your account.
-                </p>
-              </details>
-              <details>
-                <summary>What if I hate what you build?</summary>
-                <p>
-                  Say so and give us one sentence about why. It rebuilds. Nothing goes live without
-                  you approving three real samples — and if you never approve, nothing ever goes
-                  live and you&apos;ve paid nothing.
-                </p>
-              </details>
-              <details>
-                <summary>What does my buyer actually receive?</summary>
-                <p>
-                  A written plan on the web, at a private link, generated from their quiz answers
-                  in about ninety seconds. Prose, checklists, week-by-week timelines, tables. They
-                  can save it as a PDF from their browser, and the link is emailed to them.
-                </p>
-              </details>
-              <details>
-                <summary>Why $27?</summary>
-                <p>
-                  It&apos;s the price where people buy on the spot without asking a partner. You
-                  can go higher once you have sales — but the first product should sell, not
-                  impress.
-                </p>
-              </details>
-              <details>
-                <summary>Can I run more than one product?</summary>
-                <p>One per creator for now. We&apos;d rather have one that sells than three that half-work.</p>
-              </details>
-              <details>
-                <summary>Who&apos;s behind this?</summary>
-                <p>
-                  A small team that built this exact funnel by hand, repeatedly, before turning it
-                  into a product. That&apos;s why the quality checks are strict — we know precisely
-                  where these things go wrong.
-                </p>
-              </details>
+              {LANDING_FAQ.map((item) => (
+                <details key={item.q}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
@@ -518,6 +490,7 @@ export default async function Home({
             <HandleForm inputId="handle-foot" peel />
           </div>
         </section>
+        </main>
 
         <footer>
           <div className="wrap foot">

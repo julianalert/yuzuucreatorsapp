@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { canonical } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Yuzuu",
+  description:
+    "How Yuzuu collects and uses data from creators and buyers: accounts, Instagram research, payments, and your rights.",
+  ...canonical("/privacy"),
 };
 
 export default function PrivacyPage() {
@@ -12,14 +17,14 @@ export default function PrivacyPage() {
         <div className="bar-in">
           <Wordmark href="/" />
           <div className="right">
-            <a className="btn btn-ghost btn-sm" href="/">
+            <Link className="btn btn-ghost btn-sm" href="/">
               Back to home
-            </a>
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="wrap">
+      <main className="wrap">
         <div className="doc">
           <span className="micro">Legal</span>
           <h1 style={{ marginTop: 14 }}>Privacy Policy</h1>
@@ -165,7 +170,7 @@ export default function PrivacyPage() {
             Questions about this policy go to hello (at) yuzuu (dot) co.
           </p>
         </div>
-      </div>
+      </main>
     </section>
   );
 }

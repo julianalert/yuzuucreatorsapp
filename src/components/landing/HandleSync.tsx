@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { cleanHandle, HANDLE_COOKIE } from "@/lib/pending-handle";
+import { CREATOR_KEEP_PCT } from "@/lib/seo";
 
 type HandleCtx = {
   handle: string;
@@ -86,7 +87,7 @@ export function HandleForm({
         </button>
       </div>
       <p className="handle-note">
-        $0 to build <span className="dot">·</span> you keep 70% <span className="dot">·</span>{" "}
+        $0 to build <span className="dot">·</span> you keep {CREATOR_KEEP_PCT}% <span className="dot">·</span>{" "}
         leave whenever
       </p>
     </form>

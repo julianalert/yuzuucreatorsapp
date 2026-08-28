@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { inngest, type Events } from "./client";
 import { supabaseAdmin } from "../supabase/admin";
 import {
@@ -774,6 +775,9 @@ export const blueprintBuild = inngest.createFunction(
         status: "complete",
         completed_at: now,
       });
+
+      revalidatePath("/sitemap.xml");
+      revalidatePath(`/u/${handle}`);
     });
 
     return { published: true, blueprintId };
