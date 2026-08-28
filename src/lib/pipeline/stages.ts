@@ -397,7 +397,28 @@ ${template.sections.map((s) => "    " + sectionContract(s).split("\n").join("\n 
   }
 }
 
-Every section listed in the contract must be present. Respect each section's declared shape and minimum item counts. Write in the declared voice. No markdown, no preamble — JSON only.`;
+Every section listed in the contract must be present. Respect each section's declared shape and minimum item counts. Write in the declared voice. Never use an em dash (—) anywhere in the text; rewrite the sentence with a comma, colon, or period instead. No markdown, no preamble — JSON only.`;
+}
+
+/**
+ * The prompt bans em dashes in buyer-facing text, but models still slip them
+ * in — scrub deterministically so one can never reach a paid document.
+ * Clause-joining em dashes read naturally as commas.
+ */
+export function stripEmDashes<T>(value: T): T {
+  if (typeof value === "string") {
+    return value
+      .replace(/\s*—\s*/g, ", ")
+      .replace(/^,\s*/, "")
+      .replace(/,\s*([.,;:!?])/g, "$1") as unknown as T;
+  }
+  if (Array.isArray(value)) return value.map(stripEmDashes) as unknown as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, stripEmDashes(v)])
+    ) as T;
+  }
+  return value;
 }
 
 export async function generateOutput(
@@ -410,10 +431,12 @@ export async function generateOutput(
     const retryNote = lastErrors
       ? `\n\nYour previous attempt failed structural validation:\n${lastErrors}\nFix every listed issue and return the full corrected JSON.`
       : "";
-    const output = (await ask("writer", prompt + retryNote, {
-      maxTokens: 16000,
-      ...ctx,
-    })) as GeneratedOutput;
+    const output = stripEmDashes(
+      (await ask("writer", prompt + retryNote, {
+        maxTokens: 16000,
+        ...ctx,
+      })) as GeneratedOutput
+    );
     const check = validateGeneratedOutput(args.template, output);
     if (check.ok) return output;
     lastErrors = check.errors.map((e) => `- ${e.path}: ${e.issue}`).join("\n");

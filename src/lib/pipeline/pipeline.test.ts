@@ -4,7 +4,7 @@ import path from "node:path";
 import { createMockApi } from "./mock";
 import { swapTest, divergence } from "./swap";
 import { parseModelJson } from "./ask";
-import { readableAnswers } from "./stages";
+import { readableAnswers, stripEmDashes } from "./stages";
 import { RUBRIC, MIN_SCORE, MIN_DIVERGENCE, SAMPLE_BUYER_COUNT, defaultVoice } from "./constants";
 import { validateBlueprint, flattenGeneratedOutput } from "../blueprint/validate";
 import type { Blueprint, CreatorInput, GeneratedOutput, Safety } from "../blueprint/types";
@@ -175,5 +175,28 @@ describe("parseModelJson (harness ask() recovery)", () => {
 
   it("throws when there is no JSON at all", () => {
     expect(() => parseModelJson("just prose, no json")).toThrow(/No JSON/);
+  });
+});
+
+describe("stripEmDashes", () => {
+  it("turns clause-joining em dashes into commas", () => {
+    expect(stripEmDashes("do this — then that")).toBe("do this, then that");
+    expect(stripEmDashes("tight—joined")).toBe("tight, joined");
+  });
+
+  it("drops a leading em dash and avoids double punctuation", () => {
+    expect(stripEmDashes("— a fresh start")).toBe("a fresh start");
+    expect(stripEmDashes("wait —, no")).toBe("wait, no");
+  });
+
+  it("recurses through objects and arrays, leaving non-strings alone", () => {
+    expect(
+      stripEmDashes({ cover: { title: "A — B" }, meta: [{ value: "10 — 12", n: 3 }] })
+    ).toEqual({ cover: { title: "A, B" }, meta: [{ value: "10, 12", n: 3 }] });
+  });
+
+  it("never leaves an em dash anywhere", () => {
+    const out = stripEmDashes({ a: "x — y", b: ["— z", { c: "p—q" }] });
+    expect(JSON.stringify(out)).not.toContain("—");
   });
 });
