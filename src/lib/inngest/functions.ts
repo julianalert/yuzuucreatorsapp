@@ -142,7 +142,7 @@ export const blueprintBuild = inngest.createFunction(
     },
   },
   async ({ event, step }) => {
-    const { buildId, creatorId, handle, selfDescription, rebuildOfBuildId } =
+    const { buildId, creatorId, handle, selfDescription, rebuildOfBuildId, rejectReason } =
       event.data as Events["build/requested"];
 
     const declined = async (haltedAt: string, note: string) => {
@@ -218,7 +218,7 @@ export const blueprintBuild = inngest.createFunction(
         }
       }
       const usage = createUsageTracker();
-      const scoped = createPipelineApi(usage);
+      const scoped = createPipelineApi(usage, rejectReason);
       const card = await scoped.extractAudience(creatorInput);
       await updateBuild(buildId, { audience_card: card });
       await addCost(buildId, usage.cost_usd);
@@ -262,7 +262,7 @@ export const blueprintBuild = inngest.createFunction(
       let proposals = await step.run("propose", async () => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "propose" });
         const usage = createUsageTracker();
-        const scoped = createPipelineApi(usage);
+        const scoped = createPipelineApi(usage, rejectReason);
         const topics = await scoped.proposeTopics(audience);
         await updateBuild(buildId, { topic_proposals: topics });
         await addCost(buildId, usage.cost_usd);
@@ -275,7 +275,7 @@ export const blueprintBuild = inngest.createFunction(
         proposals = await step.run("propose-bonus", async () => {
           try {
             const usage = createUsageTracker();
-            const scoped = createPipelineApi(usage);
+            const scoped = createPipelineApi(usage, rejectReason);
             const bonus = await scoped.proposeBonusTopic(audience, proposals);
             const all = [...proposals, { ...bonus, bonus: true }];
             await updateBuild(buildId, { topic_proposals: { proposals: all } });
@@ -348,7 +348,7 @@ export const blueprintBuild = inngest.createFunction(
         pack = (await step.run(`knowledge-pack-${ka}`, async () => {
           await updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge" });
           const usage = createUsageTracker();
-          const scoped = createPipelineApi(usage);
+          const scoped = createPipelineApi(usage, rejectReason);
           const candidate = await scoped.buildKnowledgePack(topic, audience);
           await addCost(buildId, usage.cost_usd);
           return candidate;
@@ -356,7 +356,7 @@ export const blueprintBuild = inngest.createFunction(
         const snapshot = pack;
         const critic = await step.run(`knowledge-critic-${ka}`, async () => {
           const usage = createUsageTracker();
-          const scoped = createPipelineApi(usage);
+          const scoped = createPipelineApi(usage, rejectReason);
           const result = await scoped.knowledgeCritic(snapshot);
           await addCost(buildId, usage.cost_usd);
           return result;
@@ -374,7 +374,7 @@ export const blueprintBuild = inngest.createFunction(
     const template = (await step.run("template", async () => {
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "template" });
       const usage = createUsageTracker();
-      const scoped = createPipelineApi(usage);
+      const scoped = createPipelineApi(usage, rejectReason);
       const t = await scoped.designOutputTemplate(topic, pack, audience);
       await addCost(buildId, usage.cost_usd);
       return t;
@@ -384,7 +384,7 @@ export const blueprintBuild = inngest.createFunction(
     const generationPrompt = (await step.run("generation-prompt", async () => {
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "prompt" });
       const usage = createUsageTracker();
-      const scoped = createPipelineApi(usage);
+      const scoped = createPipelineApi(usage, rejectReason);
       const rules = await scoped.writeGenerationPrompt(topic, pack, template, voice, DEFAULT_SAFETY);
       await addCost(buildId, usage.cost_usd);
       return rules;
@@ -423,7 +423,7 @@ export const blueprintBuild = inngest.createFunction(
       const quizResult = await step.run(`quiz-${attempt}`, async () => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "quiz" });
         const usage = createUsageTracker();
-        const scoped = createPipelineApi(usage);
+        const scoped = createPipelineApi(usage, rejectReason);
         let lastErrors: unknown[] = [];
         for (let qa = 0; qa < 3; qa++) {
           const candidate = await scoped.designQuiz(topic, pack, audience, template);
@@ -463,7 +463,7 @@ export const blueprintBuild = inngest.createFunction(
       buyers = (await step.run(`sample-buyers-${attempt}`, async () => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "samples" });
         const usage = createUsageTracker();
-        const scoped = createPipelineApi(usage);
+        const scoped = createPipelineApi(usage, rejectReason);
         const invented = await scoped.inventSampleBuyers(frozenQuiz, audience);
         await addCost(buildId, usage.cost_usd);
         return invented.slice(0, SAMPLE_BUYER_COUNT);
@@ -477,7 +477,7 @@ export const blueprintBuild = inngest.createFunction(
         const output = (await step.run(`sample-${attempt}-${i + 1}`, async () => {
           await updateBuild(buildId, { ...STAGE_STATUS, stage: "samples" });
           const usage = createUsageTracker();
-          const scoped = createPipelineApi(usage);
+          const scoped = createPipelineApi(usage, rejectReason);
           const generated = await scoped.generateOutput({
             template,
             generationPrompt,
@@ -535,7 +535,7 @@ export const blueprintBuild = inngest.createFunction(
     const gate = await step.run("critique", async () => {
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "critique" });
       const usage = createUsageTracker();
-      const scoped = createPipelineApi(usage);
+      const scoped = createPipelineApi(usage, rejectReason);
       const scored: { persona: string; weighted: number; scores: unknown }[] = [];
       for (let i = 0; i < buyers.length; i++) {
         const context = buyerContextFor(buyers[i].label, readableAnswers(quiz!, buyers[i].answers));
@@ -682,7 +682,13 @@ export const blueprintBuild = inngest.createFunction(
       });
       await step.sendEvent("trigger-rebuild", {
         name: "build/requested",
-        data: { buildId: newBuildId, creatorId, handle, rebuildOfBuildId: buildId },
+        data: {
+          buildId: newBuildId,
+          creatorId,
+          handle,
+          rebuildOfBuildId: buildId,
+          rejectReason: reviewData.reason,
+        },
       });
       return { rejected: true, rebuild: newBuildId };
     }

@@ -46,7 +46,7 @@ export default async function ReviewPage() {
           <div className="micro">Ready for you</div>
           <h1 style={{ marginTop: 18 }}>Read three plans before this goes live.</h1>
           <p className="lede">
-            We invented three very different buyers and wrote each their own plan — exactly how
+            We invented three very different buyers and wrote each their own plan, exactly how
             every real buyer&apos;s will be written. If any of it doesn&apos;t sound like you, say
             so and we&apos;ll rebuild it.
           </p>

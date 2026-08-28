@@ -8,6 +8,8 @@ export interface Events {
     selfDescription?: string;
     /** Set when this build is a rebuild after a sample rejection. */
     rebuildOfBuildId?: string;
+    /** The creator's rejection feedback, injected into rebuild prompts. */
+    rejectReason?: string;
   };
   "build/topic.chosen": { buildId: string; topicIndex: number };
   /** Creator walked away at the idea-picking step; the build row is deleted. */

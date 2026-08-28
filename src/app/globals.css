@@ -395,20 +395,38 @@ table.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
 .tbl td.mono { font-family: var(--mono); font-size: 13px; color: var(--sage); }
 
 /* ── sample review ──────────────────────────────────────── */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-top: 28px; flex-wrap: wrap; }
-.tab {
+.sample-switch { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+.sample-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font: inherit;
   font-size: 14px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 11px 14px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 16px 10px 10px;
   color: var(--sage);
   cursor: pointer;
-  margin-bottom: -1px;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
 }
-.tab:hover { color: var(--ink); }
-.tab.on { color: var(--ink); border-bottom-color: var(--zest); font-weight: 500; }
+.sample-tab:hover { border-color: var(--line-strong); color: var(--ink); }
+.sample-tab.on { border-color: var(--ink); background: var(--paper); color: var(--ink); font-weight: 500; }
+.sample-tab-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  transition: background 0.16s, color 0.16s;
+}
+.sample-tab.on .sample-tab-n { background: var(--zest); color: var(--ink); }
 .paper {
   background: var(--raised);
   border: 1px solid var(--line);

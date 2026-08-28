@@ -13,9 +13,13 @@ export type { GenerateOutputArgs } from "./stages";
 export { composeGenerationPrompt, readableAnswers } from "./stages";
 export { createMockApi } from "./mock";
 
-/** Real model-backed pipeline API. Pass a usage tracker to accumulate cost. */
-export function createRealApi(usage?: Usage): PipelineApi {
-  const ctx = { usage };
+/**
+ * Real model-backed pipeline API. Pass a usage tracker to accumulate cost.
+ * `feedback` (the creator's rejection reason on a rebuild) is injected into
+ * every product-shaping prompt.
+ */
+export function createRealApi(usage?: Usage, feedback?: string): PipelineApi {
+  const ctx = { usage, feedback };
   return {
     extractAudience: (creator) => stages.extractAudience(creator, ctx),
     proposeTopics: (audience) => stages.proposeTopics(audience, ctx),
@@ -42,7 +46,7 @@ export function createRealApi(usage?: Usage): PipelineApi {
  * PIPELINE_MOCK=true swaps every model call for the mock layer, so the whole
  * app can be exercised end-to-end without keys or cost.
  */
-export function createPipelineApi(usage?: Usage): PipelineApi {
+export function createPipelineApi(usage?: Usage, feedback?: string): PipelineApi {
   if (process.env.PIPELINE_MOCK === "true") return createMockApi();
-  return createRealApi(usage);
+  return createRealApi(usage, feedback);
 }

@@ -19,6 +19,11 @@
   color: var(--pd-ink);
 }
 
+/* Onboarding review embeds the document inside a page column that already
+   has its own max-width and no side padding — drop .pd's own so its text
+   lines up with the heading/lede/tabs above it instead of sitting inset. */
+.sample-doc .pd { max-width: none; padding-left: 0; padding-right: 0; }
+
 /* accent variants set per section */
 .pd-acc-zest { --pd-acc: #7a8917; --pd-acc-wash: #eff3d9; }
 .pd-acc-sage { --pd-acc: #5c6f63; --pd-acc-wash: #e6ece6; }

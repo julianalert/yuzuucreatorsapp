@@ -29,7 +29,20 @@ import type {
 import { validateGeneratedOutput } from "../blueprint/validate";
 import { TOPIC_COUNT } from "./constants";
 
-type Ctx = Pick<AskOptions, "usage">;
+type Ctx = Pick<AskOptions, "usage"> & {
+  /** On rebuilds: the creator's reason for rejecting the previous version. */
+  feedback?: string;
+};
+
+/** Injected into every product-shaping prompt on a rebuild. */
+function feedbackBlock(ctx: Ctx): string {
+  if (!ctx.feedback) return "";
+  return `
+
+IMPORTANT — a previous version of this product was built and the creator rejected it. Their feedback:
+<creator_feedback>${ctx.feedback}</creator_feedback>
+Treat this as a hard requirement: work out what in the previous approach prompted it and make this version address it directly. Do not repeat the rejected approach.`;
+}
 
 export async function extractAudience(creator: CreatorInput, ctx: Ctx = {}): Promise<AudienceCard> {
   return ask(
@@ -146,7 +159,7 @@ GLOSSARY — terms the plan will use, one line each.
 Rules: no intervention requiring a purchase; flag contested items with "contested":true and state both sides; mark uncertain claims "confidence":"low" rather than omitting them.
 
 Return JSON only:
-{"root_causes":[{"id":"rc_...","label":"...","prevalence":"high|medium|low","explanation":"..."}],"mechanisms":[{"id":"mech_...","name":"...","why_it_works":"..."}],"false_beliefs":[{"belief":"...","correction":"..."}],"glossary":{"term":"definition"}}`,
+{"root_causes":[{"id":"rc_...","label":"...","prevalence":"high|medium|low","explanation":"..."}],"mechanisms":[{"id":"mech_...","name":"...","why_it_works":"..."}],"false_beliefs":[{"belief":"...","correction":"..."}],"glossary":{"term":"definition"}}${feedbackBlock(ctx)}`,
     // the pack routinely runs past the 8k default and a truncated response
     // fails JSON parsing (seen in prod at ~21k chars)
     { maxTokens: 16000, ...ctx }
@@ -218,7 +231,7 @@ Also design the cover:
 - fingerprint_axes: 5-8 short axis labels the quiz can genuinely measure per buyer (aspects of their situation, severity, constraints)
 
 Return JSON only:
-{"doc_label":"...","cover_label":"...","fingerprint_title":"...","fingerprint_axes":["..."],"sections":[{"id":"snake_case_id","eyebrow":"e.g. Part 01 · Nutrition","title":"...","description":"one line under the title","accent":"zest|sage|amber|rose","component":"prose|cards|timeline|table|rhythm|checklist|brief","table_columns":["only when component is table"],"instructions":"..."}]}`,
+{"doc_label":"...","cover_label":"...","fingerprint_title":"...","fingerprint_axes":["..."],"sections":[{"id":"snake_case_id","eyebrow":"e.g. Part 01 · Nutrition","title":"...","description":"one line under the title","accent":"zest|sage|amber|rose","component":"prose|cards|timeline|table|rhythm|checklist|brief","table_columns":["only when component is table"],"instructions":"..."}]}${feedbackBlock(ctx)}`,
     ctx
   );
 }
@@ -253,7 +266,7 @@ Write 6-12 questions. Constraints, enforced by a validator after you:
 - Prefer "single" type; use "multi" only where combinations genuinely matter.
 
 Return JSON only:
-{"questions":[{"id":"q_...","question":"...","type":"single|multi","required":true,"help":"optional clarifier","informs":["section ids"],"options":[{"value":"snake_case","label":"buyer-facing label","sub":"optional detail"}]}]}`,
+{"questions":[{"id":"q_...","question":"...","type":"single|multi","required":true,"help":"optional clarifier","informs":["section ids"],"options":[{"value":"snake_case","label":"buyer-facing label","sub":"optional detail"}]}]}${feedbackBlock(ctx)}`,
     ctx
   );
 }
@@ -288,7 +301,7 @@ Write 8-12 numbered rules covering:
 
 End with a QUALITY CHECKLIST of 5-7 yes/no self-verification questions the writer must pass before returning.
 
-Return JSON only: {"rules":"the full rules block as plain text with numbered rules and the checklist"}`,
+Return JSON only: {"rules":"the full rules block as plain text with numbered rules and the checklist"}${feedbackBlock(ctx)}`,
     { maxTokens: 4000, ...ctx }
   );
   return typeof res === "string" ? res : (res.rules as string);

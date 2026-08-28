@@ -32,20 +32,29 @@ export function SampleReview({
 
   return (
     <>
-      <div className="tabs">
+      <div className="sample-switch" role="tablist" aria-label="Sample buyer">
         {samples.map((s, i) => (
-          <button key={s.persona} className={`tab ${i === tab ? "on" : ""}`} onClick={() => setTab(i)}>
-            {s.label}
+          <button
+            key={s.persona}
+            type="button"
+            role="tab"
+            aria-selected={i === tab}
+            className={`sample-tab ${i === tab ? "on" : ""}`}
+            onClick={() => setTab(i)}
+          >
+            <span className="sample-tab-n">{i + 1}</span>
+            <span className="sample-tab-label">{s.label}</span>
           </button>
         ))}
       </div>
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 18 }}>
         <span className="micro">
-          Sample {tab + 1} of {samples.length} · an invented buyer — this is the exact document
-          they&apos;d receive
+          An invented buyer — this is the exact document they&apos;d receive
         </span>
         {sample ? (
-          <PlanDocument template={template} output={sample.output} creatorName={creatorName} />
+          <div className="sample-doc">
+            <PlanDocument template={template} output={sample.output} creatorName={creatorName} />
+          </div>
         ) : null}
       </div>
 
