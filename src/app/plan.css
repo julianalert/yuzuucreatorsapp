@@ -20,6 +20,7 @@
   /* Generated copy is unpredictable length — never let a long word/number
      force this off the side of the screen instead of wrapping. */
   overflow-wrap: break-word;
+  min-width: 0;
 }
 
 /* Onboarding review embeds the document inside a page column that already
@@ -30,7 +31,7 @@
 /* Order page: the content column is already narrower than .pd's own cap, so
    the extra side padding just insets the document from the "Save as PDF"
    button above it — drop it so the right edges line up. */
-.out .pd { max-width: none; padding-left: 0; padding-right: 0; }
+.out .pd { max-width: none; padding-left: 0; padding-right: 0; width: 100%; }
 
 /* accent variants set per section */
 .pd-acc-zest { --pd-acc: #7a8917; --pd-acc-wash: #eff3d9; }
@@ -104,11 +105,12 @@
 .pd-fp-title { color: #9aa89f; margin-bottom: 14px; }
 .pd-fp-row {
   display: grid;
-  grid-template-columns: minmax(min(120px, 40%), 180px) 1fr 30px;
+  grid-template-columns: minmax(min(120px, 40%), 180px) minmax(0, 1fr) 30px;
   gap: 12px;
   align-items: center;
   padding: 5px 0;
 }
+.pd-fp-row > * { min-width: 0; }
 .pd-fp-row .l { font-size: 13px; color: #c4cdc6; }
 .pd-fp-track {
   height: 7px;
@@ -173,7 +175,9 @@
   grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 14px;
   margin-top: 20px;
+  min-width: 0;
 }
+.pd-cards > * { min-width: 0; }
 .pd-card {
   background: var(--pd-raised);
   border: 1px solid var(--pd-line);
@@ -301,11 +305,12 @@
 .pd-rhythm { margin-top: 20px; border: 1px solid var(--pd-line); border-radius: 8px; background: var(--pd-raised); overflow: hidden; }
 .pd-slot {
   display: grid;
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: 92px minmax(0, 1fr);
   gap: 16px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--pd-line);
 }
+.pd-slot > * { min-width: 0; }
 .pd-slot:last-child { border-bottom: none; }
 .pd-slot .time {
   font-family: var(--pd-mono);
@@ -405,5 +410,12 @@
 
 @media (max-width: 640px) {
   .pd-cover { padding: 34px 26px 30px; }
-  .pd-slot { grid-template-columns: 70px 1fr; }
+  .pd-brief { padding: 24px 20px; }
+  .pd-cards { grid-template-columns: 1fr; }
+  .pd-fp-row {
+    grid-template-columns: minmax(0, 1fr) 30px;
+    gap: 6px 12px;
+  }
+  .pd-fp-row .l { grid-column: 1 / -1; }
+  .pd-slot { grid-template-columns: 70px minmax(0, 1fr); }
 }

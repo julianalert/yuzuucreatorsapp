@@ -652,10 +652,15 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
   margin: 0 auto;
   padding: 52px 32px 96px;
   display: grid;
-  grid-template-columns: 230px 1fr;
+  grid-template-columns: 230px minmax(0, 1fr);
   gap: 64px;
   align-items: start;
+  min-width: 0;
 }
+/* Grid/flex children default to min-width: auto, which lets generated plan
+   content (card grids, tables, long TOC labels) size the column from their
+   min-content width and blow past the viewport on mobile. */
+.out > * { min-width: 0; max-width: 100%; }
 .toc { position: sticky; top: 100px; }
 .toc .micro { display: block; padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
 .toc a {
@@ -666,6 +671,7 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
   text-decoration: none;
   border-bottom: 1px solid var(--line);
   transition: color 0.14s;
+  overflow-wrap: anywhere;
 }
 .toc a:hover { color: var(--ink); }
 .toc a.on { color: var(--ink); font-weight: 500; }

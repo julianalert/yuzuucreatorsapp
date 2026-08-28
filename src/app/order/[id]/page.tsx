@@ -146,7 +146,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             creatorName={creatorName}
             disclaimers={bp.safety.disclaimers}
           />
-          <div className="dl pd-noprint" style={{ maxWidth: 880, margin: "0 auto", padding: "0 24px" }}>
+          <div className="dl pd-noprint" style={{ maxWidth: "100%", margin: "0 auto" }}>
             <span style={{ fontSize: 13.5, color: "var(--sage)" }}>
               Also sent to {order.buyer_email}. This link keeps working. Use Save as PDF for an
               offline copy.
