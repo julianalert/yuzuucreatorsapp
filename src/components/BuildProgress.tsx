@@ -79,7 +79,9 @@ export function BuildProgress({
         // transient — next tick retries
       }
     };
-    const interval = setInterval(tick, 2500);
+    // scan is short and the redirect to ideas should feel instant; build runs
+    // for many minutes with slow stage changes, so poll far less often
+    const interval = setInterval(tick, phase === "scan" ? 3000 : 12000);
     tick();
     return () => {
       stopped = true;
