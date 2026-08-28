@@ -147,7 +147,9 @@ Rules: no intervention requiring a purchase; flag contested items with "conteste
 
 Return JSON only:
 {"root_causes":[{"id":"rc_...","label":"...","prevalence":"high|medium|low","explanation":"..."}],"mechanisms":[{"id":"mech_...","name":"...","why_it_works":"..."}],"false_beliefs":[{"belief":"...","correction":"..."}],"glossary":{"term":"definition"}}`,
-    ctx
+    // the pack routinely runs past the 8k default and a truncated response
+    // fails JSON parsing (seen in prod at ~21k chars)
+    { maxTokens: 16000, ...ctx }
   );
 }
 
