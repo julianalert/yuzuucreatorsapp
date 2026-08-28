@@ -24,7 +24,8 @@ const PHASES: Record<"scan" | "build", StageItem[]> = {
     { label: "Writing the quiz", stages: ["quiz"] },
     { label: "Writing plans for three sample buyers", stages: ["samples"] },
     { label: "Checking they're genuinely personal", stages: ["swap_test", "critique"] },
-    { label: "Samples for you to read", stages: ["gate", "publish"] },
+    { label: "Samples for you to read", stages: ["gate"] },
+    { label: "Going live", stages: ["publish"] },
   ],
 };
 
@@ -97,7 +98,7 @@ export function BuildProgress({
     <div style={{ marginTop: 34 }}>
       <div className="live-status" role="status" aria-live="polite">
         <span className="spinner" aria-hidden="true" />
-        Working — this updates automatically
+        {phase === "build" ? "Building" : "Working"} — this updates automatically
       </div>
       <ul className="stages" style={{ marginTop: 18 }}>
         {items.map((it, i) => {
