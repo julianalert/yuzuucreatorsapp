@@ -80,6 +80,8 @@ export interface ScrapeResult {
   handle: string;
   bio: string;
   fullName: string;
+  /** Signed Instagram CDN URL — expires within days, so copy it to storage. */
+  avatarUrl: string;
   captions: string[];
   comments: string[];
   raw: { profile: unknown; posts: unknown };
@@ -97,6 +99,16 @@ export async function scrapeCreator(
   const bio =
     pick(profile, "data.user.biography", "user.biography", "biography", "data.biography") ?? "";
   const fullName = pick(profile, "data.user.full_name", "user.full_name", "full_name") ?? "";
+  const avatarUrl =
+    pick(
+      profile,
+      "data.user.profile_pic_url_hd",
+      "user.profile_pic_url_hd",
+      "profile_pic_url_hd",
+      "data.user.profile_pic_url",
+      "user.profile_pic_url",
+      "profile_pic_url"
+    ) ?? "";
 
   const postsRes = await api("/v2/instagram/user/posts", { handle, trim: true });
   const posts = postsOf(postsRes);
@@ -129,6 +141,7 @@ export async function scrapeCreator(
     handle,
     bio: String(bio),
     fullName: String(fullName),
+    avatarUrl: String(avatarUrl),
     captions,
     comments,
     raw: { profile, posts: postsRes },

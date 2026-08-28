@@ -30,7 +30,19 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
     <section>
       <header className="bar">
         <div className="bar-in">
-          <div className="avatar">{product.creatorName[0]?.toUpperCase()}</div>
+          <div className="avatar">
+            {product.creatorAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- storage-hosted avatar, not worth next/image remote-pattern config
+              <img
+                className="avatar-img"
+                src={product.creatorAvatarUrl}
+                alt={product.creatorName}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              product.creatorName[0]?.toUpperCase()
+            )}
+          </div>
           <div className="who">
             <b>{product.creatorName}</b>
             <span>@{product.handle} · built from their audience</span>

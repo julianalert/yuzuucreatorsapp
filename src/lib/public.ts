@@ -28,6 +28,7 @@ export interface PublicProduct {
   priceCents: number;
   handle: string;
   creatorName: string;
+  creatorAvatarUrl: string | null;
   credibility?: string;
   title: string;
   promise: string;
@@ -41,7 +42,7 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
   const admin = supabaseAdmin();
   const { data: creator } = await admin
     .from("creators")
-    .select("id, handle, display_name")
+    .select("id, handle, display_name, avatar_url")
     .eq("handle", handle.toLowerCase())
     .maybeSingle();
   if (!creator) return null;
@@ -75,6 +76,7 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
     priceCents: (row as BlueprintRow).price_cents,
     handle: creator.handle!,
     creatorName: creator.display_name ?? bp.creator?.display_name ?? `@${creator.handle}`,
+    creatorAvatarUrl: creator.avatar_url ?? null,
     credibility: bp.creator?.credibility_statement,
     title: bp.product?.topic_title ?? "",
     promise: bp.product?.promise ?? "",

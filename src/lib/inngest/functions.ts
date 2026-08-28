@@ -41,6 +41,40 @@ async function updateBuild(buildId: string, patch: Record<string, unknown>) {
   if (error) throw new Error(`builds update: ${error.message}`);
 }
 
+/**
+ * Copy the scraped Instagram identity onto the creator row: name directly,
+ * photo via the avatars bucket (the scraped CDN URL is signed and expires).
+ * From then on the app shows the Instagram identity, not the Google one.
+ * Non-fatal — a build should never die over a profile photo.
+ */
+async function syncCreatorProfile(creatorId: string, fullName: string, igAvatarUrl: string) {
+  try {
+    const patch: Record<string, string> = {};
+    if (fullName.trim()) patch.display_name = fullName.trim();
+    if (igAvatarUrl) {
+      const res = await fetch(igAvatarUrl);
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        const contentType = res.headers.get("content-type") ?? "image/jpeg";
+        const path = `${creatorId}.jpg`;
+        const { error } = await db()
+          .storage.from("avatars")
+          .upload(path, buf, { contentType, upsert: true });
+        if (!error) {
+          const { data } = db().storage.from("avatars").getPublicUrl(path);
+          // cache-buster: same storage path on every re-scrape, fresh URL
+          patch.avatar_url = `${data.publicUrl}?v=${Date.now()}`;
+        }
+      }
+    }
+    if (Object.keys(patch).length) {
+      await db().from("creators").update(patch).eq("id", creatorId);
+    }
+  } catch (e) {
+    console.error("[syncCreatorProfile] non-fatal:", e);
+  }
+}
+
 async function addCost(buildId: string, usd: number) {
   if (!usd) return;
   const { data } = await db().from("builds").select("cost_usd").eq("id", buildId).single();
@@ -180,6 +214,7 @@ export const blueprintBuild = inngest.createFunction(
       } else {
         const s = await scrapeCreator(handle);
         thin = s.thin;
+        await syncCreatorProfile(creatorId, s.fullName, s.avatarUrl);
         input = {
           handle: s.handle,
           bio: s.bio,

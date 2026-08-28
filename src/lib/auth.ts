@@ -27,9 +27,10 @@ export async function requireCreator(): Promise<CreatorRow> {
     .eq("user_id", user.id)
     .maybeSingle();
   if (existing) {
-    // Keep the avatar in sync (covers accounts created before this field
-    // existed, and creators who update their Google photo later).
-    if (avatarUrl && avatarUrl !== existing.avatar_url) {
+    // Google metadata is only a backfill for rows that have no photo yet.
+    // Once a build scrapes Instagram, the scraped name/photo own these fields
+    // and must not be clobbered on sign-in.
+    if (avatarUrl && !existing.avatar_url) {
       const { data: updated } = await admin
         .from("creators")
         .update({ avatar_url: avatarUrl })
