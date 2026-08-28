@@ -34,7 +34,7 @@ export default function OpenGraphImage() {
           Earn regular income from your audience
         </div>
         <div style={{ display: "flex", fontSize: 28, color: "#4c5c51", marginTop: 28 }}>
-          We build the product. You keep 75% of every sale.
+          We build the product. You keep 70% of every sale.
         </div>
       </div>
     ),

@@ -6,7 +6,8 @@ export const SITE_ORIGIN = (
 ).replace(/\/$/, "");
 
 /** Creator share shown in marketing copy. Keep in sync with the pricing table. */
-export const CREATOR_KEEP_PCT = 75;
+export const CREATOR_KEEP_PCT = 70;
+export const PLATFORM_KEEP_PCT = 100 - CREATOR_KEEP_PCT;
 
 export const SITE_TITLE = "Yuzuu — Earn regular income from your audience";
 export const SITE_DESCRIPTION = `Yuzuu studies your audience, proposes product ideas, and builds the whole thing: quiz, sales page, personalized output. It costs you nothing and you keep ${CREATOR_KEEP_PCT}% of every sale.`;

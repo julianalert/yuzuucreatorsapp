@@ -12,7 +12,7 @@ import {
   RiseObserve,
 } from "@/components/landing/HandleSync";
 import { LANDING_FAQ, faqPageJsonLd } from "@/lib/landing-faq";
-import { CREATOR_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
+import { CREATOR_KEEP_PCT, PLATFORM_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
 import "./landing.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -392,7 +392,7 @@ export default async function Home({
                 </div>
                 <div className="row">
                   <span className="k">We keep</span>
-                  <span className="v">25%</span>
+                  <span className="v">{PLATFORM_KEEP_PCT}%</span>
                 </div>
                 <div className="row">
                   <span className="k">Monthly fee</span>
