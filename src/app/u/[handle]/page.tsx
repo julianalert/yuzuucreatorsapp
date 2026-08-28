@@ -58,16 +58,11 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
           </div>
           <h1 style={{ marginTop: 18 }}>{product.title}</h1>
           <p className="lede-strong">{product.promise}</p>
-          {product.credibility ? (
-            <p style={{ marginTop: 16, fontSize: 14.5, color: "var(--sage)" }}>
-              {product.credibility}
-            </p>
-          ) : null}
 
           <div className="price-line">
             <span className="amt">${price}</span>
             <span className="note">
-              One payment. Yours to keep — web, PDF, and email.
+              One payment. Yours to keep: web, PDF, and email.
             </span>
           </div>
 
@@ -75,10 +70,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
             <Link className="btn btn-primary btn-lg" href={`/u/${product.handle}/quiz`}>
               Start the {product.questions.length}-question quiz
             </Link>
-            <span style={{ fontSize: 13.5, color: "var(--sage)" }}>
-              Takes about 2 minutes · see your version before paying anything? No — but there&apos;s
-              a guarantee.
-            </span>
+            <span style={{ fontSize: 13.5, color: "var(--sage)" }}>Takes about 2 minutes</span>
           </div>
         </div>
 
@@ -87,7 +79,6 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
             <div className="cov" key={title}>
               <span className="n">{String(i + 1).padStart(2, "0")}</span>
               <h3>{title}</h3>
-              <p>Written for your answers — not a template with your name pasted in.</p>
             </div>
           ))}
         </div>
@@ -95,7 +86,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
         <div className="strip">
           <p className="q">
             The quiz works out which kind of person you are. The plan you get is written for that
-            person — different buyers get materially different plans.
+            person: different buyers get materially different plans.
           </p>
           <Link className="btn btn-outline" href={`/u/${product.handle}/quiz`}>
             Take the quiz

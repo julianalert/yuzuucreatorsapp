@@ -17,6 +17,9 @@
   margin: 0 auto;
   padding: 28px 24px 80px;
   color: var(--pd-ink);
+  /* Generated copy is unpredictable length — never let a long word/number
+     force this off the side of the screen instead of wrapping. */
+  overflow-wrap: break-word;
 }
 
 /* Onboarding review embeds the document inside a page column that already
@@ -69,7 +72,10 @@
 }
 .pd-meta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  /* min(120px, 100%) instead of a bare 120px floor — a grid item's automatic
+     minimum size is otherwise allowed to exceed the track's available space
+     and blow the whole document out sideways on narrow viewports. */
+  grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr));
   gap: 1px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -98,7 +104,7 @@
 .pd-fp-title { color: #9aa89f; margin-bottom: 14px; }
 .pd-fp-row {
   display: grid;
-  grid-template-columns: minmax(120px, 180px) 1fr 30px;
+  grid-template-columns: minmax(min(120px, 40%), 180px) 1fr 30px;
   gap: 12px;
   align-items: center;
   padding: 5px 0;
@@ -162,7 +168,9 @@
 /* cards */
 .pd-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  /* Same fix as .pd-meta: clamp the floor to the container so cards can't
+     force a horizontal scrollbar on narrow/medium screens. */
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 14px;
   margin-top: 20px;
 }

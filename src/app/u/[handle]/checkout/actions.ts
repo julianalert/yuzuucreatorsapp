@@ -16,6 +16,7 @@ export async function createOrder(formData: FormData) {
   const handle = String(formData.get("handle") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const answersRaw = String(formData.get("answers") ?? "");
+  const sessionId = String(formData.get("session_id") ?? "");
 
   const product = await publishedProductByHandle(handle);
   if (!product) redirect(`/u/${handle}`);
@@ -52,6 +53,25 @@ export async function createOrder(formData: FormData) {
     .select("id")
     .single();
   if (error) throw new Error(`order insert: ${error.message}`);
+
+  // funnel: close the loop on the quiz session. Non-fatal — an order must
+  // never fail over tracking.
+  if (sessionId) {
+    try {
+      await admin
+        .from("quiz_sessions")
+        .update({
+          status: "paid",
+          order_id: order.id,
+          email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId)
+        .eq("blueprint_id", product.blueprintId);
+    } catch (e) {
+      console.error("[createOrder] quiz session update failed:", e);
+    }
+  }
 
   await sendEvent("order/paid", { orderId: order.id });
 

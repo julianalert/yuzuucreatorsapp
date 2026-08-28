@@ -3,11 +3,18 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { QUIZ_STORAGE_KEY } from "./QuizClient";
+import { trackQuizSession } from "@/lib/quiz-tracking";
 
 const noopSubscribe = () => () => {};
 
-/** Quiz answers persisted by QuizClient, or null when missing/invalid. */
-function useStoredAnswers(handle: string): string | null | undefined {
+interface StoredQuiz {
+  answers: string;
+  sessionId: string | null;
+  email: string;
+}
+
+/** Quiz state persisted by QuizClient, or null when missing/invalid. */
+function useStoredQuiz(handle: string): StoredQuiz | null | undefined {
   const raw = useSyncExternalStore(
     noopSubscribe,
     () => sessionStorage.getItem(QUIZ_STORAGE_KEY),
@@ -18,7 +25,11 @@ function useStoredAnswers(handle: string): string | null | undefined {
   try {
     const parsed = JSON.parse(raw);
     if (parsed.handle !== handle) return null;
-    return JSON.stringify(parsed.answers);
+    return {
+      answers: JSON.stringify(parsed.answers),
+      sessionId: typeof parsed.sessionId === "string" ? parsed.sessionId : null,
+      email: typeof parsed.email === "string" ? parsed.email : "",
+    };
   } catch {
     return null;
   }
@@ -35,13 +46,19 @@ export function CheckoutClient({
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const answers = useStoredAnswers(handle);
+  const stored = useStoredQuiz(handle);
 
   useEffect(() => {
-    if (answers === null) router.replace(`/u/${handle}/quiz`);
-  }, [answers, handle, router]);
+    if (stored === null) router.replace(`/u/${handle}/quiz`);
+  }, [stored, handle, router]);
 
-  if (!answers) {
+  // funnel: they reached checkout
+  const sessionId = stored?.sessionId ?? null;
+  useEffect(() => {
+    if (sessionId) trackQuizSession({ handle, sessionId, status: "checkout" });
+  }, [sessionId, handle]);
+
+  if (!stored) {
     return <p style={{ fontSize: 14.5, color: "var(--sage)" }}>Loading your answers…</p>;
   }
 
@@ -54,7 +71,10 @@ export function CheckoutClient({
       }}
     >
       <input type="hidden" name="handle" value={handle} />
-      <input type="hidden" name="answers" value={answers} />
+      <input type="hidden" name="answers" value={stored.answers} />
+      {stored.sessionId ? (
+        <input type="hidden" name="session_id" value={stored.sessionId} />
+      ) : null}
 
       <div className="co-sec">
         <span className="micro">Where we send it</span>
@@ -62,7 +82,14 @@ export function CheckoutClient({
           Email
         </label>
         <div className="field">
-          <input id="email" type="email" name="email" placeholder="you@example.com" required />
+          <input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="you@example.com"
+            defaultValue={stored.email}
+            required
+          />
         </div>
         {emailError ? (
           <p className="hint" style={{ color: "#c96f2f" }}>

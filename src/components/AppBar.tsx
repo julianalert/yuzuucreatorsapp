@@ -5,14 +5,16 @@ export function AppBar({
   initial,
   avatarUrl,
   right,
+  wide,
 }: {
   initial?: string;
   avatarUrl?: string | null;
   right?: React.ReactNode;
+  wide?: boolean;
 }) {
   return (
     <header className="bar">
-      <div className="bar-in">
+      <div className={`bar-in${wide ? " wide" : ""}`}>
         <Wordmark href="/dashboard" />
         <div className="right">
           {right}

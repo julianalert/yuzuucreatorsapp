@@ -99,6 +99,24 @@ export interface OrderRow {
   created_at: string;
 }
 
+export type QuizSessionStatus = "quiz_started" | "quiz_completed" | "checkout" | "paid";
+
+/** One visitor quiz attempt, tracked from first answer through payment. */
+export interface QuizSessionRow {
+  id: string;
+  blueprint_id: string;
+  creator_id: string;
+  status: QuizSessionStatus;
+  answers: QuizAnswers;
+  last_question_idx: number;
+  questions_total: number;
+  email: string | null;
+  order_id: string | null;
+  abandoned_email_sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OutputRow {
   id: string;
   order_id: string;

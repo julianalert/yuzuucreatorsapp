@@ -56,7 +56,7 @@ export default async function DashboardPage({
 
   return (
     <section>
-      <AppBar initial={initial} avatarUrl={creator.avatar_url} />
+      <AppBar initial={initial} avatarUrl={creator.avatar_url} wide />
       <div className="wrap wide">
         {published ? (
           <div className="notice" style={{ marginBottom: 26 }}>

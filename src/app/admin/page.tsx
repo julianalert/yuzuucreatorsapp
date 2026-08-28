@@ -6,6 +6,10 @@ import type { BuildRow } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
 
+function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export default async function AdminPage() {
   await requireAdmin();
   const admin = supabaseAdmin();
@@ -22,6 +26,24 @@ export default async function AdminPage() {
   const { count: orderCount } = await admin
     .from("orders")
     .select("id", { count: "exact", head: true });
+
+  // quiz funnel, last 30 days — each status implies the earlier ones
+  const since = isoDaysAgo(30);
+  const { data: sessionRows } = await admin
+    .from("quiz_sessions")
+    .select("status, email")
+    .gte("created_at", since);
+  const sessions = (sessionRows ?? []) as { status: string; email: string | null }[];
+  const RANK: Record<string, number> = { quiz_started: 0, quiz_completed: 1, checkout: 2, paid: 3 };
+  const reached = (rank: number) => sessions.filter((s) => (RANK[s.status] ?? 0) >= rank).length;
+  const funnel = {
+    started: sessions.length,
+    completed: reached(1),
+    checkout: reached(2),
+    paid: reached(3),
+    emails: sessions.filter((s) => s.email).length,
+  };
+  const pct = (n: number) => (funnel.started ? Math.round((n / funnel.started) * 100) : 0);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -59,6 +81,32 @@ export default async function AdminPage() {
             <span className="k">Orders</span>
             <div className="v">{orderCount ?? 0}</div>
             <div className="sub">all time</div>
+          </div>
+        </div>
+
+        <h1 style={{ marginTop: 40 }}>Quiz funnel</h1>
+        <div className="stats">
+          <div className="stat">
+            <span className="k">Quizzes started</span>
+            <div className="v">{funnel.started}</div>
+            <div className="sub">last 30 days</div>
+          </div>
+          <div className="stat">
+            <span className="k">Finished quiz</span>
+            <div className="v">{funnel.completed}</div>
+            <div className="sub">
+              {pct(funnel.completed)}% of started · {funnel.emails} emails captured
+            </div>
+          </div>
+          <div className="stat">
+            <span className="k">Reached checkout</span>
+            <div className="v">{funnel.checkout}</div>
+            <div className="sub">{pct(funnel.checkout)}% of started</div>
+          </div>
+          <div className="stat">
+            <span className="k">Paid</span>
+            <div className="v">{funnel.paid}</div>
+            <div className="sub">{pct(funnel.paid)}% of started</div>
           </div>
         </div>
 
