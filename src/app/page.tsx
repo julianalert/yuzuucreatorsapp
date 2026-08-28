@@ -45,9 +45,12 @@ export default async function Home({
               <a href="#money">Pricing</a>
               <a href="#faq">FAQs</a>
             </div>
-            <a className="btn btn-peel" href="#claim">
-              Claim a build
-            </a>
+            <div className="nav-end">
+              <Link href="/auth">Log in</Link>
+              <a className="btn btn-peel" href="#claim">
+                Claim a build
+              </a>
+            </div>
           </div>
         </nav>
 
