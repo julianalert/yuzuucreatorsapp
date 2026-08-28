@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
+import { readPendingHandle } from "@/lib/pending-handle.server";
 import { AppBar } from "@/components/AppBar";
 import { SubmitButton } from "@/components/SubmitButton";
 import { startBuild } from "./actions";
@@ -43,6 +44,8 @@ export default async function OnboardPage({
 
   const halted = build && (build.status === "declined" || build.status === "failed");
   const initial = creator.display_name?.[0] ?? creator.email[0];
+  const pendingHandle = await readPendingHandle();
+  const handleValue = pendingHandle || creator.handle || "";
 
   return (
     <section>
@@ -83,7 +86,7 @@ export default async function OnboardPage({
                 type="text"
                 name="handle"
                 placeholder="yourhandle"
-                defaultValue={creator.handle ?? ""}
+                defaultValue={handleValue}
                 spellCheck={false}
                 autoComplete="off"
                 required

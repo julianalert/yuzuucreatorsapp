@@ -1,20 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSignedInUser } from "@/lib/auth";
-import { BuildConsole } from "@/components/landing/BuildConsole";
-import { SegmentWheel } from "@/components/landing/SegmentWheel";
+import { Wordmark } from "@/components/Wordmark";
+import {
+  HandleForm,
+  HandleProvider,
+  LiveHandle,
+  RiseObserve,
+} from "@/components/landing/HandleSync";
 import "./landing.css";
 
-function Logo({ small }: { small?: boolean }) {
-  return (
-    <Link href="/" className="logo">
-      <span className="fruit" />
-      <span className="word" style={small ? { fontSize: "1.1rem" } : undefined}>
-        yuzuu
-      </span>
-    </Link>
-  );
-}
+export const metadata: Metadata = {
+  title: "Yuzuu — we build the product your audience keeps asking for",
+  description:
+    "Hand us your Instagram handle. We build the whole product — sales page, quiz, and a plan written for each buyer. You show up twice. About 20 minutes of your time.",
+};
 
 export default async function Home({
   searchParams,
@@ -32,582 +33,498 @@ export default async function Home({
   if (user) redirect("/dashboard");
 
   return (
-    <div className="rind">
-      <nav>
-        <div className="wrap nav-in">
-          <Logo />
-          <div className="nav-links">
-            <a href="#how">How it works</a>
-            <a href="#quality">Quality</a>
-            <a href="#pricing">Pricing</a>
-            <Link href="/auth">Sign in</Link>
-            <Link href="/auth" className="btn btn-sm">
-              Start with your handle
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="peel">
+      <HandleProvider>
+        <RiseObserve />
 
-      <section className="hero">
-        <div className="wrap hero-grid">
-          <div>
-            <span className="kicker">First 50 creators · free build</span>
-            <h1 style={{ marginTop: "1.3rem" }}>
-              Earn <em>regular income</em> from your audience
-            </h1>
-            <p className="lede" style={{ marginTop: "1.5rem" }}>
-              Yuzuu studies your audience, proposes product ideas,
-              and builds the whole thing: quiz, sales page, personalized output. It costs you nothing and you keep 70% of
-              every sale! 
-            </p>
-            <div className="hero-actions">
-              <Link href="/auth" className="btn">
-                Start with your handle
-              </Link>
-              <a href="#how" className="btn ghost">
-                See how it works
-              </a>
+        <nav className="nav">
+          <div className="wrap nav-in">
+            <Wordmark href="#top" />
+            <div className="nav-links">
+              <a href="#how">How it works</a>
+              <a href="#money">Pricing</a>
+              <a href="#faq">FAQs</a>
             </div>
-            <p className="hero-note">No fee · No credit card required (AT ALL)</p>
+            <a className="btn btn-peel" href="#claim">
+              Claim a build
+            </a>
           </div>
-          <BuildConsole />
-        </div>
-      </section>
+        </nav>
 
-      <section className="reassure">
-        <div className="wrap">
-          <div className="reassure-grid">
-            <div className="reassure-item">
-              <span className="r-num">01</span>
-              <h3>No build fee</h3>
-              <p>We build the whole thing first. You only pay a share once it actually sells.</p>
-            </div>
-            <div className="reassure-item">
-              <span className="r-num">02</span>
-              <h3>You own it all</h3>
-              <p>Your Stripe account, your buyer list, exportable any day you want.</p>
-            </div>
-            <div className="reassure-item">
-              <span className="r-num">03</span>
-              <h3>Nothing ships blind</h3>
-              <p>Three real samples, your name on them — you approve before anyone sees it.</p>
-            </div>
-            <div className="reassure-item">
-              <span className="r-num">04</span>
-              <h3>Leave whenever</h3>
-              <p>No contract, no lock-in. Cancel any time and keep your list and your last build.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">01</span> Where creators get stuck
-            </div>
-            <h2>Every path to real income asks you to become a second business.</h2>
-          </div>
-          <div className="problem-list">
+        <header className="hero" id="top">
+          <div className="wrap hero-grid">
             <div>
-              <span className="n">01</span>
-              <p>Brand deals pay once, then you&apos;re back to zero and pitching again.</p>
+              <p className="eyebrow">For Instagram creators · 10k–1M</p>
+              <h1>
+                Earn <em>regular income</em> from your audience
+              </h1>
+              <p className="hero-sub">
+                Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
+                quiz, sales page, personalized output. It costs you nothing and you keep 70% of
+                every sale!
+              </p>
+              <HandleForm id="start" inputId="handle-hero" />
             </div>
+
             <div>
-              <span className="n">02</span>
-              <p>Affiliate links pay 4% of something you didn&apos;t make and can&apos;t improve.</p>
-            </div>
-            <div>
-              <span className="n">03</span>
-              <p>The course you started in January is still 40% recorded, and you know it.</p>
-            </div>
-            <div>
-              <span className="n">04</span>
-              <p>The tools (Kajabi, Gumroad, Systeme) all hand you an empty page and wish you luck.</p>
-            </div>
-          </div>
-          <p className="turn">
-            Making a product people pay for is roughly <mark>200 hours</mark> of work you
-            don&apos;t have.
-          </p>
-          <p className="lede" style={{ marginTop: "1.6rem" }}>
-          The audience is ready. The product just never gets made.
-          </p>
-        </div>
-      </section>
-
-      <section id="how" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">02</span> The Solution
-            </div>
-            <h2>We make the product for you. At our cost.</h2>
-            <p className="lede">
-            The kind where your follower answers a few questions and gets something written for their exact situation, not a generic PDF. 
-
-You stay in control at the two moments that matter. Everything else is ours.
-
-
-      </p>
-          </div>
-          <div className="steps">
-            <div className="step yours">
-              <span className="k">STEP 1 — YOURS</span>
-              <h3>Hand over your handle</h3>
-              <p>
-                Yuzuu reads your captions and comments to learn what your audience keeps asking
-                for, in the words they use.
-              </p>
-              <span className="time">~2 min</span>
-            </div>
-            <div className="step yours">
-              <span className="k">STEP 2 — YOURS</span>
-              <h3>Pick your product</h3>
-              <p>
-                Five topics, each with a promise, a price and a reason it fits. Choose one — or
-                reject them all and get more.
-              </p>
-              <span className="time">~5 min</span>
-            </div>
-            <div className="step">
-              <span className="k">STEP 3 — OURS</span>
-              <h3>Yuzuu builds it</h3>
-              <p>
-                Research, quiz, buyer types, content bank, sales page, checkout. Every stage
-                scored and rejected until it passes.
-              </p>
-              <span className="time">4–6 h, hands off</span>
-            </div>
-            <div className="step yours">
-              <span className="k">STEP 4 — YOURS</span>
-              <h3>Sign off, go live</h3>
-              <p>
-                Three sample outputs, three different buyer types. If they don&apos;t sound like
-                you, it doesn&apos;t ship.
-              </p>
-              <span className="time">~15 min</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="delivery">
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">03</span> What your follower sees
-            </div>
-            <h2>Quiz to their inbox in under four minutes.</h2>
-          </div>
-          <div className="flow">
-            <div className="f">
-              <span className="lab">00:00</span>
-              <h3>They take the quiz</h3>
-              <p>Eight to twelve questions on your page. Every answer changes what gets written.</p>
-            </div>
-            <div className="f">
-              <span className="lab">02:10</span>
-              <h3>They pay</h3>
-              <p>Stripe checkout, $27 by default. Your account, your money, split handled automatically.</p>
-            </div>
-            <div className="f">
-              <span className="lab">03:30</span>
-              <h3>Their plan arrives</h3>
-              <p>Written for their situation, not their category. In their inbox in under 90 seconds.</p>
-            </div>
-          </div>
-          <div className="sample narrow">
-            <div className="stripe" />
-            <h3>The 30-Day Wake-Up Reset</h3>
-            <div className="sub">built for: light sleeper · 2am waker · shift worker · 34</div>
-            <p className="body">
-              <b>Why you keep waking at 2am.</b> You&apos;re not a bad sleeper. You&apos;re
-              falling asleep at a body temperature that&apos;s too high, which means your first
-              deep block ends early — and once it ends, the smallest noise ends the night.
-              Rotating shifts make this worse because your temperature curve never gets a fixed
-              anchor. So we&apos;re not going to work on falling asleep. You do that fine.
-              We&apos;re going to work on the four hours before it, and on one fixed anchor your
-              body can hold onto even when your schedule can&apos;t.{" "}
-              <b>Day 1 starts tonight, and it takes eleven minutes.</b>
-            </p>
-            <div className="meta">
-              <span>4,180 words</span>
-              <span>30 days</span>
-              <span>segment 01 of 14</span>
-              <span>generated in 71s</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="quality" className="quality">
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">04</span> The part nobody else does
-            </div>
-            <h2>Nothing reaches you until it&apos;s been rejected at least once.</h2>
-            <p className="lede">
-              Anyone can point an AI at a niche and get a PDF back in thirty seconds. That&apos;s
-              why most AI products feel cheap — nothing ever tells the model no. Before a build
-              ever reaches you, it has to survive four checks built to catch exactly what makes
-              AI content feel fake.
-            </p>
-          </div>
-
-          <div className="gates">
-            <div className="gate">
-              <span className="g-num">CHECK 01</span>
-              <h3>Nothing invented</h3>
-              <p>
-                Every claim has to trace back to something real your audience said — not a guess
-                the model made up. If it can&apos;t be traced, it&apos;s cut before a buyer ever
-                sees it.
-              </p>
-            </div>
-            <div className="gate">
-              <span className="g-num">CHECK 02</span>
-              <h3>No filler questions</h3>
-              <p>
-                Every quiz question has to change what the buyer gets. If a question is only
-                there to decorate the experience, it&apos;s deleted.
-              </p>
-            </div>
-            <div className="gate">
-              <span className="g-num">CHECK 03</span>
-              <h3>The swap test</h3>
-              <p>
-                We take one buyer&apos;s plan and hand it to a different buyer. If it still fits
-                them too, the personalization is fake — the whole build is rejected and rebuilt.
-              </p>
-            </div>
-            <div className="gate">
-              <span className="g-num">CHECK 04</span>
-              <h3>Safe to sell</h3>
-              <p>
-                Health, money and legal topics get a stricter pass: no promises, no diagnoses,
-                referral language where it belongs.
-              </p>
-            </div>
-
-            <div className="gate human">
-              <div className="human-in">
-                <div className="seal" aria-hidden="true">
-                  <svg viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="57" fill="none" stroke="#0F1F17" strokeWidth="1.5" />
-                    <circle cx="60" cy="60" r="44" fill="none" stroke="#0F1F17" strokeWidth="1" />
-                    <g className="ring">
-                      <path id="sealpath" d="M60 10 a50 50 0 1 1 -0.1 0" fill="none" />
-                      <text fontSize="7.2" letterSpacing="2.4" fill="#0F1F17" style={{ fontFamily: "var(--l-mono)" }}>
-                        <textPath href="#sealpath" startOffset="0">
-                          APPROVED BY THE CREATOR · NOT BY THE MACHINE ·{" "}
-                        </textPath>
-                      </text>
-                    </g>
-                    <text x="60" y="57" textAnchor="middle" fontSize="8" fill="#0F1F17" style={{ fontFamily: "var(--l-mono)" }}>
-                      3/3
-                    </text>
-                    <text x="60" y="70" textAnchor="middle" fontSize="6" fill="#2F6B4F" style={{ fontFamily: "var(--l-mono)" }}>
-                      SAMPLES
-                    </text>
-                  </svg>
+              <div className="preview">
+                <div className="bar">
+                  <span className="pip" />
+                  <span className="pip" />
+                  <span className="pip" />
+                  <span className="url">
+                    yuzuu.co/u/
+                    <b>
+                      <LiveHandle />
+                    </b>
+                  </span>
                 </div>
-                <div className="txt">
-                  <span className="g-num">CHECK 05 — YOU</span>
-                  <h3>The one we can&apos;t automate</h3>
+                <div className="preview-body">
+                  <p className="pv-eyebrow">
+                    by @
+                    <LiveHandle />
+                  </p>
+                  <h3 className="pv-title">The 30-Day Sleep Reset, written for your nights</h3>
+                  <p className="pv-p">
+                    Six questions about how you actually sleep. Then a day-by-day plan built
+                    around your answers — not a PDF with your name at the top.
+                  </p>
+                  <div className="pv-cta">
+                    <span className="pv-price">$27</span>
+                    <span className="pv-btn">Start the quiz →</span>
+                  </div>
+                  <div className="chips">
+                    <span className="chip">Your wind-down</span>
+                    <span className="chip">Week 1 · nights 1–7</span>
+                    <span className="chip">If you wake at 3am</span>
+                    <span className="chip">Shift work</span>
+                  </div>
+                </div>
+              </div>
+              <p className="caption">Type your handle — this is the page we&apos;d host for you.</p>
+            </div>
+          </div>
+        </header>
+
+        <section id="problem">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">The shelf is empty</p>
+              <h2>You&apos;ve had the audience for a while. Where&apos;s the revenue?</h2>
+              <p className="lede">
+                Not a criticism. It&apos;s just that making something people pay for is a second
+                job, and you already have one.
+              </p>
+            </div>
+
+            <div className="tries rise">
+              <div className="try">
+                <h3>Brand deals</h3>
+                <p>Paid once. Then you&apos;re back in the DMs pitching the next one.</p>
+              </div>
+              <div className="try">
+                <h3>Affiliate links</h3>
+                <p>A few percent of something you didn&apos;t make, for an audience you did.</p>
+              </div>
+              <div className="try">
+                <h3>The course</h3>
+                <p>Module 3 has been &quot;almost done&quot; since spring.</p>
+              </div>
+              <div className="try">
+                <h3>Course platforms</h3>
+                <p>You paid $99 and got a blank page and a login.</p>
+              </div>
+            </div>
+
+            <div className="punch rise">
+              <div className="punch-side old">
+                <span className="big">~20h</span>
+                <span className="lbl">To build it yourself</span>
+              </div>
+              <span className="punch-vs">vs</span>
+              <div className="punch-side win">
+                <span className="big">~20min</span>
+                <span className="lbl">To build it with us</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Four steps · two are yours</p>
+              <h2>What actually happens after you type your handle.</h2>
+            </div>
+
+            <div className="steps">
+              <div className="step rise">
+                <span className="num">01</span>
+                <div>
+                  <span className="who who-you">Yours · 2 min</span>
+                  <h3>Hand over the handle</h3>
+                </div>
+                <div className="step-body">
                   <p>
-                    Three samples, three different buyer types, your name on the front. Nothing
-                    ships until you say it sounds like you.
+                    Yuzuu reads your captions and comments to learn what your audience keeps asking
+                    for, in the words they use.
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-          <p className="cap" style={{ marginTop: "1.6rem" }}>
-            On average, two builds get rejected internally before one reaches a creator — that&apos;s
-            the normal number, not a bug.
-          </p>
-        </div>
-      </section>
 
-      <section>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">05</span> What personalization actually means
-            </div>
-            <h2>Everyone buys the same product. Nobody gets the same answer.</h2>
-            <p className="lede">
-              Your buyers don&apos;t split into beginner, intermediate and advanced — they split
-              by what&apos;s actually wrong. The quiz figures out which, then writes for that
-              problem specifically: its own diagnosis, its own first week, its own
-              troubleshooting.
-            </p>
-          </div>
-          <SegmentWheel />
-          <p className="cap">
-            Hover a segment. Same product, same price, same page — a different diagnosis, not a
-            different name inserted.
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">06</span> Your side of it
-            </div>
-            <h2>You get a business, not a folder of files.</h2>
-          </div>
-          <div className="cols">
-            <div>
-              <h3>What comes with the build</h3>
-              <ul className="tick">
-                <li>
-                  <b>Your page</b> — yuzuu.co/u/yourname, or your own domain
-                </li>
-                <li>
-                  <b>Your own Stripe account</b> — buyers pay you, the split happens automatically
-                </li>
-                <li>
-                  <b>Your email list</b> — every buyer is yours, exportable any day
-                </li>
-                <li>
-                  <b>The order emails</b> — delivery, receipts, follow-ups, written
-                </li>
-                <li>
-                  <b>A dashboard</b> — sales, conversion, where buyers drop off
-                </li>
-                <li>
-                  <b>Rebuilds</b> — outgrow the product, rebuild it, keep the list
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3>One design, and you can&apos;t change it</h3>
-              <p className="note-p" style={{ marginTop: "1.2rem" }}>
-                Every Yuzuu page looks the same right now. That&apos;s on purpose, and it&apos;s
-                the honest tradeoff of the early version.
-              </p>
-              <p className="note-p">
-                The quiz and checkout have been tested on live traffic across three products.
-                Handing you colour pickers would let you break a page that converts, and would
-                cost us the ability to improve it for everyone at once.
-              </p>
-              <p className="note-p" style={{ margin: 0 }}>
-                Your logo, your name, your voice, your domain. Not your layout — yet.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={{ background: "var(--paper-2)" }}>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">07</span> Where this sits
-            </div>
-            <h2>The tools sell you shelves. Yuzuu makes the thing on them.</h2>
-          </div>
-          <div className="tbl-scroll">
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>Route</th>
-                  <th>You supply</th>
-                  <th>Time to live</th>
-                  <th>Ongoing work</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Gumroad / Systeme</td>
-                  <td>The whole product</td>
-                  <td>Weeks — if you finish</td>
-                  <td>All of it</td>
-                </tr>
-                <tr>
-                  <td>Course platform</td>
-                  <td>Script, filming, editing</td>
-                  <td>2–3 months</td>
-                  <td>Updates, support, refunds</td>
-                </tr>
-                <tr>
-                  <td>Hiring a ghostwriter</td>
-                  <td>$4k–$12k and a brief</td>
-                  <td>4–8 weeks</td>
-                  <td>One static PDF, forever</td>
-                </tr>
-                <tr>
-                  <td>ChatGPT and a PDF</td>
-                  <td>An afternoon</td>
-                  <td>Same day</td>
-                  <td>Refunds, mostly</td>
-                </tr>
-                <tr className="us">
-                  <td>Yuzuu</td>
-                  <td>A handle and 20 minutes</td>
-                  <td>Under a week</td>
-                  <td>Post about it</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing">
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">08</span> Pricing
-            </div>
-            <h2>You keep 75%. We only get paid when you do.</h2>
-            <p className="lede">
-              No build fee, no monthly minimum, no contract. If your product never sells,
-              you&apos;ve paid us nothing — which is the point. It keeps us responsible for
-              whether the thing works, not just for shipping it.
-            </p>
-          </div>
-          <div className="price-grid">
-            <div className="plan featured">
-              <span className="name">Launch</span>
-              <div className="amt">
-                75<small>% to you</small>
+              <div className="step rise">
+                <span className="num">02</span>
+                <div>
+                  <span className="who who-you">Yours · 5 min</span>
+                  <h3>Pick the product</h3>
+                </div>
+                <div className="step-body">
+                  <p>
+                    You get three ideas, each with a promise, a price and the receipts — the
+                    comments that prove people want it. Plus one wild card. Pick one. Or throw all
+                    four back and we go again.
+                  </p>
+                </div>
               </div>
-              <p className="note">
-                $0 to build. We take 25% of net sales. Full pipeline, your page, your list, your
-                buyers. Nothing up front, ever.
-              </p>
-              <Link href="/auth" className="btn">
-                Start with your handle
-              </Link>
-            </div>
-            <div className="plan">
-              <span className="name">Scale</span>
-              <div className="amt">
-                90<small>% to you</small>
+
+              <div className="step rise">
+                <span className="num">03</span>
+                <div>
+                  <span className="who who-us">Ours · a few hours</span>
+                  <h3>We build the whole thing</h3>
+                </div>
+                <div className="step-body">
+                  <p>
+                    Research, quiz, buyer types, content bank, sales page, checkout. Every stage
+                    scored and rejected until it passes. Go do your day.
+                  </p>
+                </div>
               </div>
-              <p className="note">
-                $99/month buys the share down to 10%. Worth it past roughly 25 sales a month —
-                switch whenever the maths turns, we&apos;ll tell you when.
-              </p>
-              <Link href="/auth" className="btn ghost">
-                Start with your handle
-              </Link>
+
+              <div className="step rise">
+                <span className="num">04</span>
+                <div>
+                  <span className="who who-you">Yours · 15 min</span>
+                  <h3>Read three samples, then go live</h3>
+                </div>
+                <div className="step-body">
+                  <p>
+                    Three full plans for three different buyers land in your inbox. Read them like
+                    one of your followers would. Approve, and your page goes live. Reject, tell us
+                    why in a sentence, and it rebuilds. Nothing publishes without your yes.
+                  </p>
+                  <span className="time">
+                    Then: your link, your sales, your buyer list, on one dashboard.
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <p className="cap">
-            Split is on net — card fees come off the top before we take anything. Payouts daily
-            via Stripe. Refunds shared the same 75/25. Leave whenever, keep your list.
-          </p>
-        </div>
-      </section>
+        </section>
 
-      <section style={{ background: "var(--paper-2)" }}>
-        <div className="wrap">
-          <div className="narrow" style={{ margin: 0 }}>
-            <div className="tag-rule">
-              <span className="n">09</span> Before you ask
+        <section id="buyer">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">What your buyer gets</p>
+              <h2>Two people, same $27, two different documents.</h2>
+              <p className="lede">
+                Your follower takes the quiz, pays, and ninety seconds later reads a plan written
+                around those answers. Here&apos;s the same product, two buyers.
+              </p>
             </div>
-            <h2>The six things everyone asks.</h2>
-          </div>
-          <div className="faq">
-            <details open>
-              <summary>Is this just ChatGPT with a nicer wrapper?</summary>
-              <p>
-                No, and the difference is the build phase. Most AI products ask a model to invent
-                a product while a customer waits thirty seconds. Yuzuu spends hours up front
-                researching, drafting and rejecting until a blueprint passes every check — then
-                freezes it. At purchase time the model isn&apos;t deciding what your product is.
-                It&apos;s writing from a brief that already passed. That&apos;s why quality
-                doesn&apos;t wobble from buyer to buyer.
-              </p>
-            </details>
-            <details>
-              <summary>Will it sound like me or like a robot?</summary>
-              <p>
-                It learns your vocabulary, your recurring points and how you talk to your audience
-                from your own posts, and voice match is one of the scored criteria. But you&apos;re
-                the final gate: three samples, and if they don&apos;t sound like you, they
-                don&apos;t ship. Send them back as many times as you need.
-              </p>
-            </details>
-            <details>
-              <summary>What if my niche is weird or very small?</summary>
-              <p>
-                Small and specific is usually better — the personalization has more to grip. The
-                real constraint is topic type: Yuzuu builds personalized transformation plans, so
-                anything shaped like &quot;here&apos;s your situation, here&apos;s your 30
-                days&quot; works. Something shaped like a software tutorial or a physical product
-                doesn&apos;t, yet.
-              </p>
-            </details>
-            <details>
-              <summary>Who owns the product and the buyers?</summary>
-              <p>
-                You own both. Your name on the product, your Stripe account, your customer list,
-                exportable whenever you want. If you leave, you keep the list and the last version
-                of the content.
-              </p>
-            </details>
-            <details>
-              <summary>How big does my audience need to be?</summary>
-              <p>
-                Engagement matters more than size. Around 10,000 engaged followers is enough to
-                test with, and this works best between 50k and 1M with an audience that asks you
-                questions rather than just watching. If people DM you for advice, that&apos;s the
-                signal.
-              </p>
-            </details>
-            <details>
-              <summary>What does it actually cost me if it flops?</summary>
-              <p>
-                Your time — about twenty minutes across the build — and nothing else. There&apos;s
-                no build fee, so a product that never sells costs you nothing beyond the afternoon
-                you spent posting about it. We carry the build cost, which is exactly why we
-                won&apos;t ship you a product we don&apos;t think will sell.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
 
-      <section id="apply" className="cta">
-        <div className="halo" />
-        <div className="wrap" style={{ position: "relative" }}>
-          <h2>The first 50 builds are free.</h2>
-          <p>
-            Fifty creators in the first cohort. We build with you directly and use what breaks to
-            make the pipeline better. No fee, no lock-in — you keep 75% of everything it makes.
-          </p>
-          <Link href="/auth" className="btn yuzu">
-            Start with your handle
-          </Link>
-          <div className="seats">31 of 50 places open · reviewed within 48h</div>
-        </div>
-      </section>
+            <div className="swap">
+              <article className="person rise">
+                <header>
+                  <h3>Maya, 34</h3>
+                  <span>Falls asleep fine, wakes at 3am, two kids</span>
+                </header>
+                <dl className="qa">
+                  <dt>Hardest part</dt>
+                  <dd>Waking in the night</dd>
+                  <dt>Evenings look like</dt>
+                  <dd>Bedtime routine until 9:30, then work</dd>
+                  <dt>Has tried</dt>
+                  <dd>Magnesium, blackout blinds</dd>
+                </dl>
+                <div className="plan">
+                  <h4>Her plan opens with</h4>
+                  <ul>
+                    <li>A 3am protocol: what to do in the first four minutes awake</li>
+                    <li>Week 1 built around a 9:30 start, not a 7pm one</li>
+                    <li>Skips the magnesium chapter — she&apos;s already there</li>
+                  </ul>
+                </div>
+              </article>
 
-      <footer>
-        <div className="wrap footer-in">
-          <Logo small />
-          <span>
-            © 2026 ·{" "}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer">
-              Privacy
-            </a>{" "}
-            ·{" "}
-            <a href="/terms" target="_blank" rel="noopener noreferrer">
-              Terms
-            </a>{" "}
-            · hello (at) yuzuu (dot) co
-          </span>
-        </div>
-      </footer>
+              <article className="person rise">
+                <header>
+                  <h3>Tom, 27</h3>
+                  <span>Can&apos;t switch off, phone in bed, works late shifts</span>
+                </header>
+                <dl className="qa">
+                  <dt>Hardest part</dt>
+                  <dd>Falling asleep at all</dd>
+                  <dt>Evenings look like</dt>
+                  <dd>Home at 11pm, wired</dd>
+                  <dt>Has tried</dt>
+                  <dd>Nothing yet</dd>
+                </dl>
+                <div className="plan">
+                  <h4>His plan opens with</h4>
+                  <ul>
+                    <li>A wind-down that starts at 11pm, because that&apos;s when he gets home</li>
+                    <li>Phone rules he&apos;ll actually keep, phased over ten days</li>
+                    <li>A shift-work chapter Maya never sees</li>
+                  </ul>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="quality">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">The part that&apos;s hard to fake</p>
+              <h2>&quot;Couldn&apos;t I just do this with ChatGPT?&quot;</h2>
+              <p className="lede">
+                You could get a draft. What you can&apos;t get in an afternoon is a product that
+                holds up across a thousand different buyers — because that work happens before
+                anyone buys, and it happens once.
+              </p>
+            </div>
+
+            <div className="gates">
+              <div className="gate rise">
+                <span className="tag">Evidence</span>
+                <h3>Every claim traces to your audience</h3>
+                <p>
+                  If your followers never said it, it doesn&apos;t go in. Nothing gets invented to
+                  fill a page.
+                </p>
+              </div>
+              <div className="gate rise">
+                <span className="tag">The swap test</span>
+                <h3>Different buyers, different plans</h3>
+                <p>
+                  We compare generated plans against each other. Not different enough, and the
+                  build goes back to the drawing board.
+                </p>
+              </div>
+              <div className="gate rise">
+                <span className="tag">No filler</span>
+                <h3>Every question changes something</h3>
+                <p>
+                  If an answer doesn&apos;t visibly change a section of the plan, the question gets
+                  cut. Quizzes that ask for nothing are how people learn to distrust them.
+                </p>
+              </div>
+              <div className="gate rise">
+                <span className="tag">Safety</span>
+                <h3>Health, money and legal get a stricter pass</h3>
+                <p>
+                  No diagnoses, no guaranteed outcomes, no advice that should come from a
+                  professional. Your name is on it.
+                </p>
+              </div>
+              <div className="gate rise">
+                <span className="tag">Frozen at launch</span>
+                <h3>Nothing is improvised at checkout</h3>
+                <p>
+                  The product is locked before it goes live. At purchase, the model writes from
+                  that locked brief — it isn&apos;t inventing your product while a buyer waits.
+                </p>
+              </div>
+              <div className="gate rise">
+                <span className="tag">We say no</span>
+                <h3>Some accounts get declined</h3>
+                <p>
+                  If the material isn&apos;t there, we tell you and build nothing. A bad product
+                  with your face on it costs you more than no product.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="money">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">The money</p>
+              <h2>We only get paid when you do.</h2>
+              <p className="lede">
+                The build costs real money in compute. We cover it. If your product never sells, we
+                ate that — which is the strongest reason you&apos;ll ever get to believe we
+                won&apos;t ship you something weak.
+              </p>
+            </div>
+
+            <div className="money">
+              <div className="split rise">
+                <div className="row">
+                  <span className="k">Cost to build</span>
+                  <span className="v hot">$0</span>
+                </div>
+                <div className="row">
+                  <span className="k">You keep, per sale</span>
+                  <span className="v">75%</span>
+                </div>
+                <div className="row">
+                  <span className="k">We keep</span>
+                  <span className="v">25%</span>
+                </div>
+                <div className="row">
+                  <span className="k">Monthly fee</span>
+                  <span className="v">None</span>
+                </div>
+                <div className="row">
+                  <span className="k">Minimum term</span>
+                  <span className="v">None</span>
+                </div>
+                <p className="later" style={{ color: "rgba(251, 252, 245, 0.62)" }}>
+                  Split is on net, after card fees. Refunds come out of both sides the same way.
+                </p>
+              </div>
+
+              <div className="owns rise">
+                <h3>What&apos;s yours, permanently</h3>
+                <ul>
+                  <li>The product. It&apos;s built from your material and your voice.</li>
+                  <li>The buyer list. Export it whenever you want, no ask.</li>
+                  <li>The right to leave. Walk away with the list and the last build.</li>
+                </ul>
+                <a className="btn btn-peel owns-cta" href="#claim">
+                  Claim a build
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="fit">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Honest fit</p>
+              <h2>This doesn&apos;t work for everyone yet.</h2>
+            </div>
+            <div className="fit">
+              <div className="fit-col fit-yes rise">
+                <h3>It works when</h3>
+                <ul>
+                  <li>Your comments and DMs are full of people describing their own situation</li>
+                  <li>
+                    Your topic fits &quot;here&apos;s where you are, here&apos;s your next 30
+                    days&quot; — sleep, habits, training, language, money, plants, focus,
+                    confidence
+                  </li>
+                  <li>You&apos;d be comfortable putting your name on a document you didn&apos;t type</li>
+                  <li>You&apos;ll actually post about it once it&apos;s live</li>
+                </ul>
+              </div>
+              <div className="fit-col fit-no rise">
+                <h3>Not yet when</h3>
+                <ul>
+                  <li>Your niche is software tutorials or anything that needs screens and steps</li>
+                  <li>You sell physical products and want this to be one</li>
+                  <li>Your audience watches but never asks — big numbers, no questions</li>
+                  <li>
+                    You want to art-direct the page. Every Yuzuu page looks the same on purpose.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Questions you should be asking</p>
+              <h2>Straight answers.</h2>
+            </div>
+            <div className="faq rise">
+              <details>
+                <summary>How much of my time is this, really?</summary>
+                <p>
+                  About twenty minutes, split across two sittings a few hours apart. Two minutes to
+                  hand over your handle, five to pick the idea, and roughly fifteen to read three
+                  sample plans properly. If you skim the samples, don&apos;t do this.
+                </p>
+              </details>
+              <details>
+                <summary>Do you post as me, or touch my account?</summary>
+                <p>
+                  No. We read your public posts and comments. We never log in as you, never message
+                  anyone, never publish anything on your account.
+                </p>
+              </details>
+              <details>
+                <summary>What if I hate what you build?</summary>
+                <p>
+                  Say so and give us one sentence about why. It rebuilds. Nothing goes live without
+                  you approving three real samples — and if you never approve, nothing ever goes
+                  live and you&apos;ve paid nothing.
+                </p>
+              </details>
+              <details>
+                <summary>What does my buyer actually receive?</summary>
+                <p>
+                  A written plan on the web, at a private link, generated from their quiz answers
+                  in about ninety seconds. Prose, checklists, week-by-week timelines, tables. They
+                  can save it as a PDF from their browser, and the link is emailed to them.
+                </p>
+              </details>
+              <details>
+                <summary>Why $27?</summary>
+                <p>
+                  It&apos;s the price where people buy on the spot without asking a partner. You
+                  can go higher once you have sales — but the first product should sell, not
+                  impress.
+                </p>
+              </details>
+              <details>
+                <summary>Can I run more than one product?</summary>
+                <p>One per creator for now. We&apos;d rather have one that sells than three that half-work.</p>
+              </details>
+              <details>
+                <summary>Who&apos;s behind this?</summary>
+                <p>
+                  A small team that built this exact funnel by hand, repeatedly, before turning it
+                  into a product. That&apos;s why the quality checks are strict — we know precisely
+                  where these things go wrong.
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <section className="closer" id="claim">
+          <div className="wrap">
+            <p className="eyebrow" style={{ color: "var(--peel)" }}>
+              Nothing to lose
+            </p>
+            <h2>
+              Give us twenty minutes. <span>We give you a full product to earn money.</span>
+            </h2>
+            <p className="lede">
+              You&apos;ll know within a few minutes whether there&apos;s a product in your
+              audience. If there isn&apos;t, we&apos;ll tell you that instead of selling you
+              something.
+            </p>
+            <HandleForm inputId="handle-foot" peel />
+          </div>
+        </section>
+
+        <footer>
+          <div className="wrap foot">
+            <Wordmark href="#top" size={17} />
+            <span className="sp">© 2026 Yuzuu</span>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </div>
+        </footer>
+      </HandleProvider>
     </div>
   );
 }

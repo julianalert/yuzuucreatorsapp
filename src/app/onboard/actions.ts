@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireCreator } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { inngest } from "@/lib/inngest/client";
+import { clearPendingHandle } from "@/lib/pending-handle.server";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{1,30}$/;
 
@@ -36,6 +37,7 @@ export async function startBuild(formData: FormData) {
   if (taken) redirect("/onboard?error=taken");
 
   await admin.from("creators").update({ handle: raw }).eq("id", creator.id);
+  await clearPendingHandle();
 
   const { data: build, error } = await admin
     .from("builds")
