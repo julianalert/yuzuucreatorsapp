@@ -25,15 +25,16 @@ function roleSpec(role: ModelRole): ModelSpec {
   }
   const defaults: Record<ModelRole, ModelSpec> = {
     extract: { provider: "openai", model: "gpt-5-mini" },
-    build: { provider: "anthropic", model: "claude-opus-4-6" },
+    build: { provider: "anthropic", model: "claude-sonnet-5" },
     critic: { provider: "openai", model: "gpt-5-mini" },
-    writer: { provider: "anthropic", model: "claude-sonnet-4-6" },
+    writer: { provider: "anthropic", model: "claude-sonnet-5" },
   };
   return defaults[role];
 }
 
 // Rough $/1M tokens. Update when pricing changes.
 const PRICING: Record<string, { input: number; output: number }> = {
+  "claude-sonnet-5": { input: 2, output: 10 },
   "claude-opus-4-6": { input: 5, output: 25 },
   "claude-sonnet-4-6": { input: 3, output: 15 },
   "gpt-5-mini": { input: 0.25, output: 2 },
