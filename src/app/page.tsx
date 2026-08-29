@@ -76,7 +76,7 @@ export default async function Home({
             <div>
               <p className="eyebrow">For Instagram creators · 10k–1M</p>
               <h1>
-                Earn <em>regular income</em> from your audience
+                <em>Regular income</em> from your audience, without making the product yourself
               </h1>
               <p className="hero-sub">
                 Yuzuu studies your audience, proposes product ideas, and builds the whole thing:

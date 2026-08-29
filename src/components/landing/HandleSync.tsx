@@ -83,7 +83,7 @@ export function HandleForm({
           onChange={(e) => setHandle(e.target.value)}
         />
         <button className={peel ? "btn btn-peel" : "btn"} type="submit">
-          Build mine
+          Build my product
         </button>
       </div>
       <p className="handle-note">

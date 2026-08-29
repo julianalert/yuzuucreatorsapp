@@ -16,12 +16,13 @@ export async function generateMetadata({
   if (!product) return { title: "Yuzuu", ...noIndex };
   const title = `${product.title} — ${product.creatorName}`;
   const path = `/u/${product.handle}`;
+  const meta = canonical(path);
   return {
     title,
     description: product.promise,
-    ...canonical(path),
+    ...meta,
     openGraph: {
-      ...canonical(path).openGraph,
+      ...meta.openGraph,
       title,
       description: product.promise,
       type: "website",
@@ -30,6 +31,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description: product.promise,
+      images: meta.twitter?.images,
     },
   };
 }

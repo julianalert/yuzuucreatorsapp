@@ -17,15 +17,29 @@ export function absoluteUrl(path = "/"): string {
   return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+/** Default share image for Open Graph / Twitter cards. Served from /public. */
+export const DEFAULT_OG_IMAGE = {
+  url: "/thumbnail.png",
+  width: 2250,
+  height: 1224,
+  alt: SITE_NAME,
+} as const;
+
 export const noIndex: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export function canonical(path: string): Pick<Metadata, "alternates" | "openGraph"> {
+export function canonical(path: string): Pick<Metadata, "alternates" | "openGraph" | "twitter"> {
   const url = absoluteUrl(path);
   return {
     alternates: { canonical: url },
-    openGraph: { url },
+    openGraph: {
+      url,
+      images: [DEFAULT_OG_IMAGE],
+    },
+    twitter: {
+      images: [DEFAULT_OG_IMAGE.url],
+    },
   };
 }
 
