@@ -4,12 +4,22 @@ import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AppBar } from "@/components/AppBar";
+import { LaunchKit } from "@/components/LaunchKit";
+import { fallbackShareKit } from "@/lib/share-kit";
+import { CREATOR_KEEP_PCT } from "@/lib/seo";
 import type { Blueprint } from "@/lib/blueprint/types";
-import type { BlueprintRow, OrderRow } from "@/lib/db/types";
+import type { BlueprintRow, OrderRow, QuizSessionRow } from "@/lib/db/types";
 
 function countLastWeek(orders: OrderRow[]): number {
   const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
   return orders.filter((o) => new Date(o.created_at).getTime() > weekAgo).length;
+}
+
+/** j•••@example.com — leads gave their email for a plan, not for display. */
+function maskEmail(email: string): string {
+  const [user, domain] = email.split("@");
+  if (!domain) return "•••";
+  return `${user.slice(0, 1)}•••@${domain}`;
 }
 
 export default async function DashboardPage({
@@ -39,20 +49,56 @@ export default async function DashboardPage({
   const blueprint = bpRow as BlueprintRow;
   const bp = blueprint.data as Blueprint;
 
-  const { data: orderRows } = await admin
-    .from("orders")
-    .select("*")
-    .eq("blueprint_id", blueprint.id)
-    .in("status", ["paid", "generating", "delivered"])
-    .order("created_at", { ascending: false });
+  const [{ data: orderRows }, { count: visitCount }, { data: sessionRows }] = await Promise.all([
+    admin
+      .from("orders")
+      .select("*")
+      .eq("blueprint_id", blueprint.id)
+      .in("status", ["paid", "generating", "delivered"])
+      .order("created_at", { ascending: false }),
+    admin
+      .from("creator_events")
+      .select("id", { count: "exact", head: true })
+      .eq("creator_id", creator.id)
+      .eq("type", "page_visit"),
+    admin
+      .from("quiz_sessions")
+      .select("id, status, email, updated_at, order_id")
+      .eq("creator_id", creator.id)
+      .order("updated_at", { ascending: false }),
+  ]);
+
   const orders = (orderRows ?? []) as OrderRow[];
+  const sessions = (sessionRows ?? []) as Pick<
+    QuizSessionRow,
+    "id" | "status" | "email" | "updated_at" | "order_id"
+  >[];
 
   const sold = orders.length;
-  const earned = orders.reduce((sum, o) => sum + o.amount_cents, 0) / 100;
+  const grossUsd = orders.reduce((sum, o) => sum + o.amount_cents, 0) / 100;
+  const netUsd = (grossUsd * CREATOR_KEEP_PCT) / 100;
   const thisWeek = countLastWeek(orders);
+  const activated = Boolean(creator.first_sale_at) || sold > 0;
 
+  const visits = visitCount ?? 0;
+  const quizStarts = sessions.length;
+  const quizFinished = sessions.filter((s) => s.status !== "quiz_started").length;
+  const leads = sessions.filter((s) => s.email && s.status !== "paid" && !s.order_id);
+
+  const price = (blueprint.price_cents / 100).toFixed(0);
+  const netPerSale = ((blueprint.price_cents * CREATOR_KEEP_PCT) / 100 / 100).toFixed(2);
   const url = `yuzuu.co/u/${creator.handle}`;
   const initial = creator.display_name?.[0] ?? creator.email[0];
+
+  const kit =
+    blueprint.share_kit ??
+    fallbackShareKit({
+      handle: creator.handle ?? "",
+      topicTitle: bp.product.topic_title,
+      promise: bp.product.promise,
+      priceCents: blueprint.price_cents,
+      durationDays: bp.product.duration_days,
+    });
 
   return (
     <section>
@@ -60,7 +106,8 @@ export default async function DashboardPage({
       <div className="wrap wide">
         {published ? (
           <div className="notice" style={{ marginBottom: 26 }}>
-            Your product is live. Put the link in your bio and tell your audience about it.
+            <b>Your product is live.</b> It can sell while you sleep — but only once people see
+            it. The checklist below is the whole job.
           </div>
         ) : null}
 
@@ -74,37 +121,82 @@ export default async function DashboardPage({
             <Link className="btn btn-outline btn-sm" href={`/u/${creator.handle}`}>
               View page
             </Link>
-            <Link className="btn btn-ghost btn-sm" href="/onboard?new=1">
-              Build a new product
-            </Link>
+            {activated ? (
+              <Link className="btn btn-ghost btn-sm" href="/onboard?new=1">
+                Build a new product
+              </Link>
+            ) : null}
           </div>
         </div>
 
-        <div className="stats">
+        {!activated ? (
+          <div style={{ marginTop: 26 }}>
+            <LaunchKit
+              handle={creator.handle ?? ""}
+              url={url}
+              kit={kit}
+              checklist={creator.launch_checklist ?? {}}
+              netPerSale={netPerSale}
+              price={price}
+            />
+          </div>
+        ) : null}
+
+        <div className="stats four">
+          <div className="stat">
+            <span className="k">Page visits</span>
+            <div className="v">{visits}</div>
+            <div className="sub">people who opened your page</div>
+          </div>
+          <div className="stat">
+            <span className="k">Quiz starts</span>
+            <div className="v">{quizStarts}</div>
+            <div className="sub">{quizFinished} finished it</div>
+          </div>
           <div className="stat">
             <span className="k">Plans sold</span>
             <div className="v">{sold}</div>
-            <div className="sub">{thisWeek} in the last 7 days</div>
-          </div>
-          <div className="stat">
-            <span className="k">Earned</span>
-            <div className="v">${earned.toFixed(0)}</div>
-            <div className="sub">${(blueprint.price_cents / 100).toFixed(0)} per plan</div>
-          </div>
-          <div className="stat">
-            <span className="k">Version</span>
-            <div className="v">v{blueprint.version}</div>
             <div className="sub">
-              approved {blueprint.approved_at ? new Date(blueprint.approved_at).toLocaleDateString() : "—"}
+              {sold > 0
+                ? `${thisWeek} in the last 7 days`
+                : quizStarts > 0
+                  ? "buyers are close — keep posting"
+                  : "starts with one post"}
+            </div>
+          </div>
+          <div className="stat">
+            <span className="k">Your earnings</span>
+            <div className="v">${netUsd.toFixed(netUsd > 0 && netUsd < 100 ? 2 : 0)}</div>
+            <div className="sub">
+              your {CREATOR_KEEP_PCT}% — ${netPerSale} per ${price} sale
             </div>
           </div>
         </div>
+
+        {leads.length > 0 ? (
+          <div className="card" style={{ marginTop: 26 }}>
+            <span className="micro">Almost-buyers</span>
+            <p style={{ marginTop: 12, fontSize: 14.5, color: "var(--ink-soft)" }}>
+              {leads.length} {leads.length === 1 ? "person" : "people"} finished your quiz and left
+              an email without buying. We follow up with them automatically.
+            </p>
+            <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {leads.slice(0, 12).map((l) => (
+                <span key={l.id} className="chip">
+                  {maskEmail(l.email!)}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="card" style={{ marginTop: 26 }}>
           <span className="micro">Recent buyers</span>
           {orders.length === 0 ? (
             <p style={{ marginTop: 16, fontSize: 14.5, color: "var(--sage)" }}>
-              No buyers yet. Share {url} — every sale shows up here.
+              {quizStarts > 0
+                ? `No buyers yet — but ${quizStarts} ${quizStarts === 1 ? "person has" : "people have"} started your quiz. Every sale shows up here the second it happens.`
+                : `No buyers yet. Nobody buys what they haven't seen — the launch checklist above puts ${url} in front of your audience.`}
             </p>
           ) : (
             <table className="tbl" style={{ marginTop: 14 }}>

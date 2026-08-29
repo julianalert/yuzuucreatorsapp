@@ -1,27 +1,62 @@
 import { notFound } from "next/navigation";
-import { publishedProductByHandle } from "@/lib/public";
+import Link from "next/link";
+import { productForViewer } from "@/lib/public";
+import { getSignedInUser } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Wordmark } from "@/components/Wordmark";
-import { CheckoutClient } from "@/components/CheckoutClient";
+import { CheckoutClient, type RestoredQuiz } from "@/components/CheckoutClient";
 import { CheckoutSummary } from "@/components/CheckoutSummary";
 import { createOrder } from "./actions";
+
+/**
+ * Abandoned-checkout recovery lands here with ?session=<id> — often on a
+ * different device, where sessionStorage is empty. Rebuild the checkout state
+ * from the tracked quiz session so the click actually converts.
+ */
+async function restoredSession(
+  sessionId: string | undefined,
+  blueprintId: string
+): Promise<RestoredQuiz | null> {
+  if (!sessionId) return null;
+  const { data } = await supabaseAdmin()
+    .from("quiz_sessions")
+    .select("id, blueprint_id, answers, email, order_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!data || data.blueprint_id !== blueprintId || data.order_id) return null;
+  if (!data.answers || !Object.keys(data.answers).length) return null;
+  return {
+    answers: JSON.stringify(data.answers),
+    sessionId: data.id,
+    email: data.email ?? "",
+  };
+}
 
 export default async function CheckoutPage({
   params,
   searchParams,
 }: {
   params: Promise<{ handle: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; session?: string }>;
 }) {
   const { handle } = await params;
-  const { error } = await searchParams;
-  const product = await publishedProductByHandle(handle);
+  const { error, session } = await searchParams;
+  const viewer = await getSignedInUser();
+  const { product, isPreview } = await productForViewer(handle, viewer?.id);
   if (!product) notFound();
 
+  const restored = isPreview ? null : await restoredSession(session, product.blueprintId);
   const price = (product.priceCents / 100).toFixed(0);
   const inside = product.sections.filter((s) => !/disclaimer|safety/i.test(s.title));
 
   return (
     <section>
+      {isPreview ? (
+        <div className="preview-note">
+          <b>Preview</b> — buyers see a Pay button here; your walkthrough never creates an order.
+          <Link href="/dashboard">Back to dashboard</Link>
+        </div>
+      ) : null}
       <header className="bar">
         <div className="bar-in">
           <div className="avatar">
@@ -53,7 +88,11 @@ export default async function CheckoutPage({
             told us.
           </p>
 
-          <CheckoutSummary handle={product.handle} questions={product.questions} />
+          <CheckoutSummary
+            handle={product.handle}
+            questions={product.questions}
+            restoredAnswers={restored?.answers ?? null}
+          />
 
           <div className="co-sec">
             <span className="micro">What&apos;s inside</span>
@@ -126,6 +165,8 @@ export default async function CheckoutPage({
               handle={product.handle}
               action={createOrder}
               emailError={error === "email"}
+              isPreview={isPreview}
+              restored={restored}
             />
             <div className="trust">
               <span>Secure checkout</span>

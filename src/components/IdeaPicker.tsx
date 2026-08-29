@@ -12,17 +12,26 @@ const SCORE_LABELS: [keyof TopicProposal["scores"], string][] = [
 export function IdeaPicker({
   proposals,
   buildId,
+  priceUsd,
+  keepUsd,
   action,
+  regenerateAction,
   discardAction,
 }: {
   proposals: TopicProposal[];
   buildId: string;
+  priceUsd: string;
+  keepUsd: string;
   action: (formData: FormData) => Promise<void>;
+  regenerateAction: (formData: FormData) => Promise<void>;
   discardAction: (formData: FormData) => Promise<void>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const busy = submitting || regenerating || discarding;
 
   return (
     <form
@@ -58,6 +67,10 @@ export function IdeaPicker({
               ) : null}
               <h3>{p.topic_title}</h3>
               <span className="promise">{p.promise}</span>
+              <span className="idea-money">
+                ${priceUsd} per sale — <b>${keepUsd} goes to you</b>
+              </span>
+              {p.why_this_works ? <span className="idea-why">{p.why_this_works}</span> : null}
               {p.segmentation_preview?.length ? (
                 <span className="who-group">
                   <span className="who-label">Works for</span>
@@ -95,22 +108,60 @@ export function IdeaPicker({
         <button
           className="btn btn-primary btn-lg"
           type="submit"
-          disabled={selected === null || submitting || discarding}
+          disabled={selected === null || busy}
         >
           {submitting ? "Starting the build…" : "Build this product"}
         </button>
-        <button
-          className="btn btn-ghost"
-          type="submit"
-          disabled={submitting || discarding}
-          formAction={(fd: FormData) => {
-            setDiscarding(true);
-            return discardAction(fd);
-          }}
-        >
-          {discarding ? "Clearing…" : "None of these fit"}
-        </button>
+        {!regenOpen ? (
+          <button
+            className="btn btn-ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => setRegenOpen(true)}
+          >
+            None of these fit
+          </button>
+        ) : null}
       </div>
+
+      {regenOpen ? (
+        <div className="card" style={{ marginTop: 22 }}>
+          <label className="form-label" htmlFor="regen_reason">
+            What&apos;s off about them?
+          </label>
+          <textarea
+            className="area"
+            id="regen_reason"
+            name="regen_reason"
+            rows={2}
+            placeholder="Optional, but it sharpens the next batch — e.g. Too beginner-focused, my audience is mostly advanced."
+          />
+          <div style={{ marginTop: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn btn-outline"
+              type="submit"
+              disabled={busy}
+              formAction={(fd: FormData) => {
+                setRegenerating(true);
+                return regenerateAction(fd);
+              }}
+            >
+              {regenerating ? "Rethinking…" : "Get different ideas"}
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="submit"
+              disabled={busy}
+              formAction={(fd: FormData) => {
+                setDiscarding(true);
+                return discardAction(fd);
+              }}
+            >
+              {discarding ? "Clearing…" : "Start over from scratch"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }

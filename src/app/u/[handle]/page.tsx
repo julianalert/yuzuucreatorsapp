@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { publishedProductByHandle } from "@/lib/public";
+import { publishedProductByHandle, productForViewer } from "@/lib/public";
+import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
 import { JsonLd } from "@/components/JsonLd";
+import { VisitPing } from "@/components/VisitPing";
 import { absoluteUrl, canonical, noIndex } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -17,6 +19,13 @@ export async function generateMetadata({
   const title = `${product.title} — ${product.creatorName}`;
   const path = `/u/${product.handle}`;
   const meta = canonical(path);
+  // per-product share image — a link share should sell their product, not Yuzuu
+  const ogImage = {
+    url: absoluteUrl(`${path}/og`),
+    width: 1200,
+    height: 630,
+    alt: title,
+  };
   return {
     title,
     description: product.promise,
@@ -26,19 +35,21 @@ export async function generateMetadata({
       title,
       description: product.promise,
       type: "website",
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: product.promise,
-      images: meta.twitter?.images,
+      images: [ogImage.url],
     },
   };
 }
 
 export default async function SalesPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
-  const product = await publishedProductByHandle(handle);
+  const viewer = await getSignedInUser();
+  const { product, isPreview } = await productForViewer(handle, viewer?.id);
   if (!product) notFound();
 
   const price = (product.priceCents / 100).toFixed(0);
@@ -47,6 +58,15 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
 
   return (
     <section>
+      {isPreview ? (
+        <div className="preview-note">
+          <b>Preview</b> — this is exactly what your followers see. Your visits here never count
+          in your stats.
+          <Link href="/dashboard">Back to dashboard</Link>
+        </div>
+      ) : (
+        <VisitPing handle={product.handle} />
+      )}
       <JsonLd
         data={{
           "@context": "https://schema.org",

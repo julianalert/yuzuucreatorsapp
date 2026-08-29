@@ -94,7 +94,7 @@ Reject any candidate below 6 on segmentability or below 5 on acuteness regardles
 Return JSON only:
 {"proposals":[{"topic_title":"...","promise":"...","duration_days":n,"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations needing different plans"],"risk":"..."}]}
 
-Return the top ${TOPIC_COUNT}. If fewer than ${TOPIC_COUNT} survive the rejection rules, return fewer and add {"insufficient": true}.`,
+Return the top ${TOPIC_COUNT}. If fewer than ${TOPIC_COUNT} survive the rejection rules, return fewer and add {"insufficient": true}.${feedbackBlock(ctx)}`,
     ctx
   );
 }
@@ -134,7 +134,7 @@ Hard constraints (the delivery machine is fixed):
 Score it 1-10 on the same dimensions (resolvability = "the product can honestly deliver its promise"). If the idea has a natural time component, include duration_days (14-90); if it isn't time-boxed, omit duration_days entirely.
 
 Return JSON only:
-{"topic_title":"...","promise":"...","duration_days":n (optional),"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"one sentence on why this is the unexpected-but-right idea","segmentation_preview":["4-6 buyer situations needing different content"],"risk":"..."}`,
+{"topic_title":"...","promise":"...","duration_days":n (optional),"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"one sentence on why this is the unexpected-but-right idea","segmentation_preview":["4-6 buyer situations needing different content"],"risk":"..."}${feedbackBlock(ctx)}`,
     ctx
   );
 }

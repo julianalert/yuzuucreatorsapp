@@ -84,6 +84,14 @@ export function SampleReview({
             >
               Request changes
             </button>
+            <a
+              className="btn btn-ghost"
+              href={`/u/${handle}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Preview your page as a follower
+            </a>
             <span style={{ fontSize: 13.5, color: "var(--sage)" }}>
               Publishing puts this at yuzuu.co/u/{handle}
             </span>

@@ -29,6 +29,9 @@ export type BuildStage =
   | "gate"
   | "publish";
 
+/** Launch checklist state: item id → ISO timestamp when completed. */
+export type LaunchChecklist = Partial<Record<"quiz" | "link" | "bio" | "story", string>>;
+
 export interface CreatorRow {
   id: string;
   user_id: string;
@@ -38,6 +41,9 @@ export interface CreatorRow {
   email: string;
   stripe_account_id: string | null;
   stripe_onboarded: boolean;
+  /** Activation moment: set once on the creator's first paid order. */
+  first_sale_at: string | null;
+  launch_checklist: LaunchChecklist;
   created_at: string;
 }
 
@@ -61,6 +67,14 @@ export interface BuildRow {
 
 export type BlueprintStatus = "draft" | "complete" | "approved" | "archived";
 
+/** Paste-ready promotion copy generated at publish time. */
+export interface ShareKit {
+  bio_line: string;
+  story_text: string;
+  caption: string;
+  reel_script: string;
+}
+
 export interface BlueprintRow {
   id: string;
   creator_id: string;
@@ -72,6 +86,7 @@ export interface BlueprintRow {
   approved_by: string | null;
   published: boolean;
   price_cents: number;
+  share_kit: ShareKit | null;
   created_at: string;
 }
 
@@ -115,6 +130,18 @@ export interface QuizSessionRow {
   abandoned_email_sent_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type CreatorEventType = "page_visit" | "link_copied";
+
+/** Creator-side funnel event (public-page visits, share-link copies). */
+export interface CreatorEventRow {
+  id: string;
+  creator_id: string;
+  blueprint_id: string | null;
+  type: CreatorEventType;
+  meta: Record<string, unknown> | null;
+  created_at: string;
 }
 
 export interface OutputRow {

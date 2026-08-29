@@ -35,31 +35,63 @@ function useStoredQuiz(handle: string): StoredQuiz | null | undefined {
   }
 }
 
+/** Quiz state rebuilt server-side from a tracked session (recovery emails). */
+export interface RestoredQuiz {
+  answers: string;
+  sessionId: string;
+  email: string;
+}
+
 export function CheckoutClient({
   handle,
   action,
   emailError,
+  isPreview = false,
+  restored = null,
 }: {
   handle: string;
   action: (formData: FormData) => Promise<void>;
   emailError?: boolean;
+  /** The creator walking their own funnel — no order, no tracking. */
+  isPreview?: boolean;
+  restored?: RestoredQuiz | null;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const stored = useStoredQuiz(handle);
+  const fromStorage = useStoredQuiz(handle);
+  const stored = fromStorage ?? restored;
 
   useEffect(() => {
-    if (stored === null) router.replace(`/u/${handle}/quiz`);
-  }, [stored, handle, router]);
+    if (fromStorage === null && !restored) router.replace(`/u/${handle}/quiz`);
+  }, [fromStorage, restored, handle, router]);
 
   // funnel: they reached checkout
   const sessionId = stored?.sessionId ?? null;
   useEffect(() => {
-    if (sessionId) trackQuizSession({ handle, sessionId, status: "checkout" });
-  }, [sessionId, handle]);
+    if (sessionId && !isPreview) trackQuizSession({ handle, sessionId, status: "checkout" });
+  }, [sessionId, handle, isPreview]);
 
   if (!stored) {
     return <p style={{ fontSize: 14.5, color: "var(--sage)" }}>Loading your answers…</p>;
+  }
+
+  if (isPreview) {
+    return (
+      <div className="co-form">
+        <div className="co-sec">
+          <span className="micro">Payment</span>
+          <div className="pay-fake">
+            <p>
+              This is your preview — a buyer sees the payment step here. Walking through never
+              creates an order or touches your stats.
+            </p>
+          </div>
+        </div>
+        <button className="btn btn-primary btn-lg btn-block" type="button" disabled>
+          Pay now (buyers only)
+        </button>
+      </div>
+    );
   }
 
   return (

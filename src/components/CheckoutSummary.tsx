@@ -14,25 +14,37 @@ const noopSubscribe = () => () => {};
 export function CheckoutSummary({
   handle,
   questions,
+  restoredAnswers,
 }: {
   handle: string;
   questions: PublicQuizQuestion[];
+  /** JSON answers rebuilt server-side from a tracked session (recovery links). */
+  restoredAnswers?: string | null;
 }) {
   const raw = useSyncExternalStore(
     noopSubscribe,
     () => sessionStorage.getItem(QUIZ_STORAGE_KEY),
     () => undefined
   );
-  if (raw === undefined || !raw) return null;
+  if (raw === undefined && !restoredAnswers) return null;
 
-  let answers: Record<string, string | string[]>;
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed.handle !== handle) return null;
-    answers = parsed.answers ?? {};
-  } catch {
-    return null;
+  let answers: Record<string, string | string[]> | null = null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.handle === handle) answers = parsed.answers ?? {};
+    } catch {
+      // fall through to restored
+    }
   }
+  if (!answers && restoredAnswers) {
+    try {
+      answers = JSON.parse(restoredAnswers);
+    } catch {
+      return null;
+    }
+  }
+  if (!answers) return null;
 
   const picked: string[] = [];
   for (const q of questions) {

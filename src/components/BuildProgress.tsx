@@ -32,7 +32,9 @@ const PHASES: Record<"scan" | "build", StageItem[]> = {
 const ROUTE_FOR_STATUS: Record<string, string> = {
   awaiting_topic: "/onboard/ideas",
   awaiting_approval: "/onboard/review",
-  complete: "/dashboard",
+  // the transition from "publishing" to "live" is the launch moment —
+  // ?published=1 turns the dashboard into the launch screen
+  complete: "/dashboard?published=1",
   declined: "/onboard",
   failed: "/onboard",
 };

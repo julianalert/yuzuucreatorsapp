@@ -38,24 +38,16 @@ export interface PublicProduct {
   questions: PublicQuizQuestion[];
 }
 
-export async function publishedProductByHandle(handle: string): Promise<PublicProduct | null> {
-  const admin = supabaseAdmin();
-  const { data: creator } = await admin
-    .from("creators")
-    .select("id, handle, display_name, avatar_url")
-    .eq("handle", handle.toLowerCase())
-    .maybeSingle();
-  if (!creator) return null;
+interface PublicCreator {
+  id: string;
+  user_id: string;
+  handle: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+}
 
-  const { data: row } = await admin
-    .from("blueprints")
-    .select("*")
-    .eq("creator_id", creator.id)
-    .eq("published", true)
-    .maybeSingle();
-  if (!row) return null;
-
-  const bp = (row as BlueprintRow).data as Blueprint;
+function toPublicProduct(row: BlueprintRow, creator: PublicCreator): PublicProduct {
+  const bp = row.data as Blueprint;
 
   const questions: PublicQuizQuestion[] = (bp.quiz?.questions ?? []).map((q: QuizQuestion) => ({
     id: q.id,
@@ -72,8 +64,8 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
 
   return {
     blueprintId: row.id,
-    version: (row as BlueprintRow).version,
-    priceCents: (row as BlueprintRow).price_cents,
+    version: row.version,
+    priceCents: row.price_cents,
     handle: creator.handle!,
     creatorName: creator.display_name ?? bp.creator?.display_name ?? `@${creator.handle}`,
     creatorAvatarUrl: creator.avatar_url ?? null,
@@ -90,6 +82,71 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
     sectionTitles: (bp.output?.template?.sections ?? []).map((s) => s.title),
     questions,
   };
+}
+
+async function creatorByHandle(handle: string): Promise<PublicCreator | null> {
+  const { data } = await supabaseAdmin()
+    .from("creators")
+    .select("id, user_id, handle, display_name, avatar_url")
+    .eq("handle", handle.toLowerCase())
+    .maybeSingle();
+  return (data as PublicCreator) ?? null;
+}
+
+export async function publishedProductByHandle(handle: string): Promise<PublicProduct | null> {
+  const creator = await creatorByHandle(handle);
+  if (!creator) return null;
+
+  const { data: row } = await supabaseAdmin()
+    .from("blueprints")
+    .select("*")
+    .eq("creator_id", creator.id)
+    .eq("published", true)
+    .maybeSingle();
+  if (!row) return null;
+
+  return toPublicProduct(row as BlueprintRow, creator);
+}
+
+/**
+ * Resolve the product for a specific viewer. The creator viewing their own
+ * page gets preview mode: their live page if published, otherwise their
+ * latest finished-but-unpublished blueprint (the one awaiting approval) — so
+ * they can walk the follower journey before going live, and their own visits
+ * never count as buyer traffic.
+ */
+export async function productForViewer(
+  handle: string,
+  viewerUserId: string | null | undefined
+): Promise<{ product: PublicProduct | null; isPreview: boolean }> {
+  const creator = await creatorByHandle(handle);
+  if (!creator) return { product: null, isPreview: false };
+  const isOwner = Boolean(viewerUserId) && creator.user_id === viewerUserId;
+
+  const admin = supabaseAdmin();
+  const { data: published } = await admin
+    .from("blueprints")
+    .select("*")
+    .eq("creator_id", creator.id)
+    .eq("published", true)
+    .maybeSingle();
+
+  if (published) {
+    return { product: toPublicProduct(published as BlueprintRow, creator), isPreview: isOwner };
+  }
+  if (!isOwner) return { product: null, isPreview: false };
+
+  // owner, nothing live: preview the latest complete draft (pre-approval)
+  const { data: draft } = await admin
+    .from("blueprints")
+    .select("*")
+    .eq("creator_id", creator.id)
+    .eq("status", "complete")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!draft) return { product: null, isPreview: false };
+  return { product: toPublicProduct(draft as BlueprintRow, creator), isPreview: true };
 }
 
 export async function listPublishedHandles(): Promise<

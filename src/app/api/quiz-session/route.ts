@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { publishedProductByHandle } from "@/lib/public";
+import { sendFirstQuizStart } from "@/lib/email";
 import type { QuizSessionStatus } from "@/lib/db/types";
 
 /** Higher rank wins — a session's status never moves backwards. */
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
   if (!body.sessionId) {
     const { data: creator } = await admin
       .from("creators")
-      .select("id")
+      .select("id, email, handle")
       .eq("handle", handle.toLowerCase())
       .single();
     if (!creator) return NextResponse.json({ error: "unknown creator" }, { status: 404 });
@@ -85,6 +86,17 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (error) return NextResponse.json({ error: "insert failed" }, { status: 500 });
+
+    // first quiz start ever → a mini-aha for the creator on the way to the sale
+    if (creator.email) {
+      const { error: claimErr } = await admin
+        .from("lifecycle_emails")
+        .insert({ creator_id: creator.id, type: "first_quiz", ref_id: "" });
+      if (!claimErr) {
+        await sendFirstQuizStart(creator.email, { handle: creator.handle ?? handle });
+      }
+    }
+
     return NextResponse.json({ sessionId: session.id });
   }
 

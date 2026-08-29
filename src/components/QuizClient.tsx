@@ -12,9 +12,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function QuizClient({
   handle,
   questions,
+  isPreview = false,
 }: {
   handle: string;
   questions: PublicQuizQuestion[];
+  /** The creator walking their own funnel — no session tracking. */
+  isPreview?: boolean;
 }) {
   const router = useRouter();
   const [idx, setIdx] = useState(0);
@@ -33,6 +36,7 @@ export function QuizClient({
   const progress = (idx / (total + 1)) * 100;
 
   function ensureSession(withAnswers: Record<string, string | string[]>) {
+    if (isPreview) return;
     if (sessionIdRef.current || creatingRef.current) return;
     creatingRef.current = true;
     trackQuizSession({ handle, answers: withAnswers, lastQuestionIdx: idx }).then((id) => {
@@ -104,7 +108,7 @@ export function QuizClient({
         return;
       }
       const cleanEmail = email.trim().toLowerCase();
-      if (sessionIdRef.current) {
+      if (!isPreview && sessionIdRef.current) {
         trackQuizSession({
           handle,
           sessionId: sessionIdRef.current,

@@ -81,6 +81,79 @@ export async function chooseTopic(formData: FormData) {
   redirect("/onboard/building");
 }
 
+/**
+ * "None of these fit" without starting over: kill the parked run, then start
+ * a rebuild that reuses the scrape and audience card but proposes fresh
+ * topics, with the creator's reason (and the rejected titles) fed into the
+ * proposal prompt. Capped at 2 regenerations — proposals cost money.
+ */
+export async function regenerateIdeas(formData: FormData) {
+  const creator = await requireCreator();
+  const buildId = String(formData.get("build_id"));
+  const reason = String(formData.get("regen_reason") ?? "").trim();
+
+  const admin = supabaseAdmin();
+  const { data: build } = await admin
+    .from("builds")
+    .select("id, creator_id, status, topic_proposals")
+    .eq("id", buildId)
+    .single();
+  if (!build || build.creator_id !== creator.id || build.status !== "awaiting_topic") {
+    redirect("/onboard");
+  }
+
+  const { count: regens } = await admin
+    .from("builds")
+    .select("id", { count: "exact", head: true })
+    .eq("creator_id", creator.id)
+    .eq("halted_at", "ideas_regenerated");
+  if ((regens ?? 0) >= 2) redirect("/onboard/ideas?error=regen_limit");
+
+  // cancel the pipeline run parked on the topic wait (best-effort, like discard)
+  try {
+    await inngest.send({ name: "build/discarded", data: { buildId } });
+  } catch (e) {
+    console.error("regenerateIdeas: cancel event failed", e);
+  }
+
+  await admin
+    .from("builds")
+    .update({
+      status: "failed",
+      halted_at: "ideas_regenerated",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", buildId);
+
+  const { data: next, error } = await admin
+    .from("builds")
+    .insert({ creator_id: creator.id, status: "queued" })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  const rejectedTitles = (
+    (build.topic_proposals?.proposals ?? []) as { topic_title: string }[]
+  ).map((p) => p.topic_title);
+  const rejectReason =
+    `The creator saw these product ideas and said none of them fit: ${rejectedTitles.join("; ") || "(unknown)"}. ` +
+    `Propose genuinely different angles — do not rephrase the rejected ones.` +
+    (reason ? ` Their words: ${reason}` : "");
+
+  await inngest.send({
+    name: "build/requested",
+    data: {
+      buildId: next.id,
+      creatorId: creator.id,
+      handle: creator.handle ?? "",
+      rebuildOfBuildId: buildId,
+      rejectReason,
+    },
+  });
+
+  redirect("/onboard/scanning?rebuilding=1");
+}
+
 export async function discardBuild(formData: FormData) {
   const creator = await requireCreator();
   const buildId = String(formData.get("build_id"));

@@ -29,13 +29,40 @@ import type {
 import type { OrderRow } from "../db/types";
 import { scrapeCreator } from "../scrape";
 import {
+  sendAbandonedCheckout,
   sendBuildDeclined,
+  sendIdeaReminder,
   sendIdeasReady,
+  sendLaunchNudge,
+  sendMilestone,
   sendPlanDelivered,
+  sendReviewReminder,
+  sendSaleNotification,
   sendSamplesReady,
+  sendYoureLive,
+  type LaunchNudgeVariant,
 } from "../email";
+import { generateShareKit } from "../share-kit";
+import { CREATOR_KEEP_PCT } from "../seo";
+import type { ShareKit } from "../db/types";
 
 const db = () => supabaseAdmin();
+
+/**
+ * One-shot lifecycle email dedupe: the unique constraint on
+ * (creator_id, type, ref_id) makes the insert the claim. Send only when the
+ * claim succeeds — safe across cron runs and Inngest retries.
+ */
+async function claimLifecycleEmail(
+  creatorId: string,
+  type: string,
+  refId = ""
+): Promise<boolean> {
+  const { error } = await db()
+    .from("lifecycle_emails")
+    .insert({ creator_id: creatorId, type, ref_id: refId });
+  return !error;
+}
 
 async function updateBuild(buildId: string, patch: Record<string, unknown>) {
   const { error } = await db().from("builds").update(patch).eq("id", buildId);
@@ -780,6 +807,49 @@ export const blueprintBuild = inngest.createFunction(
       revalidatePath(`/u/${handle}`);
     });
 
+    // Paste-ready promotion copy, written from the product itself. Non-fatal:
+    // the launch screen falls back to deterministic copy if this is null.
+    const shareKit = await step.run("share-kit", async (): Promise<ShareKit | null> => {
+      try {
+        const usage = createUsageTracker();
+        const kit = await generateShareKit(
+          {
+            handle,
+            topicTitle: topic.topic_title,
+            promise: topic.promise,
+            priceCents: DEFAULT_PRICE_CENTS,
+            durationDays,
+            audienceCard: audience,
+          },
+          usage
+        );
+        await db().from("blueprints").update({ share_kit: kit }).eq("id", blueprintId);
+        await addCost(buildId, usage.cost_usd);
+        return kit;
+      } catch (e) {
+        console.error("[share-kit] non-fatal:", e);
+        return null;
+      }
+    });
+
+    // The launch moment must not be silent: tell the creator they're live and
+    // hand them the first post, ready to paste.
+    await step.run("youre-live-email", async () => {
+      const { data: creator } = await db()
+        .from("creators")
+        .select("id, email")
+        .eq("id", creatorId)
+        .single();
+      if (!creator?.email) return;
+      if (!(await claimLifecycleEmail(creator.id, "youre_live", blueprintId))) return;
+      await sendYoureLive(creator.email, {
+        handle,
+        topicTitle: topic.topic_title,
+        priceCents: DEFAULT_PRICE_CENTS,
+        kit: shareKit,
+      });
+    });
+
     return { published: true, blueprintId };
   }
 );
@@ -814,12 +884,73 @@ export const planGenerate = inngest.createFunction(
       return {
         order: order as OrderRow,
         blueprintRowId: bpRow.id as string,
+        creatorId: bpRow.creator_id as string,
         blueprint: bpRow.data as Blueprint,
         creatorName:
           (bpRow.creators?.display_name as string) ??
           (bpRow.creators?.handle as string) ??
           (bpRow.data as Blueprint).creator.handle,
       };
+    });
+
+    // A sale is the creator's activation moment — never let it pass silently.
+    // Runs before generation so the notification isn't delayed by the writer.
+    await step.run("notify-creator", async () => {
+      const { data: creator } = await db()
+        .from("creators")
+        .select("id, email, first_sale_at")
+        .eq("id", ctx.creatorId)
+        .single();
+      if (!creator) return;
+
+      // every sale across all of this creator's blueprint versions, in order
+      const { data: bpIds } = await db()
+        .from("blueprints")
+        .select("id")
+        .eq("creator_id", creator.id);
+      const ids = (bpIds ?? []).map((b) => b.id as string);
+      const { data: orderRows } = await db()
+        .from("orders")
+        .select("id, amount_cents, created_at")
+        .in("blueprint_id", ids)
+        .in("status", ["paid", "generating", "delivered"])
+        .order("created_at", { ascending: true });
+      const orders = orderRows ?? [];
+      const idx = orders.findIndex((o) => o.id === orderId);
+      const saleNumber = idx === -1 ? orders.length : idx + 1;
+
+      if (saleNumber === 1 && !creator.first_sale_at) {
+        await db()
+          .from("creators")
+          .update({ first_sale_at: new Date().toISOString() })
+          .eq("id", creator.id)
+          .is("first_sale_at", null);
+      }
+
+      if (!creator.email) return;
+      const topicTitle = (ctx.blueprint as Blueprint).product.topic_title;
+
+      if (await claimLifecycleEmail(creator.id, "sale", orderId)) {
+        await sendSaleNotification(creator.email, {
+          topicTitle,
+          priceCents: ctx.order.amount_cents,
+          saleNumber,
+        });
+      }
+
+      // milestones — each fires once, ever
+      if (saleNumber >= 5 && (await claimLifecycleEmail(creator.id, "milestone_5"))) {
+        await sendMilestone(creator.email, { kind: "5_sales", topicTitle });
+      }
+      if (saleNumber >= 10 && (await claimLifecycleEmail(creator.id, "milestone_10"))) {
+        await sendMilestone(creator.email, { kind: "10_sales", topicTitle });
+      }
+      const netCents = orders
+        .slice(0, Math.max(saleNumber, 1))
+        .reduce((t, o) => t + (o.amount_cents as number), 0) * (CREATOR_KEEP_PCT / 100);
+      if (netCents >= 10000 && (await claimLifecycleEmail(creator.id, "milestone_100usd"))) {
+        await sendMilestone(creator.email, { kind: "100_usd", topicTitle });
+      }
     });
 
     const bp = ctx.blueprint;
@@ -908,4 +1039,168 @@ export const planGenerate = inngest.createFunction(
   }
 );
 
-export const functions = [blueprintBuild, planGenerate];
+// ============================================================ lifecycle.cron
+const HOUR_MS = 3600_000;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Hourly sweep for everything time-based on the road to activation:
+ * - reminders before the 7-day idea and 14-day review timeouts silently expire
+ * - "live but silent" nudges for published creators with no sale yet
+ * - abandoned-checkout recovery emails to buyers who finished the quiz
+ *
+ * All one-shot sends are deduped through lifecycle_emails (creators) or
+ * quiz_sessions.abandoned_email_sent_at (buyers), so re-runs are safe.
+ */
+export const lifecycleCron = inngest.createFunction(
+  { id: "lifecycle-cron", retries: 1, triggers: [{ cron: "0 * * * *" }] },
+  async ({ step }) => {
+    // ---- idea-pick reminders (7-day timeout) -------------------------------
+    await step.run("idea-reminders", async () => {
+      const { data } = await db()
+        .from("builds")
+        .select("id, creator_id, created_at, creators(email)")
+        .eq("status", "awaiting_topic")
+        .lt("created_at", new Date(Date.now() - 3 * DAY_MS).toISOString());
+      for (const b of data ?? []) {
+        const email = (b.creators as unknown as { email: string } | null)?.email;
+        if (!email) continue;
+        const ageDays = (Date.now() - new Date(b.created_at).getTime()) / DAY_MS;
+        if (ageDays >= 7.5) continue; // wait already timed out
+        const daysLeft = Math.max(1, Math.ceil(7 - ageDays));
+        const type = ageDays >= 6 ? "idea_reminder_final" : "idea_reminder";
+        if (await claimLifecycleEmail(b.creator_id, type, b.id)) {
+          await sendIdeaReminder(email, { daysLeft });
+        }
+      }
+    });
+
+    // ---- sample-review reminders (14-day timeout) --------------------------
+    await step.run("review-reminders", async () => {
+      const { data } = await db()
+        .from("builds")
+        .select("id, creator_id, creators(email)")
+        .eq("status", "awaiting_approval");
+      for (const b of data ?? []) {
+        const email = (b.creators as unknown as { email: string } | null)?.email;
+        if (!email) continue;
+        // the wait starts when the blueprint row is persisted, not at build start
+        const { data: bp } = await db()
+          .from("blueprints")
+          .select("created_at, data")
+          .eq("build_id", b.id)
+          .maybeSingle();
+        if (!bp) continue;
+        const ageDays = (Date.now() - new Date(bp.created_at).getTime()) / DAY_MS;
+        if (ageDays < 3 || ageDays >= 14.5) continue;
+        const daysLeft = Math.max(1, Math.ceil(14 - ageDays));
+        const type = ageDays >= 11 ? "review_reminder_final" : "review_reminder";
+        if (await claimLifecycleEmail(b.creator_id, type, b.id)) {
+          await sendReviewReminder(email, {
+            topicTitle: (bp.data as Blueprint).product.topic_title,
+            daysLeft,
+          });
+        }
+      }
+    });
+
+    // ---- live-but-silent launch nudges -------------------------------------
+    await step.run("launch-nudges", async () => {
+      const { data } = await db()
+        .from("blueprints")
+        .select(
+          "id, creator_id, approved_at, created_at, share_kit, data, creators!inner(id, email, handle, first_sale_at)"
+        )
+        .eq("published", true);
+      for (const bp of data ?? []) {
+        const c = bp.creators as unknown as {
+          id: string;
+          email: string | null;
+          handle: string | null;
+          first_sale_at: string | null;
+        };
+        if (!c?.email || !c.handle || c.first_sale_at) continue;
+        const liveMs = Date.now() - new Date(bp.approved_at ?? bp.created_at).getTime();
+        if (liveMs < HOUR_MS) continue;
+
+        const { count: visits } = await db()
+          .from("creator_events")
+          .select("id", { count: "exact", head: true })
+          .eq("creator_id", c.id)
+          .eq("type", "page_visit");
+        const { count: quizStarts } = await db()
+          .from("quiz_sessions")
+          .select("id", { count: "exact", head: true })
+          .eq("creator_id", c.id);
+
+        // most advanced eligible stage first; one nudge per stage, ever
+        const stages: { variant: LaunchNudgeVariant; eligible: boolean }[] = [
+          { variant: "7d", eligible: liveMs >= 7 * DAY_MS },
+          { variant: "3d", eligible: liveMs >= 3 * DAY_MS },
+          { variant: "24h", eligible: liveMs >= DAY_MS && (quizStarts ?? 0) === 0 },
+          { variant: "1h", eligible: liveMs >= HOUR_MS && (visits ?? 0) === 0 },
+        ];
+        for (const s of stages) {
+          if (!s.eligible) continue;
+          if (!(await claimLifecycleEmail(c.id, `nudge_${s.variant}`, bp.id))) continue;
+          await sendLaunchNudge(c.email, {
+            variant: s.variant,
+            handle: c.handle,
+            topicTitle: (bp.data as Blueprint).product.topic_title,
+            kit: (bp.share_kit as ShareKit | null) ?? null,
+            visits: visits ?? 0,
+            quizStarts: quizStarts ?? 0,
+          });
+          break;
+        }
+      }
+    });
+
+    // ---- abandoned-checkout recovery (buyers) -------------------------------
+    await step.run("abandoned-checkouts", async () => {
+      const { data } = await db()
+        .from("quiz_sessions")
+        .select("id, blueprint_id, email, updated_at")
+        .in("status", ["quiz_completed", "checkout"])
+        .not("email", "is", null)
+        .is("abandoned_email_sent_at", null)
+        .is("order_id", null)
+        .lt("updated_at", new Date(Date.now() - 2 * HOUR_MS).toISOString())
+        .gt("updated_at", new Date(Date.now() - 7 * DAY_MS).toISOString());
+      for (const s of data ?? []) {
+        const { data: bp } = await db()
+          .from("blueprints")
+          .select("published, price_cents, data, creators!inner(handle, display_name)")
+          .eq("id", s.blueprint_id)
+          .maybeSingle();
+        // only recover toward a page that still exists
+        if (!bp?.published) continue;
+        const creator = bp.creators as unknown as {
+          handle: string | null;
+          display_name: string | null;
+        };
+        if (!creator?.handle) continue;
+        // claim via the timestamp itself — the update only wins once
+        const { data: claimed } = await db()
+          .from("quiz_sessions")
+          .update({ abandoned_email_sent_at: new Date().toISOString() })
+          .eq("id", s.id)
+          .is("abandoned_email_sent_at", null)
+          .select("id");
+        if (!claimed?.length) continue;
+        const blueprint = bp.data as Blueprint;
+        await sendAbandonedCheckout(s.email!, {
+          creatorName: creator.display_name ?? `@${creator.handle}`,
+          topicTitle: blueprint.product.topic_title,
+          handle: creator.handle,
+          sessionId: s.id,
+          priceCents: bp.price_cents,
+        });
+      }
+    });
+
+    return { ok: true };
+  }
+);
+
+export const functions = [blueprintBuild, planGenerate, lifecycleCron];
