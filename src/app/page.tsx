@@ -76,7 +76,7 @@ export default async function Home({
             <div>
               <p className="eyebrow">For Instagram creators · 10k–1M</p>
               <h1>
-                <em>Regular income</em> from your audience, without making the product yourself
+                Earn <em>Regular income</em> from your audience
               </h1>
               <p className="hero-sub">
                 Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
@@ -87,6 +87,9 @@ export default async function Home({
             </div>
 
             <div>
+              <p className="eyebrow preview-label">
+                What your followers see when you share your link
+              </p>
               <div className="preview">
                 <div className="bar">
                   <span className="pip" />
@@ -107,21 +110,14 @@ export default async function Home({
                   <p className="pv-title">The 30-Day Sleep Reset, written for your nights</p>
                   <p className="pv-p">
                     Six questions about how you actually sleep. Then a day-by-day plan built
-                    around your answers — not a PDF with your name at the top.
+                    around your answers, not a PDF with your name at the top.
                   </p>
                   <div className="pv-cta">
                     <span className="pv-price">$27</span>
                     <span className="pv-btn">Start the quiz →</span>
                   </div>
-                  <div className="chips">
-                    <span className="chip">Your wind-down</span>
-                    <span className="chip">Week 1 · nights 1–7</span>
-                    <span className="chip">If you wake at 3am</span>
-                    <span className="chip">Shift work</span>
-                  </div>
                 </div>
               </div>
-              <p className="caption">Type your handle — this is the page we&apos;d host for you.</p>
             </div>
           </div>
         </header>

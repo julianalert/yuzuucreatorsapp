@@ -293,6 +293,9 @@
 }
 
 /* preview card */
+.peel .preview-label {
+  margin-bottom: 12px;
+}
 .peel .preview {
   background: #fff;
   border: 1.5px solid var(--rind);
