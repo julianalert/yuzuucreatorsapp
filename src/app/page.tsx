@@ -101,6 +101,7 @@ export default async function Home({
                       <LiveHandle />
                     </b>
                   </span>
+                  <span className="preview-badge">Preview</span>
                 </div>
                 <div className="preview-body">
                   <p className="pv-eyebrow">
@@ -118,6 +119,11 @@ export default async function Home({
                   </div>
                 </div>
               </div>
+              <p className="caption preview-outcome">
+                You share yuzuu.co/u/
+                <LiveHandle />
+                . Followers take the quiz and pay. You keep {CREATOR_KEEP_PCT}%.
+              </p>
             </div>
           </div>
         </header>

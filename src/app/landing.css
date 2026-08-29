@@ -331,6 +331,19 @@
   color: var(--rind);
   font-weight: 500;
 }
+.peel .preview-badge {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--slate);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
 .peel .preview-body {
   padding: 26px 24px 24px;
 }
@@ -372,6 +385,8 @@
   font-size: 0.88rem;
   padding: 10px 16px;
   border-radius: 999px;
+  pointer-events: none;
+  cursor: default;
 }
 .peel .chips {
   display: flex;
@@ -395,6 +410,9 @@
   color: var(--slate);
   margin-top: 14px;
   text-align: right;
+}
+.peel .preview-outcome {
+  text-align: left;
 }
 
 /* ---------- section frame ---------- */
