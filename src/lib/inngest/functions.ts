@@ -227,14 +227,20 @@ export const blueprintBuild = inngest.createFunction(
       "scrape",
       async (): Promise<{ input: CreatorInput; restricted: boolean }> => {
         await updateBuild(buildId, { ...STAGE_STATUS, stage: "scrape" });
-        if (rebuildOfBuildId) {
+        // rebuilds copy from the rejected build; a re-triggered event for the
+        // same build (crash recovery) reuses whatever its own dead run paid for
+        const scrapeSrc = rebuildOfBuildId ?? buildId;
+        {
           const { data: prev } = await db()
             .from("builds")
             .select("scrape_data")
-            .eq("id", rebuildOfBuildId)
+            .eq("id", scrapeSrc)
             .single();
           if (prev?.scrape_data?.creator_input) {
-            return { input: prev.scrape_data.creator_input as CreatorInput, restricted: false };
+            return {
+              input: prev.scrape_data.creator_input as CreatorInput,
+              restricted: Boolean(prev.scrape_data.restricted),
+            };
           }
         }
         let input: CreatorInput;
@@ -259,11 +265,15 @@ export const blueprintBuild = inngest.createFunction(
         return { input, restricted };
       }
     );
-    const creatorInput = scraped.input;
+    // runs started before the step began returning { input, restricted } replay
+    // the old memoized shape (a bare CreatorInput) — accept both
+    const creatorInput: CreatorInput =
+      (scraped as { input?: CreatorInput }).input ?? (scraped as unknown as CreatorInput);
+    const scrapeRestricted = Boolean((scraped as { restricted?: boolean }).restricted);
 
     // restriction is a property of the account, not of our pipeline — tell
     // the creator what to fix instead of the generic thin-content note
-    if (scraped.restricted) {
+    if (scrapeRestricted) {
       await step.run("decline-restricted", () =>
         declined(
           "profile_restricted",
@@ -287,11 +297,11 @@ export const blueprintBuild = inngest.createFunction(
     const audience = await step.run("extract", async (): Promise<AudienceCard> => {
       await assertDailyCap();
       await updateBuild(buildId, { ...STAGE_STATUS, stage: "extract" });
-      if (rebuildOfBuildId) {
+      {
         const { data: prev } = await db()
           .from("builds")
           .select("audience_card")
-          .eq("id", rebuildOfBuildId)
+          .eq("id", rebuildOfBuildId ?? buildId)
           .single();
         if (prev?.audience_card) {
           await updateBuild(buildId, { audience_card: prev.audience_card });
@@ -325,22 +335,23 @@ export const blueprintBuild = inngest.createFunction(
     // ---- 3. topic proposals + pause for the creator's pick ------------------
     let chosen: TopicProposal | null = null;
 
-    const prevChosen = rebuildOfBuildId
-      ? await step.run("copy-topic", async () => {
-          const { data: prev } = await db()
-            .from("builds")
-            .select("chosen_topic, topic_proposals")
-            .eq("id", rebuildOfBuildId)
-            .single();
-          if (prev?.chosen_topic) {
-            await updateBuild(buildId, {
-              chosen_topic: prev.chosen_topic,
-              topic_proposals: prev.topic_proposals,
-            });
-          }
-          return (prev?.chosen_topic as TopicProposal) ?? null;
-        })
-      : null;
+    // rebuilds copy the rejected build's topic; crash-recovery re-triggers find
+    // their own earlier pick, so the creator never has to choose twice
+    const prevChosen = await step.run("copy-topic", async () => {
+      const { data: prev } = await db()
+        .from("builds")
+        .select("chosen_topic, topic_proposals")
+        .eq("id", rebuildOfBuildId ?? buildId)
+        .single();
+      if (!prev?.chosen_topic) return null;
+      if (rebuildOfBuildId) {
+        await updateBuild(buildId, {
+          chosen_topic: prev.chosen_topic,
+          topic_proposals: prev.topic_proposals,
+        });
+      }
+      return prev.chosen_topic as TopicProposal;
+    });
 
     if (prevChosen) {
       chosen = prevChosen;
