@@ -63,6 +63,8 @@ Extract only what the evidence supports. Where evidence is thin, say so in confi
 
 Pay particular attention to the comments. The words the audience uses for their own problem matter more than the words the creator uses. When they differ, record both.
 
+Sparse comments are normal for smaller accounts and are NOT by themselves a reason for low confidence in "who" or "core_promise": a clear bio and consistent captions are strong evidence for both. Reserve low scores on those two axes for genuinely unreadable positioning. Score "objections" honestly from whatever audience language exists — a low objections score is fine and expected when comments are few.
+
 Return JSON only:
 {"who":"...","core_promise":"...","vocabulary":[...],"audience_words":[...],"objections":[...],"tone_notes":"...","credibility_basis":"...","confidence":{"who":0-1,"core_promise":0-1,"objections":0-1},"evidence":{"who":["..."],"core_promise":["..."]}}`,
     ctx

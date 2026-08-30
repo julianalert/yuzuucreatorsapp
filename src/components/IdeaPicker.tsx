@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { TopicProposal } from "@/lib/blueprint/types";
 
 const SCORE_LABELS: [keyof TopicProposal["scores"], string][] = [
@@ -8,6 +9,95 @@ const SCORE_LABELS: [keyof TopicProposal["scores"], string][] = [
   ["segmentability", "Fits different people"],
   ["credibility", "You're credible"],
 ];
+
+type SubmitIntent = "build" | "regen" | "discard";
+
+const PENDING_LABELS: Record<SubmitIntent, string> = {
+  build: "Starting building…",
+  regen: "Rethinking…",
+  discard: "Clearing…",
+};
+
+function IdeaPickerActions({
+  selected,
+  regenOpen,
+  setRegenOpen,
+  regenerateAction,
+  discardAction,
+}: {
+  selected: number | null;
+  regenOpen: boolean;
+  setRegenOpen: (open: boolean) => void;
+  regenerateAction: (formData: FormData) => Promise<void>;
+  discardAction: (formData: FormData) => Promise<void>;
+}) {
+  const { pending } = useFormStatus();
+  const [intent, setIntent] = useState<SubmitIntent | null>(null);
+
+  if (pending && intent) {
+    return (
+      <div style={{ marginTop: 30 }}>
+        <span className="btn-pending" role="status" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          {PENDING_LABELS[intent]}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ marginTop: 30, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          className="btn btn-primary btn-lg"
+          type="submit"
+          disabled={selected === null}
+          onClick={() => setIntent("build")}
+        >
+          Build this product
+        </button>
+        {!regenOpen ? (
+          <button className="btn btn-ghost" type="button" onClick={() => setRegenOpen(true)}>
+            None of these fit
+          </button>
+        ) : null}
+      </div>
+
+      {regenOpen ? (
+        <div className="card" style={{ marginTop: 22 }}>
+          <label className="form-label" htmlFor="regen_reason">
+            What&apos;s off about them?
+          </label>
+          <textarea
+            className="area"
+            id="regen_reason"
+            name="regen_reason"
+            rows={2}
+            placeholder="Optional, but it sharpens the next batch — e.g. Too beginner-focused, my audience is mostly advanced."
+          />
+          <div style={{ marginTop: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn btn-outline"
+              type="submit"
+              formAction={regenerateAction}
+              onClick={() => setIntent("regen")}
+            >
+              Get different ideas
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="submit"
+              formAction={discardAction}
+              onClick={() => setIntent("discard")}
+            >
+              Start over from scratch
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 export function IdeaPicker({
   proposals,
@@ -27,19 +117,10 @@ export function IdeaPicker({
   discardAction: (formData: FormData) => Promise<void>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
-  const [discarding, setDiscarding] = useState(false);
-  const busy = submitting || regenerating || discarding;
 
   return (
-    <form
-      action={(fd) => {
-        setSubmitting(true);
-        return action(fd);
-      }}
-    >
+    <form action={action}>
       <input type="hidden" name="build_id" value={buildId} />
       <input type="hidden" name="topic_index" value={selected ?? ""} />
 
@@ -104,64 +185,13 @@ export function IdeaPicker({
         ))}
       </div>
 
-      <div style={{ marginTop: 30, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          className="btn btn-primary btn-lg"
-          type="submit"
-          disabled={selected === null || busy}
-        >
-          {submitting ? "Starting the build…" : "Build this product"}
-        </button>
-        {!regenOpen ? (
-          <button
-            className="btn btn-ghost"
-            type="button"
-            disabled={busy}
-            onClick={() => setRegenOpen(true)}
-          >
-            None of these fit
-          </button>
-        ) : null}
-      </div>
-
-      {regenOpen ? (
-        <div className="card" style={{ marginTop: 22 }}>
-          <label className="form-label" htmlFor="regen_reason">
-            What&apos;s off about them?
-          </label>
-          <textarea
-            className="area"
-            id="regen_reason"
-            name="regen_reason"
-            rows={2}
-            placeholder="Optional, but it sharpens the next batch — e.g. Too beginner-focused, my audience is mostly advanced."
-          />
-          <div style={{ marginTop: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              className="btn btn-outline"
-              type="submit"
-              disabled={busy}
-              formAction={(fd: FormData) => {
-                setRegenerating(true);
-                return regenerateAction(fd);
-              }}
-            >
-              {regenerating ? "Rethinking…" : "Get different ideas"}
-            </button>
-            <button
-              className="btn btn-ghost"
-              type="submit"
-              disabled={busy}
-              formAction={(fd: FormData) => {
-                setDiscarding(true);
-                return discardAction(fd);
-              }}
-            >
-              {discarding ? "Clearing…" : "Start over from scratch"}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <IdeaPickerActions
+        selected={selected}
+        regenOpen={regenOpen}
+        setRegenOpen={setRegenOpen}
+        regenerateAction={regenerateAction}
+        discardAction={discardAction}
+      />
     </form>
   );
 }

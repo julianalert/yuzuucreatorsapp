@@ -223,37 +223,55 @@ export const blueprintBuild = inngest.createFunction(
     };
 
     // ---- 1. scrape (or copy from the rejected build on a rebuild) ----------
-    const creatorInput = await step.run("scrape", async (): Promise<CreatorInput> => {
-      await updateBuild(buildId, { ...STAGE_STATUS, stage: "scrape" });
-      if (rebuildOfBuildId) {
-        const { data: prev } = await db()
-          .from("builds")
-          .select("scrape_data")
-          .eq("id", rebuildOfBuildId)
-          .single();
-        if (prev?.scrape_data?.creator_input) {
-          return prev.scrape_data.creator_input as CreatorInput;
+    const scraped = await step.run(
+      "scrape",
+      async (): Promise<{ input: CreatorInput; restricted: boolean }> => {
+        await updateBuild(buildId, { ...STAGE_STATUS, stage: "scrape" });
+        if (rebuildOfBuildId) {
+          const { data: prev } = await db()
+            .from("builds")
+            .select("scrape_data")
+            .eq("id", rebuildOfBuildId)
+            .single();
+          if (prev?.scrape_data?.creator_input) {
+            return { input: prev.scrape_data.creator_input as CreatorInput, restricted: false };
+          }
         }
+        let input: CreatorInput;
+        let thin = false;
+        let restricted = false;
+        if (process.env.PIPELINE_MOCK === "true" || !process.env.SCRAPECREATORS_API_KEY) {
+          input = mockCreatorInput(handle, selfDescription);
+        } else {
+          const s = await scrapeCreator(handle);
+          thin = s.thin;
+          restricted = s.restricted;
+          await syncCreatorProfile(creatorId, s.fullName, s.avatarUrl);
+          input = {
+            handle: s.handle,
+            bio: s.bio,
+            captions: s.captions,
+            comments: s.comments,
+            self_description: selfDescription || s.bio,
+          };
+        }
+        await updateBuild(buildId, { scrape_data: { creator_input: input, thin, restricted } });
+        return { input, restricted };
       }
-      let input: CreatorInput;
-      let thin = false;
-      if (process.env.PIPELINE_MOCK === "true" || !process.env.SCRAPECREATORS_API_KEY) {
-        input = mockCreatorInput(handle, selfDescription);
-      } else {
-        const s = await scrapeCreator(handle);
-        thin = s.thin;
-        await syncCreatorProfile(creatorId, s.fullName, s.avatarUrl);
-        input = {
-          handle: s.handle,
-          bio: s.bio,
-          captions: s.captions,
-          comments: s.comments,
-          self_description: selfDescription || s.bio,
-        };
-      }
-      await updateBuild(buildId, { scrape_data: { creator_input: input, thin } });
-      return input;
-    });
+    );
+    const creatorInput = scraped.input;
+
+    // restriction is a property of the account, not of our pipeline — tell
+    // the creator what to fix instead of the generic thin-content note
+    if (scraped.restricted) {
+      await step.run("decline-restricted", () =>
+        declined(
+          "profile_restricted",
+          "Instagram doesn't show this profile's content to outside services — it's restricted to logged-in viewers."
+        )
+      );
+      return { declined: "profile_restricted" };
+    }
 
     if (!creatorInput.captions.length && !creatorInput.comments.length) {
       await step.run("decline-thin", () =>
@@ -288,8 +306,13 @@ export const blueprintBuild = inngest.createFunction(
       return card;
     });
 
-    const minConf = Math.min(...Object.values(audience.confidence ?? { x: 1 }));
-    if (minConf < 0.5) {
+    // Gate only on the axes topic proposal actually needs: who the audience is
+    // and what the creator promises them. `objections` is scored mostly from
+    // comments, which small accounts barely have — a low score there used to
+    // decline accounts with perfectly readable bios and captions.
+    const conf = audience.confidence ?? {};
+    const coreConf = Math.min(conf.who ?? 1, conf.core_promise ?? 1);
+    if (coreConf < 0.4) {
       await step.run("decline-confidence", () =>
         declined(
           "audience_confidence",

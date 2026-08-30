@@ -87,6 +87,12 @@ export interface ScrapeResult {
   raw: { profile: unknown; posts: unknown };
   /** Under 8 usable comments produces a weak audience card. */
   thin: boolean;
+  /**
+   * Instagram serves this profile to logged-in viewers only (sensitive-topic,
+   * age or region gating) — the scraping provider gets nothing. Distinct from
+   * "public but empty" so the creator can be told what to actually fix.
+   */
+  restricted: boolean;
 }
 
 export async function scrapeCreator(
@@ -112,6 +118,10 @@ export async function scrapeCreator(
 
   const postsRes = await api("/v2/instagram/user/posts", { handle, trim: true });
   const posts = postsOf(postsRes);
+
+  const restricted =
+    Boolean(pick(profile, "isRestricted") ?? pick(postsRes, "isRestricted")) ||
+    /restricted/i.test(String(pick(profile, "message") ?? pick(postsRes, "message") ?? ""));
   const captions = posts
     .map((p) => captionHook(captionOf(p)))
     .filter((c) => c.length > 25)
@@ -146,5 +156,6 @@ export async function scrapeCreator(
     comments,
     raw: { profile, posts: postsRes },
     thin: comments.length < 8,
+    restricted,
   };
 }

@@ -13,6 +13,8 @@ const ERRORS: Record<string, string> = {
 };
 
 const HALT_NOTES: Record<string, string> = {
+  profile_restricted:
+    "Instagram restricts this profile to logged-in viewers, so we can't read it from outside. This usually means the account is age- or region-gated, or flagged for sensitive-topic review. Check Settings → Account privacy on Instagram, then try again.",
   thin_content:
     "Your account came back with too little public content for us to read your audience. If your account is private, make it public and try again.",
   audience_confidence:
