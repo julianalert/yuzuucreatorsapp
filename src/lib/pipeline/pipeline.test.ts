@@ -176,6 +176,17 @@ describe("parseModelJson (harness ask() recovery)", () => {
   it("throws when there is no JSON at all", () => {
     expect(() => parseModelJson("just prose, no json")).toThrow(/No JSON/);
   });
+
+  it("repairs trailing commas in arrays and objects", () => {
+    expect(parseModelJson('{"items": ["a", "b",], "n": 1,}')).toEqual({
+      items: ["a", "b"],
+      n: 1,
+    });
+  });
+
+  it("still throws on genuinely broken JSON (missing comma between elements)", () => {
+    expect(() => parseModelJson('{"items": ["a" "b"]}')).toThrow();
+  });
 });
 
 describe("stripEmDashes", () => {

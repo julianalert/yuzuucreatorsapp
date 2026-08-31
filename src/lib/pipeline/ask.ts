@@ -76,7 +76,14 @@ export function assertPipelineEnabled() {
   }
 }
 
-/** Same JSON recovery as the harness: strip fences, then brace-match. */
+/** Strip trailing commas before ] or } — the most common model JSON slip
+ * that is unambiguously safe to repair. */
+function stripTrailingCommas(text: string): string {
+  return text.replace(/,\s*([\]}])/g, "$1");
+}
+
+/** Same JSON recovery as the harness (strip fences, then brace-match),
+ * plus a trailing-comma repair pass. */
 export function parseModelJson(text: string): unknown {
   const clean = text.replace(/^```(?:json)?\s*/m, "").replace(/```\s*$/m, "").trim();
   try {
@@ -85,7 +92,12 @@ export function parseModelJson(text: string): unknown {
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
     if (start === -1 || end === -1) throw new Error("No JSON in response: " + clean.slice(0, 300));
-    return JSON.parse(clean.slice(start, end + 1));
+    const sliced = clean.slice(start, end + 1);
+    try {
+      return JSON.parse(sliced);
+    } catch {
+      return JSON.parse(stripTrailingCommas(sliced));
+    }
   }
 }
 
@@ -95,11 +107,14 @@ export interface AskOptions {
   usage?: Usage;
 }
 
-export async function ask(role: ModelRole, prompt: string, opts: AskOptions = {}): Promise<any> {
-  assertPipelineEnabled();
-  const { json = true, maxTokens = 8000, usage } = opts;
-  const spec = roleSpec(role);
+async function callModel(
+  spec: ModelSpec,
+  prompt: string,
+  maxTokens: number,
+  usage?: Usage
+): Promise<{ text: string; truncated: boolean }> {
   let text: string;
+  let truncated: boolean;
   let inputTokens = 0;
   let outputTokens = 0;
 
@@ -113,6 +128,7 @@ export async function ask(role: ModelRole, prompt: string, opts: AskOptions = {}
     });
     inputTokens = res.usage.input_tokens;
     outputTokens = res.usage.output_tokens;
+    truncated = res.stop_reason === "max_tokens";
     text = res.content
       .filter((b: { type: string }) => b.type === "text")
       .map((b: { text: string }) => b.text)
@@ -127,6 +143,7 @@ export async function ask(role: ModelRole, prompt: string, opts: AskOptions = {}
     });
     inputTokens = res.usage?.prompt_tokens ?? 0;
     outputTokens = res.usage?.completion_tokens ?? 0;
+    truncated = res.choices[0]?.finish_reason === "length";
     text = res.choices[0]?.message?.content ?? "";
   }
 
@@ -138,6 +155,44 @@ export async function ask(role: ModelRole, prompt: string, opts: AskOptions = {}
     usage.cost_usd += (inputTokens / 1e6) * price.input + (outputTokens / 1e6) * price.output;
   }
 
-  if (!json) return text;
-  return parseModelJson(text);
+  return { text, truncated };
+}
+
+/** Hard ceiling when retrying a truncated response with a bigger budget. */
+const MAX_TOKENS_CEILING = 32000;
+
+export async function ask(role: ModelRole, prompt: string, opts: AskOptions = {}): Promise<any> {
+  assertPipelineEnabled();
+  const { json = true, maxTokens = 8000, usage } = opts;
+  const spec = roleSpec(role);
+
+  // Model output is untrusted: it can come back truncated (max_tokens) or as
+  // malformed JSON. One in-process retry — with a doubled budget if the first
+  // response was cut off — fixes nearly all of these without failing the step.
+  let budget = maxTokens;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { text, truncated } = await callModel(spec, prompt, budget, usage);
+    if (!json) return text;
+
+    if (truncated) {
+      lastError = new Error(
+        `${spec.provider}:${spec.model} response truncated at ${budget} max tokens`
+      );
+      budget = Math.min(budget * 2, MAX_TOKENS_CEILING);
+      continue;
+    }
+    try {
+      return parseModelJson(text);
+    } catch (e) {
+      lastError = e;
+      console.error(
+        `[ask] ${spec.provider}:${spec.model} returned unparseable JSON (attempt ${attempt + 1}):`,
+        e instanceof Error ? e.message : e,
+        "— tail:",
+        text.slice(-300)
+      );
+    }
+  }
+  throw lastError;
 }
