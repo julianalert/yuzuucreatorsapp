@@ -32,6 +32,8 @@ export type BuildStage =
 /** Launch checklist state: item id → ISO timestamp when completed. */
 export type LaunchChecklist = Partial<Record<"quiz" | "link" | "bio" | "story", string>>;
 
+export type PayoutDetailsStatus = "not_set" | "pending" | "ready";
+
 export interface CreatorRow {
   id: string;
   user_id: string;
@@ -39,8 +41,12 @@ export interface CreatorRow {
   display_name: string | null;
   avatar_url: string | null;
   email: string;
-  stripe_account_id: string | null;
-  stripe_onboarded: boolean;
+  /** How the creator wants to be paid: 'paypal' | 'bank' | 'other'. */
+  payout_provider: string | null;
+  /** An email or short note — never full bank numbers. */
+  payout_recipient_id: string | null;
+  payout_status: PayoutDetailsStatus;
+  agreement_signed_at: string | null;
   /** Activation moment: set once on the creator's first paid order. */
   first_sale_at: string | null;
   launch_checklist: LaunchChecklist;
@@ -107,7 +113,13 @@ export interface SampleRow {
   created_at: string;
 }
 
-export type OrderStatus = "pending_payment" | "paid" | "generating" | "delivered" | "failed";
+export type OrderStatus =
+  | "pending_payment"
+  | "paid"
+  | "generating"
+  | "delivered"
+  | "failed"
+  | "refunded";
 
 export interface OrderRow {
   id: string;
@@ -116,8 +128,51 @@ export interface OrderRow {
   buyer_email: string;
   quiz_answers: QuizAnswers;
   stripe_payment_intent: string | null;
+  stripe_checkout_session_id: string | null;
   amount_cents: number;
+  /** Money breakdown frozen at time of sale — never recomputed later. */
+  currency: string;
+  gross_cents: number | null;
+  tax_cents: number;
+  net_cents: number | null;
+  creator_cents: number | null;
+  platform_cents: number | null;
+  stripe_fee_cents: number | null;
+  refunded_at: string | null;
   status: OrderStatus;
+  created_at: string;
+}
+
+export type LedgerKind = "sale" | "refund" | "payout" | "adjustment";
+
+/** Signed money movement: + owed to the creator, − reduces what's owed.
+ * Balance = sum(amount_cents) where payout_id is null. Source of truth. */
+export interface LedgerEntryRow {
+  id: string;
+  creator_id: string;
+  order_id: string | null;
+  kind: LedgerKind;
+  amount_cents: number;
+  currency: string;
+  external_ref: string | null;
+  /** When a sale becomes payable (14 days after purchase). */
+  available_at: string | null;
+  payout_id: string | null;
+  created_at: string;
+}
+
+export type PayoutStatus = "draft" | "sent" | "paid" | "failed";
+
+export interface PayoutRow {
+  id: string;
+  creator_id: string;
+  amount_cents: number;
+  currency: string;
+  external_ref: string | null;
+  method: string;
+  status: PayoutStatus;
+  period_start: string | null;
+  period_end: string | null;
   created_at: string;
 }
 

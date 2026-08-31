@@ -94,7 +94,7 @@ export default async function Home({
             <div>
               <p className="eyebrow">For Instagram creators · 10k–1M</p>
               <h1>
-                Earn <em>Regular income</em> from your audience
+                Earn <em>regular income</em> from your audience
               </h1>
               <p className="hero-sub">
                 Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
@@ -428,7 +428,8 @@ export default async function Home({
                   <span className="v">None</span>
                 </div>
                 <p className="later" style={{ color: "rgba(251, 252, 245, 0.62)" }}>
-                  Split is on net, after card fees. Refunds come out of both sides the same way.
+                  Split is on the price before tax — card fees come out of our side, not yours.
+                  Refunds come out of both sides the same way. Paid out monthly from $50.
                 </p>
               </div>
 

@@ -45,13 +45,22 @@ export interface RestoredQuiz {
 export function CheckoutClient({
   handle,
   action,
+  priceUsd,
   emailError,
+  payError = false,
+  canceled = false,
   isPreview = false,
   restored = null,
 }: {
   handle: string;
   action: (formData: FormData) => Promise<void>;
+  /** List price, e.g. "27". Tax is added by Stripe on the payment page. */
+  priceUsd: string;
   emailError?: boolean;
+  /** Stripe session creation failed — ask them to try again. */
+  payError?: boolean;
+  /** They backed out of the Stripe payment page. */
+  canceled?: boolean;
   /** The creator walking their own funnel — no order, no tracking. */
   isPreview?: boolean;
   restored?: RestoredQuiz | null;
@@ -80,15 +89,15 @@ export function CheckoutClient({
       <div className="co-form">
         <div className="co-sec">
           <span className="micro">Payment</span>
-          <div className="pay-fake">
+          <div className="pay-note">
             <p>
-              This is your preview — a buyer sees the payment step here. Walking through never
-              creates an order or touches your stats.
+              This is your preview — a buyer goes to a secure Stripe payment page from here.
+              Walking through never creates an order or touches your stats.
             </p>
           </div>
         </div>
         <button className="btn btn-primary btn-lg btn-block" type="button" disabled>
-          Pay now (buyers only)
+          Pay ${priceUsd} (buyers only)
         </button>
       </div>
     );
@@ -132,22 +141,27 @@ export function CheckoutClient({
         )}
       </div>
 
-      <div className="co-sec">
-        <span className="micro">Payment</span>
-        <div className="pay-fake">
-          <p>
-            Payments aren&apos;t wired up yet — clicking Pay now generates your plan immediately,
-            free. Stripe goes in before launch.
+      {canceled ? (
+        <div className="co-sec">
+          <p className="hint">
+            No charge was made — your answers are still here whenever you&apos;re ready.
           </p>
         </div>
-      </div>
+      ) : null}
+      {payError ? (
+        <div className="co-sec">
+          <p className="hint" style={{ color: "#c96f2f" }}>
+            Something went wrong starting the payment — please try again.
+          </p>
+        </div>
+      ) : null}
 
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={submitting}>
-        {submitting ? "Starting your plan…" : "Pay now"}
+        {submitting ? "Taking you to payment…" : `Pay $${priceUsd} securely`}
       </button>
       <p className="guarantee">
-        If the plan doesn&apos;t fit your situation, reply to the delivery email within 14 days
-        for a full refund.
+        Secure payment by Stripe. Not what you described? Reply to the delivery email within 14
+        days and we&apos;ll refund you.
       </p>
     </form>
   );

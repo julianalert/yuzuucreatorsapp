@@ -182,6 +182,11 @@ export default async function AdminPage() {
         <div className="bar-in wide">
           <Wordmark href="/dashboard" />
           <span className="micro">Admin</span>
+          <div className="right">
+            <Link className="btn btn-ghost btn-sm" href="/admin/payouts">
+              Payouts
+            </Link>
+          </div>
         </div>
       </header>
       <div className="wrap wide">

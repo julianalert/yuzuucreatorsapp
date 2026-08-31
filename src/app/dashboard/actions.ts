@@ -26,6 +26,31 @@ export async function setChecklistItem(item: string, done: boolean) {
   revalidatePath("/dashboard");
 }
 
+const PAYOUT_PROVIDERS = ["paypal", "bank", "other"] as const;
+
+/**
+ * How the creator wants their monthly payout. We store an email or short
+ * note — never full bank numbers (see docs/payments.md). Saving puts the
+ * details in review; an admin flips payout_status to 'ready'.
+ */
+export async function setPayoutDetails(formData: FormData) {
+  const creator = await requireCreator();
+  const provider = String(formData.get("payout_provider") ?? "");
+  const recipient = String(formData.get("payout_recipient") ?? "").trim().slice(0, 200);
+  if (!(PAYOUT_PROVIDERS as readonly string[]).includes(provider) || !recipient) return;
+
+  await supabaseAdmin()
+    .from("creators")
+    .update({
+      payout_provider: provider,
+      payout_recipient_id: recipient,
+      // edits always go back through review
+      payout_status: "pending",
+    })
+    .eq("id", creator.id);
+  revalidatePath("/dashboard");
+}
+
 /** The copy button was clicked: log the share-intent event + tick the item. */
 export async function recordLinkCopied() {
   const creator = await requireCreator();

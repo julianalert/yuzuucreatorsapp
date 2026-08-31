@@ -21,7 +21,7 @@ The marketing landing page lives at `/` in this repo (signed-in visitors go to `
 | `src/lib/blueprint/` | Blueprint types + structural validator |
 | `src/lib/inngest/` | `blueprint-build` and `plan-generate` job definitions |
 | `src/app/onboard/` | Creator flow: handle → scanning → 5 ideas → building → sample review |
-| `src/app/u/[handle]/` | Buyer flow: sales page → quiz → checkout (fake pay for now) |
+| `src/app/u/[handle]/` | Buyer flow: sales page → quiz → checkout (hosted Stripe Checkout) |
 | `src/app/order/[id]/` | Generating status → web plan output |
 | `src/app/dashboard/` | Creator dashboard (live link, sales, recent buyers) |
 | `src/app/admin/` | Build inspector, env-allowlisted via `ADMIN_EMAILS` |
@@ -66,4 +66,4 @@ RLS model: creators can only **read** their own rows through the browser key; ev
 
 Cost controls: `PIPELINE_KILL_SWITCH=true` stops every model call instantly; `DAILY_SPEND_CAP_USD` halts new build stages once the day's tracked spend crosses it; `PER_CREATOR_BUILD_LIMIT` caps live/completed builds per account (default 1; failed and declined attempts don't count). Per-build spend is tracked on `builds.cost_usd` and shown in `/admin`.
 
-Stripe is intentionally not wired yet: checkout's **Pay now** creates a `paid` order and triggers generation. `orders.stripe_payment_intent` is already in the schema for when it lands.
+Payments are live: Yuzuu is the merchant of record on a plain Stripe account (no Connect). Buyers pay $27 + tax (Stripe Tax) through hosted Checkout; the webhook marks orders paid and writes a per-creator ledger; payouts are a manual monthly run in `/admin/payouts`. Full architecture, setup checklist, and payout runbook: `docs/payments.md`.

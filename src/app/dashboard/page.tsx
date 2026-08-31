@@ -6,9 +6,16 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AppBar } from "@/components/AppBar";
 import { LaunchKit } from "@/components/LaunchKit";
 import { fallbackShareKit } from "@/lib/share-kit";
+import { creatorBalance, MIN_PAYOUT_CENTS, AVAILABLE_AFTER_DAYS } from "@/lib/ledger";
+import { setPayoutDetails } from "./actions";
 import { CREATOR_KEEP_PCT } from "@/lib/seo";
 import type { Blueprint } from "@/lib/blueprint/types";
 import type { BlueprintRow, OrderRow, QuizSessionRow } from "@/lib/db/types";
+
+function usd(cents: number): string {
+  const v = cents / 100;
+  return `$${v.toFixed(v > 0 && v < 100 ? 2 : 0)}`;
+}
 
 function countLastWeek(orders: OrderRow[]): number {
   const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
@@ -49,24 +56,26 @@ export default async function DashboardPage({
   const blueprint = bpRow as BlueprintRow;
   const bp = blueprint.data as Blueprint;
 
-  const [{ data: orderRows }, { count: visitCount }, { data: sessionRows }] = await Promise.all([
-    admin
-      .from("orders")
-      .select("*")
-      .eq("blueprint_id", blueprint.id)
-      .in("status", ["paid", "generating", "delivered"])
-      .order("created_at", { ascending: false }),
-    admin
-      .from("creator_events")
-      .select("id", { count: "exact", head: true })
-      .eq("creator_id", creator.id)
-      .eq("type", "page_visit"),
-    admin
-      .from("quiz_sessions")
-      .select("id, status, email, updated_at, order_id")
-      .eq("creator_id", creator.id)
-      .order("updated_at", { ascending: false }),
-  ]);
+  const [{ data: orderRows }, { count: visitCount }, { data: sessionRows }, balance] =
+    await Promise.all([
+      admin
+        .from("orders")
+        .select("*")
+        .eq("blueprint_id", blueprint.id)
+        .in("status", ["paid", "generating", "delivered"])
+        .order("created_at", { ascending: false }),
+      admin
+        .from("creator_events")
+        .select("id", { count: "exact", head: true })
+        .eq("creator_id", creator.id)
+        .eq("type", "page_visit"),
+      admin
+        .from("quiz_sessions")
+        .select("id, status, email, updated_at, order_id")
+        .eq("creator_id", creator.id)
+        .order("updated_at", { ascending: false }),
+      creatorBalance(creator.id),
+    ]);
 
   const orders = (orderRows ?? []) as OrderRow[];
   const sessions = (sessionRows ?? []) as Pick<
@@ -75,8 +84,7 @@ export default async function DashboardPage({
   >[];
 
   const sold = orders.length;
-  const grossUsd = orders.reduce((sum, o) => sum + o.amount_cents, 0) / 100;
-  const netUsd = (grossUsd * CREATOR_KEEP_PCT) / 100;
+  const balanceCents = balance.availableCents + balance.pendingCents;
   const thisWeek = countLastWeek(orders);
   const activated = Boolean(creator.first_sale_at) || sold > 0;
 
@@ -165,12 +173,60 @@ export default async function DashboardPage({
             </div>
           </div>
           <div className="stat">
-            <span className="k">Your earnings</span>
-            <div className="v">${netUsd.toFixed(netUsd > 0 && netUsd < 100 ? 2 : 0)}</div>
+            <span className="k">Your balance</span>
+            <div className="v">{usd(balanceCents)}</div>
             <div className="sub">
-              your {CREATOR_KEEP_PCT}% — ${netPerSale} per ${price} sale
+              {balanceCents > 0
+                ? `${usd(balance.availableCents)} payable now · ${usd(balance.pendingCents)} clearing`
+                : `your ${CREATOR_KEEP_PCT}% — $${netPerSale} per $${price} sale`}
             </div>
           </div>
+        </div>
+
+        <div className="card" style={{ marginTop: 26 }}>
+          <span className="micro">Getting paid</span>
+          <p style={{ marginTop: 12, fontSize: 14.5, color: "var(--ink-soft)", maxWidth: "62ch" }}>
+            Payouts go out monthly on the 1st, once your balance passes{" "}
+            <b>${(MIN_PAYOUT_CENTS / 100).toFixed(0)}</b> — below that it simply rolls into the
+            next month. A sale becomes payable {AVAILABLE_AFTER_DAYS} days after purchase, when
+            its refund window closes.
+            {balance.paidOutCents > 0 ? <> Paid out so far: <b>{usd(balance.paidOutCents)}</b>.</> : null}
+          </p>
+          {creator.payout_status === "ready" ? (
+            <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--ink-soft)" }}>
+              Payout details confirmed: <b>{creator.payout_provider}</b> ·{" "}
+              {creator.payout_recipient_id}
+            </p>
+          ) : creator.payout_status === "pending" ? (
+            <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--sage)" }}>
+              Details received ({creator.payout_provider} · {creator.payout_recipient_id}) —
+              we&apos;ll confirm them before your first payout.
+            </p>
+          ) : null}
+          <form className="payout-form" action={setPayoutDetails}>
+            <select
+              name="payout_provider"
+              defaultValue={creator.payout_provider ?? "paypal"}
+              aria-label="Payout method"
+            >
+              <option value="paypal">PayPal</option>
+              <option value="bank">Bank transfer</option>
+              <option value="other">Other</option>
+            </select>
+            <input
+              type="text"
+              name="payout_recipient"
+              placeholder="PayPal email, or how to reach you about payment"
+              defaultValue={creator.payout_recipient_id ?? ""}
+              required
+            />
+            <button className="btn btn-outline btn-sm" type="submit">
+              {creator.payout_status === "not_set" ? "Save payout details" : "Update"}
+            </button>
+          </form>
+          <p className="hint" style={{ marginTop: 10 }}>
+            An email or a short note is enough — never paste full bank account numbers here.
+          </p>
         </div>
 
         {leads.length > 0 ? (

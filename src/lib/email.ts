@@ -358,3 +358,41 @@ export async function sendPlanDelivered(
     `)
   );
 }
+
+/** Generation failed for good — the buyer is refunded automatically and told
+ * plainly. Runs from planGenerate's onFailure handler. */
+export async function sendOrderRefunded(
+  to: string,
+  args: { topicTitle: string; grossCents: number }
+) {
+  await send(
+    to,
+    "We couldn't write your plan — you've been refunded in full",
+    wrap(`
+      ${paragraph(`Something went wrong on our side while writing <strong style="color:${C.ink};font-weight:600;">${args.topicTitle}</strong>, and we couldn't deliver what you paid for.`)}
+      ${paragraph(`We've refunded the full <strong style="color:${C.ink};font-weight:600;">$${(args.grossCents / 100).toFixed(2)}</strong> to your card — it usually lands within a few business days. No action needed.`)}
+      ${paragraph(`<span style="font-size:14px;color:${C.sage};">We're sorry for the letdown. If you'd like to try again later, your quiz takes two minutes.</span>`)}
+    `)
+  );
+}
+
+// ─────────────────────────────────────────────────────────── payouts
+
+/** The monthly payout landed. Sent when the admin marks a payout paid. */
+export async function sendPayoutPaid(
+  to: string,
+  args: { amountCents: number; periodEnd: string | null }
+) {
+  const period = args.periodEnd
+    ? new Date(args.periodEnd).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : "this month";
+  await send(
+    to,
+    `Your payout is on its way: $${(args.amountCents / 100).toFixed(2)}`,
+    wrap(`
+      ${paragraph(`We've just sent your <strong style="color:${C.ink};font-weight:600;">$${(args.amountCents / 100).toFixed(2)}</strong> payout for ${period}. Depending on your bank it can take a few business days to show up.`)}
+      ${paragraph(`That's your ${CREATOR_KEEP_PCT}% of every sale, minus refunds. The full breakdown is in your dashboard.`)}
+      ${button(appUrl("/dashboard"), "See your earnings")}
+    `)
+  );
+}

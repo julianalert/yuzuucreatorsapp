@@ -35,9 +35,25 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     .maybeSingle();
   const creatorAvatarUrl = (creatorRow as { avatar_url: string | null } | null)?.avatar_url ?? null;
 
-  // ── generating / failed ────────────────────────────────────────────────
+  // ── pending / generating / failed / refunded ──────────────────────────
   if (order.status !== "delivered") {
     const failed = order.status === "failed";
+    const refunded = order.status === "refunded";
+    const confirming = order.status === "pending_payment";
+    const micro = failed
+      ? "Something went wrong"
+      : refunded
+        ? "Order refunded"
+        : confirming
+          ? "Almost there"
+          : "Being written now";
+    const heading = failed
+      ? "We hit a problem writing your plan."
+      : refunded
+        ? "This order was refunded."
+        : confirming
+          ? "Thanks — confirming your payment."
+          : "Your plan is being written.";
     return (
       <section>
         <header className="bar">
@@ -62,15 +78,27 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           </div>
         </header>
         <div className="gen">
-          <div className="micro">{failed ? "Something went wrong" : "Being written now"}</div>
-          <h1 style={{ marginTop: 16 }}>
-            {failed ? "We hit a problem generating your plan." : "Your plan is being written."}
-          </h1>
+          <div className="micro">{micro}</div>
+          <h1 style={{ marginTop: 16 }}>{heading}</h1>
           {failed ? (
             <p className="lede">
-              Your payment is safe. We&apos;ve been notified and will email your plan to{" "}
-              {order.buyer_email} as soon as it&apos;s fixed.
+              We couldn&apos;t deliver what you paid for, so we&apos;ve refunded your payment in
+              full — it lands back on your card within a few business days. A confirmation is on
+              its way to {order.buyer_email}.
             </p>
+          ) : refunded ? (
+            <p className="lede">
+              Your payment was returned in full — it lands back on your card within a few business
+              days. Questions? Just reply to any email from us.
+            </p>
+          ) : confirming ? (
+            <>
+              <p className="lede">
+                Your payment is going through. The moment it&apos;s confirmed, the writing starts —
+                no need to do anything.
+              </p>
+              <OrderPoller orderId={id} mode="confirming" />
+            </>
           ) : (
             <>
               <p className="lede">

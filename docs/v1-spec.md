@@ -32,8 +32,11 @@ Explicitly out of scope. Do not build these:
 - **Inngest** — background jobs. This is not optional: a blueprint build takes
   several minutes across many model calls and will exceed any serverless request
   timeout. Every pipeline stage is an Inngest step with its own retry.
-- **Stripe Connect (Express)** — creators onboard their own account; platform
-  takes an application fee. Buyers pay the creator, platform never holds funds.
+- ~~**Stripe Connect (Express)** — creators onboard their own account; platform
+  takes an application fee. Buyers pay the creator, platform never holds funds.~~
+  **Superseded — see `docs/payments.md`.** v1 uses no Connect: Yuzuu is the
+  merchant of record on a plain Stripe account; creators are paid monthly from
+  a ledger, manually.
 - **Resend** — transactional email (plan delivery, creator notifications)
 - **Anthropic SDK** — the pipeline
 - **ScrapeCreators** — Instagram ingestion
@@ -151,7 +154,7 @@ Constraints that matter:
 | `/onboard` | Handle → scrape → build starts. Shows live stage progress. |
 | `/onboard/topic` | The 4 topic proposals with scores and segmentation preview. Creator picks one. |
 | `/onboard/review` | Three sample plans from different archetypes. Approve or reject with a reason. |
-| `/onboard/payment` | Stripe Connect Express onboarding. |
+| ~~`/onboard/payment`~~ | ~~Stripe Connect Express onboarding.~~ Superseded — no Connect. Payout details live in `/dashboard`; see `docs/payments.md`. |
 | `/dashboard` | Sales count, revenue, link to their page, blueprint status. |
 
 ### Internal
@@ -159,7 +162,7 @@ Constraints that matter:
 | Route | What it does |
 |---|---|
 | `/api/inngest` | Inngest handler |
-| `/api/stripe/webhook` | `checkout.session.completed` → mark paid → trigger generation |
+| `/api/stripe/webhook` | `checkout.session.completed` → mark paid + ledger → trigger generation; `charge.refunded` → ledger refund. Details in `docs/payments.md`. |
 | `/admin` | Every build, its stage, its critic scores, its cost. Gated by an env allowlist. |
 
 ## Jobs
@@ -248,7 +251,8 @@ sample review, approval. Still no public page, no payments.
 **Phase 3 — public page and quiz.** `/c/[handle]`, the quiz, archetype
 resolution. Fake the payment — go straight to generation.
 
-**Phase 4 — payments and delivery.** Stripe Connect, webhook, PDF, email.
+**Phase 4 — payments and delivery.** ~~Stripe Connect,~~ Stripe Checkout as
+merchant of record (see `docs/payments.md`), webhook, PDF, email.
 
 **Phase 5 — admin and hardening.** `/admin`, RLS audit, cost caps, rate limits.
 

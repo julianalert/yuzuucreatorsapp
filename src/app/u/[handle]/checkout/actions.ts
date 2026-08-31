@@ -3,14 +3,23 @@
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { publishedProductByHandle } from "@/lib/public";
-import { sendEvent } from "@/lib/inngest/client";
+import { stripe } from "@/lib/stripe";
+import { absoluteUrl, CREATOR_KEEP_PCT } from "@/lib/seo";
 import type { QuizAnswers } from "@/lib/blueprint/types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Statement descriptor suffix: buyers see YUZUU* <creator> on their card. */
+function descriptorSuffix(handle: string): string | undefined {
+  const clean = handle.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 10).toUpperCase();
+  return clean.length >= 2 ? clean : undefined;
+}
+
 /**
- * Fake pay: no Stripe yet. Clicking "Pay now" creates a paid order and kicks
- * off plan.generate. `orders.stripe_payment_intent` stays nullable for later.
+ * Real pay: insert the order as pending_payment, then send the buyer to
+ * hosted Stripe Checkout. The list price is tax-exclusive — Stripe Tax adds
+ * VAT/sales tax on top per the registrations in the Stripe dashboard. The
+ * webhook (api/stripe/webhook) flips the order to paid and starts generation.
  */
 export async function createOrder(formData: FormData) {
   const handle = String(formData.get("handle") ?? "");
@@ -39,6 +48,13 @@ export async function createOrder(formData: FormData) {
     answers[q.id] = q.type === "multi" ? valid : valid[0];
   }
 
+  // Tax-exclusive split, frozen at time of sale: net is always the list
+  // price, tax rides on top. Gross/tax are filled in by the webhook once
+  // Stripe Tax has computed them.
+  const netCents = product.priceCents;
+  const creatorCents = Math.round((netCents * CREATOR_KEEP_PCT) / 100);
+  const platformCents = netCents - creatorCents;
+
   const admin = supabaseAdmin();
   const { data: order, error } = await admin
     .from("orders")
@@ -48,32 +64,61 @@ export async function createOrder(formData: FormData) {
       buyer_email: email,
       quiz_answers: answers,
       amount_cents: product.priceCents,
-      status: "paid",
+      currency: "usd",
+      net_cents: netCents,
+      creator_cents: creatorCents,
+      platform_cents: platformCents,
+      status: "pending_payment",
     })
     .select("id")
     .single();
   if (error) throw new Error(`order insert: ${error.message}`);
 
-  // funnel: close the loop on the quiz session. Non-fatal — an order must
-  // never fail over tracking.
-  if (sessionId) {
-    try {
-      await admin
-        .from("quiz_sessions")
-        .update({
-          status: "paid",
-          order_id: order.id,
-          email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", sessionId)
-        .eq("blueprint_id", product.blueprintId);
-    } catch (e) {
-      console.error("[createOrder] quiz session update failed:", e);
-    }
+  let checkoutUrl: string;
+  try {
+    const session = await stripe().checkout.sessions.create({
+      mode: "payment",
+      customer_email: email,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: product.priceCents,
+            tax_behavior: "exclusive",
+            product_data: {
+              name: product.title,
+              description: `Personalized plan by ${product.creatorName}`,
+            },
+          },
+        },
+      ],
+      // Stripe Tax adds tax as a separate line on top of the $27 price.
+      // What gets collected is driven by the dashboard registrations.
+      automatic_tax: { enabled: true },
+      metadata: { order_id: order.id, quiz_session_id: sessionId || "" },
+      payment_intent_data: {
+        metadata: { order_id: order.id },
+        ...(descriptorSuffix(handle)
+          ? { statement_descriptor_suffix: descriptorSuffix(handle) }
+          : {}),
+      },
+      success_url: absoluteUrl(`/order/${order.id}`),
+      cancel_url: absoluteUrl(`/u/${handle}/checkout?canceled=1`),
+    });
+    if (!session.url) throw new Error("checkout session has no url");
+    checkoutUrl = session.url;
+
+    await admin
+      .from("orders")
+      .update({ stripe_checkout_session_id: session.id })
+      .eq("id", order.id);
+  } catch (e) {
+    // never leave a dead pending order behind a failed session
+    console.error("[createOrder] stripe session failed:", e);
+    await admin.from("orders").delete().eq("id", order.id).eq("status", "pending_payment");
+    redirect(`/u/${handle}/checkout?error=pay`);
   }
 
-  await sendEvent("order/paid", { orderId: order.id });
-
-  redirect(`/order/${order.id}`);
+  redirect(checkoutUrl);
 }

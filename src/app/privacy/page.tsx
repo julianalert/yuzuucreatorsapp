@@ -62,8 +62,8 @@ export default function PrivacyPage() {
             </li>
             <li>
               <span>
-                <b>Payout info</b> — details needed to connect your payment account so buyers can
-                pay you directly.
+                <b>Payout info</b> — how you want your monthly payout sent (e.g. a PayPal
+                email). We never ask for or store full bank card numbers.
               </span>
             </li>
             <li>
@@ -118,7 +118,8 @@ export default function PrivacyPage() {
             </li>
             <li>
               <span>
-                <b>Stripe</b> — processes buyer payments and creator payouts.
+                <b>Stripe</b> — processes buyer payments on Yuzuu&apos;s behalf, including tax
+                calculation at checkout.
               </span>
             </li>
             <li>

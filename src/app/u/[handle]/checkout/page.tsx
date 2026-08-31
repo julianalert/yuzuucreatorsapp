@@ -37,10 +37,10 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ handle: string }>;
-  searchParams: Promise<{ error?: string; session?: string }>;
+  searchParams: Promise<{ error?: string; session?: string; canceled?: string }>;
 }) {
   const { handle } = await params;
-  const { error, session } = await searchParams;
+  const { error, session, canceled } = await searchParams;
   const viewer = await getSignedInUser();
   const { product, isPreview } = await productForViewer(handle, viewer?.id);
   if (!product) notFound();
@@ -158,13 +158,19 @@ export default async function CheckoutPage({
           </div>
           <div className="sum-total">
             <span className="k">Total</span>
-            <span className="v">${price}</span>
+            <span className="v">
+              ${price}
+              <span className="sum-tax"> + tax where applicable</span>
+            </span>
           </div>
           <div className="sum-foot">
             <CheckoutClient
               handle={product.handle}
               action={createOrder}
+              priceUsd={price}
               emailError={error === "email"}
+              payError={error === "pay"}
+              canceled={canceled === "1"}
               isPreview={isPreview}
               restored={restored}
             />

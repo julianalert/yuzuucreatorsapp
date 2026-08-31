@@ -35,6 +35,7 @@ import {
   sendIdeasReady,
   sendLaunchNudge,
   sendMilestone,
+  sendOrderRefunded,
   sendPlanDelivered,
   sendReviewReminder,
   sendSaleNotification,
@@ -42,6 +43,8 @@ import {
   sendYoureLive,
   type LaunchNudgeVariant,
 } from "../email";
+import { stripe, stripeConfigured } from "../stripe";
+import { recordRefund } from "../ledger";
 import { generateShareKit } from "../share-kit";
 import { CREATOR_KEEP_PCT } from "../seo";
 import type { ShareKit } from "../db/types";
@@ -937,6 +940,49 @@ export const planGenerate = inngest.createFunction(
     concurrency: { limit: 5 },
     retries: 2,
     triggers: [{ event: "order/paid" }],
+    // A paid order that can't be delivered is refunded automatically —
+    // "test the failure path first" (docs/payments.md). Runs after all
+    // retries are exhausted.
+    onFailure: async ({ event }) => {
+      const { orderId } = event.data.event.data as Events["order/paid"];
+      const { data: order } = await db().from("orders").select("*").eq("id", orderId).single();
+      if (!order || order.status === "delivered") return;
+
+      await db().from("orders").update({ status: "failed" }).eq("id", orderId);
+
+      // refund the real payment; the charge.refunded webhook also fires and
+      // no-ops thanks to the idempotent ledger insert
+      if (order.stripe_payment_intent && !order.refunded_at && stripeConfigured()) {
+        try {
+          await stripe().refunds.create(
+            { payment_intent: order.stripe_payment_intent },
+            { idempotencyKey: `gen-failure-${orderId}` }
+          );
+          await db()
+            .from("orders")
+            .update({ refunded_at: new Date().toISOString() })
+            .eq("id", orderId);
+        } catch (e) {
+          // charge may already be refunded (manual dashboard action) — log,
+          // don't crash the failure handler
+          console.error(`[plan-generate onFailure] refund failed for ${orderId}:`, e);
+        }
+        const { data: bpRow } = await db()
+          .from("blueprints")
+          .select("creator_id, data")
+          .eq("id", order.blueprint_id)
+          .single();
+        if (bpRow?.creator_id) {
+          await recordRefund(order as OrderRow, bpRow.creator_id as string, `gen-failure`);
+        }
+        await sendOrderRefunded(order.buyer_email, {
+          topicTitle:
+            ((bpRow?.data as Blueprint | undefined)?.product?.topic_title as string) ??
+            "your plan",
+          grossCents: order.gross_cents ?? order.amount_cents,
+        });
+      }
+    },
   },
   async ({ event, step }) => {
     const { orderId } = event.data as Events["order/paid"];
@@ -986,7 +1032,7 @@ export const planGenerate = inngest.createFunction(
       const ids = (bpIds ?? []).map((b) => b.id as string);
       const { data: orderRows } = await db()
         .from("orders")
-        .select("id, amount_cents, created_at")
+        .select("id, amount_cents, creator_cents, created_at")
         .in("blueprint_id", ids)
         .in("status", ["paid", "generating", "delivered"])
         .order("created_at", { ascending: true });
@@ -1022,7 +1068,13 @@ export const planGenerate = inngest.createFunction(
       }
       const netCents = orders
         .slice(0, Math.max(saleNumber, 1))
-        .reduce((t, o) => t + (o.amount_cents as number), 0) * (CREATOR_KEEP_PCT / 100);
+        .reduce(
+          (t, o) =>
+            t +
+            ((o.creator_cents as number | null) ??
+              Math.round((o.amount_cents as number) * (CREATOR_KEEP_PCT / 100))),
+          0
+        );
       if (netCents >= 10000 && (await claimLifecycleEmail(creator.id, "milestone_100usd"))) {
         await sendMilestone(creator.email, { kind: "100_usd", topicTitle });
       }
@@ -1280,4 +1332,21 @@ export const lifecycleCron = inngest.createFunction(
   }
 );
 
-export const functions = [blueprintBuild, planGenerate, lifecycleCron];
+// ============================================================= payouts.draft
+/**
+ * First of the month, 06:00 UTC: draft a payout run for every creator owed
+ * ≥ $50 with confirmed payout details. Drafts only — confirming and sending
+ * money are human actions in /admin/payouts, never automated.
+ */
+export const payoutsDraftCron = inngest.createFunction(
+  { id: "payouts-draft", retries: 1, triggers: [{ cron: "0 6 1 * *" }] },
+  async ({ step }) => {
+    const result = await step.run("draft-runs", async () => {
+      const { draftPayoutRuns } = await import("../payouts");
+      return draftPayoutRuns();
+    });
+    return result;
+  }
+);
+
+export const functions = [blueprintBuild, planGenerate, lifecycleCron, payoutsDraftCron];

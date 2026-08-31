@@ -71,12 +71,19 @@ export default function TermsPage() {
 
           <h2>4. Fees and payouts</h2>
           <p>
-            There&apos;s no upfront fee to build your product. Buyers pay through your own
-            connected payment account, and Yuzuu takes a percentage of net sales — the exact
-            split for your plan is always shown in your dashboard before you go live, and we
-            don&apos;t change it retroactively on sales you&apos;ve already made. Refunds are
-            shared in that same proportion. Payouts, timing, and any plan-switch terms follow
-            whatever your payment processor (currently Stripe) supports.
+            There&apos;s no upfront fee to build your product. Buyers pay Yuzuu directly —
+            payments are processed by Stripe on Yuzuu&apos;s account, with any applicable
+            VAT or sales tax added on top of the listed price. Your share is 70% of the
+            tax-exclusive sale price, credited to your Yuzuu balance; payment processing fees
+            come out of Yuzuu&apos;s share, not yours. We don&apos;t change your split
+            retroactively on sales you&apos;ve already made.
+          </p>
+          <p>
+            A sale becomes payable 14 days after purchase, once its refund window closes.
+            Payouts go out monthly once your balance reaches $50 — below that it rolls into the
+            next month. Refunds and chargebacks reduce your balance by your share of the
+            refunded sale; if that makes the balance negative, it carries into future sales.
+            Your live balance and every line behind it are always visible in your dashboard.
           </p>
 
           <h2>5. Ownership</h2>
@@ -99,10 +106,13 @@ export default function TermsPage() {
 
           <h2>7. Buyer purchases and refunds</h2>
           <p>
-            Buyers are purchasing a digital product from you, not from Yuzuu — but we operate the
-            checkout, delivery, and support tooling on your behalf. If a buyer disputes a charge
-            or asks for a refund, we&apos;ll handle it consistently with the refund policy shown
-            on your sales page at the time of purchase, split the same way as the original sale.
+            Buyers purchase from Yuzuu, the merchant of record: Yuzuu operates the checkout,
+            processes the payment, delivers the product, and handles support and refunds. The
+            product itself is created from your content and approved by you, and that&apos;s how
+            it&apos;s presented on your page. Buyers can request a full refund within 14 days of
+            purchase; if we can&apos;t deliver a purchased plan, the buyer is refunded
+            automatically. Refunds reduce your balance by your share of the sale, the same
+            proportion as the original split.
           </p>
 
           <h2>8. Leaving</h2>
