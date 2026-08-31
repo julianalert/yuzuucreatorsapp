@@ -3,7 +3,9 @@ import { Inngest } from "inngest";
 export interface Events {
   "build/requested": {
     buildId: string;
-    creatorId: string;
+    /** Null for guest builds — the owner is attached at claim time, while the
+     * run is parked on wait-topic, and re-read from the build row after it. */
+    creatorId: string | null;
     handle: string;
     selfDescription?: string;
     /** Set when this build is a rebuild after a sample rejection. */

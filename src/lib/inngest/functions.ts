@@ -208,17 +208,20 @@ export const blueprintBuild = inngest.createFunction(
       event.data as Events["build/requested"];
 
     const declined = async (haltedAt: string, note: string) => {
-      const { data: creator } = await db()
-        .from("creators")
-        .select("email, handle")
-        .eq("id", creatorId)
-        .single();
       await updateBuild(buildId, {
         status: "declined",
         halted_at: haltedAt,
         error: note,
         completed_at: new Date().toISOString(),
       });
+      // the row, not the event: a guest build may have been claimed mid-scan
+      const { data: b } = await db().from("builds").select("creator_id").eq("id", buildId).single();
+      if (!b?.creator_id) return; // still a guest — no account, no email
+      const { data: creator } = await db()
+        .from("creators")
+        .select("email, handle")
+        .eq("id", b.creator_id)
+        .single();
       if (creator?.email) await sendBuildDeclined(creator.email, creator.handle ?? handle, note);
     };
 
@@ -246,13 +249,17 @@ export const blueprintBuild = inngest.createFunction(
         let input: CreatorInput;
         let thin = false;
         let restricted = false;
+        // guest builds have no creator row yet — the identity is stashed in
+        // scrape_data and synced after the claim, once an owner exists
+        let profile: { full_name: string; avatar_url: string } | null = null;
         if (process.env.PIPELINE_MOCK === "true" || !process.env.SCRAPECREATORS_API_KEY) {
           input = mockCreatorInput(handle, selfDescription);
         } else {
           const s = await scrapeCreator(handle);
           thin = s.thin;
           restricted = s.restricted;
-          await syncCreatorProfile(creatorId, s.fullName, s.avatarUrl);
+          profile = { full_name: s.fullName, avatar_url: s.avatarUrl };
+          if (creatorId) await syncCreatorProfile(creatorId, s.fullName, s.avatarUrl);
           input = {
             handle: s.handle,
             bio: s.bio,
@@ -261,7 +268,9 @@ export const blueprintBuild = inngest.createFunction(
             self_description: selfDescription || s.bio,
           };
         }
-        await updateBuild(buildId, { scrape_data: { creator_input: input, thin, restricted } });
+        await updateBuild(buildId, {
+          scrape_data: { creator_input: input, thin, restricted, profile },
+        });
         return { input, restricted };
       }
     );
@@ -396,10 +405,17 @@ export const blueprintBuild = inngest.createFunction(
 
       await step.run("await-topic-status", async () => {
         await updateBuild(buildId, { status: "awaiting_topic", stage: "propose" });
+        // the row, not the event: a guest build may have been claimed mid-scan
+        const { data: b } = await db()
+          .from("builds")
+          .select("creator_id")
+          .eq("id", buildId)
+          .single();
+        if (!b?.creator_id) return; // still a guest — no email address yet
         const { data: creator } = await db()
           .from("creators")
           .select("email, handle")
-          .eq("id", creatorId)
+          .eq("id", b.creator_id)
           .single();
         if (creator?.email) await sendIdeasReady(creator.email, creator.handle ?? handle);
       });
@@ -425,6 +441,31 @@ export const blueprintBuild = inngest.createFunction(
       await step.run("record-topic", () =>
         updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge", chosen_topic: chosen })
       );
+    }
+
+    // Guest builds are claimed (creator attached) while this run is parked on
+    // wait-topic, so the event payload predates the owner — everything past
+    // this point uses the owner from the row, never the event's creatorId.
+    const ownerId = (await step.run("resolve-owner", async () => {
+      if (creatorId) return creatorId;
+      const { data } = await db().from("builds").select("creator_id").eq("id", buildId).single();
+      if (!data?.creator_id) {
+        throw new Error("build resumed without an owner — the claim did not complete");
+      }
+      return data.creator_id as string;
+    })) as string;
+
+    if (!creatorId) {
+      // deferred Instagram identity sync — skipped at scrape time for guests
+      await step.run("sync-profile-post-claim", async () => {
+        const { data } = await db().from("builds").select("scrape_data").eq("id", buildId).single();
+        const profile = (
+          data?.scrape_data as { profile?: { full_name?: string; avatar_url?: string } } | null
+        )?.profile;
+        if (profile) {
+          await syncCreatorProfile(ownerId, profile.full_name ?? "", profile.avatar_url ?? "");
+        }
+      });
     }
 
     const topic = chosen!;
@@ -488,7 +529,7 @@ export const blueprintBuild = inngest.createFunction(
     })) as string;
 
     const draftBlueprint = (quiz: Quiz): Blueprint => ({
-      blueprint_id: `bp_${creatorId}`,
+      blueprint_id: `bp_${ownerId}`,
       blueprint_version: 0,
       status: "draft",
       creator: { handle, audience_card: audience },
@@ -669,7 +710,7 @@ export const blueprintBuild = inngest.createFunction(
       const { data: prev } = await db()
         .from("blueprints")
         .select("version")
-        .eq("creator_id", creatorId)
+        .eq("creator_id", ownerId)
         .order("version", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -709,7 +750,7 @@ export const blueprintBuild = inngest.createFunction(
       const { data: bpRow, error } = await db()
         .from("blueprints")
         .insert({
-          creator_id: creatorId,
+          creator_id: ownerId,
           build_id: buildId,
           version,
           status: "complete",
@@ -733,7 +774,7 @@ export const blueprintBuild = inngest.createFunction(
       const { data: creator } = await db()
         .from("creators")
         .select("email")
-        .eq("id", creatorId)
+        .eq("id", ownerId)
         .single();
       if (creator?.email) await sendSamplesReady(creator.email, topic.topic_title);
       return bpRow.id as string;
@@ -771,7 +812,7 @@ export const blueprintBuild = inngest.createFunction(
         await db().from("blueprints").update({ status: "archived" }).eq("id", blueprintId);
         const { data: next, error } = await db()
           .from("builds")
-          .insert({ creator_id: creatorId, status: "queued" })
+          .insert({ creator_id: ownerId, status: "queued" })
           .select("id")
           .single();
         if (error) throw new Error(`rebuild insert: ${error.message}`);
@@ -781,7 +822,7 @@ export const blueprintBuild = inngest.createFunction(
         name: "build/requested",
         data: {
           buildId: newBuildId,
-          creatorId,
+          creatorId: ownerId,
           handle,
           rebuildOfBuildId: buildId,
           rejectReason: reviewData.reason,
@@ -796,7 +837,7 @@ export const blueprintBuild = inngest.createFunction(
       const { data: creator } = await db()
         .from("creators")
         .select("user_id, display_name")
-        .eq("id", creatorId)
+        .eq("id", ownerId)
         .single();
       const now = new Date().toISOString();
 
@@ -804,7 +845,7 @@ export const blueprintBuild = inngest.createFunction(
       await db()
         .from("blueprints")
         .update({ published: false, status: "archived" })
-        .eq("creator_id", creatorId)
+        .eq("creator_id", ownerId)
         .eq("published", true);
 
       const { data: bpRow } = await db()
@@ -872,7 +913,7 @@ export const blueprintBuild = inngest.createFunction(
       const { data: creator } = await db()
         .from("creators")
         .select("id, email")
-        .eq("id", creatorId)
+        .eq("id", ownerId)
         .single();
       if (!creator?.email) return;
       if (!(await claimLifecycleEmail(creator.id, "youre_live", blueprintId))) return;
@@ -1095,6 +1136,8 @@ export const lifecycleCron = inngest.createFunction(
         .from("builds")
         .select("id, creator_id, created_at, creators(email)")
         .eq("status", "awaiting_topic")
+        // guest builds have no creator (and no email) until they're claimed
+        .not("creator_id", "is", null)
         .lt("created_at", new Date(Date.now() - 3 * DAY_MS).toISOString());
       for (const b of data ?? []) {
         const email = (b.creators as unknown as { email: string } | null)?.email;

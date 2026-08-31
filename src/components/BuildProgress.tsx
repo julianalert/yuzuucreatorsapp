@@ -39,16 +39,29 @@ const ROUTE_FOR_STATUS: Record<string, string> = {
   failed: "/onboard",
 };
 
+/** Pre-signup builds live on /start; declines land back on the homepage with
+ * the halt reason, since there's no /onboard to explain it. */
+function guestRouteFor(status: string, haltedAt: string | null): string | null {
+  if (status === "awaiting_topic") return "/start/ideas";
+  if (status === "declined" || status === "failed") {
+    return `/?error=${encodeURIComponent(haltedAt ?? status)}`;
+  }
+  return ROUTE_FOR_STATUS[status] ?? null;
+}
+
 export function BuildProgress({
   buildId,
   phase,
   initialStage,
   initialStatus,
+  guest = false,
 }: {
   buildId: string;
   phase: "scan" | "build";
   initialStage: string | null;
   initialStatus: string;
+  /** Anonymous pre-signup build: routes stay on /start and errors go home. */
+  guest?: boolean;
 }) {
   const router = useRouter();
   const [stage, setStage] = useState(initialStage);
@@ -59,21 +72,28 @@ export function BuildProgress({
     const tick = async () => {
       try {
         const res = await fetch(`/api/build/status?id=${buildId}`, { cache: "no-store" });
-        if (res.status === 401) {
-          // session died mid-build — send them to sign back in, then straight back here
-          router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`);
+        if (res.status === 401 || (guest && res.status === 404)) {
+          // guests: cookie died (or the build was claimed in another tab) —
+          // creators: session died mid-build, sign back in and come straight back
+          router.push(
+            guest ? "/" : `/auth?next=${encodeURIComponent(window.location.pathname)}`
+          );
           return;
         }
         if (!res.ok) return;
-        const data: { status: string; stage: string | null } = await res.json();
+        const data: { status: string; stage: string | null; halted_at: string | null } =
+          await res.json();
         if (stopped) return;
         setStage(data.stage);
-        const route = ROUTE_FOR_STATUS[data.status];
+        const route = guest
+          ? guestRouteFor(data.status, data.halted_at)
+          : ROUTE_FOR_STATUS[data.status];
         if (route) {
           router.push(route);
           return;
         }
-        // still running — did it move to the other phase?
+        // still running — did it move to the other phase? (a guest build past
+        // the scan phase means it was claimed: the creator flow owns it now)
         const scanStages = ["scrape", "extract", "propose"];
         const inScan = scanStages.includes(data.stage ?? "scrape");
         if (phase === "scan" && !inScan) router.push("/onboard/building");
@@ -90,7 +110,7 @@ export function BuildProgress({
       stopped = true;
       clearInterval(interval);
     };
-  }, [buildId, phase, router]);
+  }, [buildId, phase, router, guest]);
 
   // index of the item currently running
   let nowIdx = items.findIndex((it) => it.stages.includes(stage ?? ""));

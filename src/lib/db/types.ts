@@ -49,7 +49,14 @@ export interface CreatorRow {
 
 export interface BuildRow {
   id: string;
-  creator_id: string;
+  /** Null while the build belongs to an anonymous visitor (guest build). */
+  creator_id: string | null;
+  /** Cookie-held ownership token for pre-signup builds; nulled at claim. */
+  guest_token: string | null;
+  /** The Instagram handle a guest entered; copied to creators.handle at claim. */
+  handle: string | null;
+  /** Idea picked right before the signup redirect, resumed at claim time. */
+  pending_topic_index: number | null;
   status: BuildStatus;
   stage: BuildStage | null;
   halted_at: string | null;

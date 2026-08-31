@@ -8,14 +8,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
-import { cleanHandle, HANDLE_COOKIE } from "@/lib/pending-handle";
+import { useFormStatus } from "react-dom";
+import { cleanHandle } from "@/lib/pending-handle";
 import { CREATOR_KEEP_PCT } from "@/lib/seo";
+import { startGuestBuild } from "@/app/start/actions";
 
 type HandleCtx = {
   handle: string;
   setHandle: (value: string) => void;
-  submit: () => void;
 };
 
 const Ctx = createContext<HandleCtx | null>(null);
@@ -28,24 +28,23 @@ function useHandle(): HandleCtx {
 
 export function HandleProvider({ children }: { children: React.ReactNode }) {
   const [handle, setHandleState] = useState("");
-  const router = useRouter();
 
   const setHandle = useCallback((value: string) => {
     setHandleState(cleanHandle(value));
   }, []);
 
-  const submit = useCallback(() => {
-    const h = cleanHandle(handle);
-    const secure = window.location.protocol === "https:" ? "; secure" : "";
-    if (h) {
-      document.cookie = `${HANDLE_COOKIE}=${encodeURIComponent(h)}; path=/; max-age=3600; samesite=lax${secure}`;
-    }
-    router.push("/auth");
-  }, [handle, router]);
-
-  const value = useMemo(() => ({ handle, setHandle, submit }), [handle, setHandle, submit]);
+  const value = useMemo(() => ({ handle, setHandle }), [handle, setHandle]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+function HandleSubmit({ peel }: { peel?: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button className={peel ? "btn btn-peel" : "btn"} type="submit" disabled={pending}>
+      {pending ? "Reading your account…" : "Build my product"}
+    </button>
+  );
 }
 
 export function HandleForm({
@@ -57,17 +56,10 @@ export function HandleForm({
   inputId: string;
   peel?: boolean;
 }) {
-  const { handle, setHandle, submit } = useHandle();
+  const { handle, setHandle } = useHandle();
 
   return (
-    <form
-      className="handle"
-      id={id}
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-    >
+    <form className="handle" id={id} action={startGuestBuild}>
       <label className="visually-hidden" htmlFor={inputId}>
         Your Instagram handle
       </label>
@@ -76,15 +68,15 @@ export function HandleForm({
         <input
           id={inputId}
           type="text"
+          name="handle"
           placeholder="yourhandle"
           autoComplete="off"
           spellCheck={false}
+          required
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
         />
-        <button className={peel ? "btn btn-peel" : "btn"} type="submit">
-          Build my product
-        </button>
+        <HandleSubmit peel={peel} />
       </div>
       <p className="handle-note">
         $0 to build <span className="dot">·</span> you keep {CREATOR_KEEP_PCT}% <span className="dot">·</span>{" "}

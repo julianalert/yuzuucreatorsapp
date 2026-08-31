@@ -19,7 +19,7 @@ export default async function SignupPage({
           <Wordmark size={26} href="/" />
           <h1 style={{ marginTop: 36 }}>Start earning from the audience you&apos;ve already built</h1>
           <p className="lede" style={{ marginInline: "auto" }}>
-            We'll turn your Instagram into a personalized product for your
+            We&apos;ll turn your Instagram into a personalized product for your
             audience and a page to sell it from.
           </p>
 

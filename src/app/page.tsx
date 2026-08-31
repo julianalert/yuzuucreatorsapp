@@ -32,16 +32,34 @@ export const metadata: Metadata = {
   ...canonical("/"),
 };
 
+/** Why a guest build ended back on the homepage. Keys are builds.halted_at
+ * values (or statuses) carried in ?error= by the guest flow. */
+const GUEST_ERRORS: Record<string, string> = {
+  handle:
+    "That doesn't look like an Instagram handle — letters, numbers, dots and underscores only.",
+  limit: "You've hit the limit of builds from this browser. Sign up to continue, or get in touch.",
+  profile_restricted:
+    "Instagram restricts this profile to logged-in viewers, so we can't read it from outside. Check Settings → Account privacy on Instagram, then try again.",
+  thin_content:
+    "That account came back with too little public content for us to read the audience. If it's private, make it public and try again.",
+  audience_confidence:
+    "We couldn't read this audience confidently enough from what's public — we'd rather decline than build something mediocre.",
+  no_viable_topic:
+    "We couldn't find a product angle personalizable enough for this audience. Some niches just don't split into different buyer situations yet.",
+  declined: "We couldn't build from that account yet. Try another handle.",
+  failed: "The scan stopped partway. Try again — this is usually transient.",
+};
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string }>;
+  searchParams: Promise<{ code?: string; error?: string }>;
 }) {
   // Fallback for OAuth providers that land the `code` on the bare homepage
   // instead of /auth/callback (happens when the redirect URL used at
   // sign-in isn't in Supabase's allow-listed Redirect URLs) — forward it so
   // sign-in still completes instead of silently failing.
-  const { code } = await searchParams;
+  const { code, error } = await searchParams;
   if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/onboard`);
 
   const user = await getSignedInUser();
@@ -83,6 +101,11 @@ export default async function Home({
                 quiz, sales page, personalized output. It costs you nothing and you keep{" "}
                 {CREATOR_KEEP_PCT}% of every sale!
               </p>
+              {error ? (
+                <div className="notice warn" style={{ marginBottom: 18 }}>
+                  {GUEST_ERRORS[error] ?? "Something went wrong — try again."}
+                </div>
+              ) : null}
               <HandleForm id="start" inputId="handle-hero" />
             </div>
 
