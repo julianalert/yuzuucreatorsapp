@@ -863,3 +863,26 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── yuzu mascot ────────────────────────────────────────────
+   Base rules for <Yuzu>. Rotation and mirroring go through CSS
+   vars, not an inline transform, so the bob animation below can
+   own `transform` without dropping them. The global
+   prefers-reduced-motion rule already stops the bob. */
+.yuzu {
+  display: block;
+  flex: none;
+  transform: rotate(var(--yz-rot, 0deg)) scaleX(var(--yz-flip, 1));
+}
+.yuzu-float {
+  animation: yuzu-bob var(--yz-dur, 5.5s) ease-in-out infinite;
+}
+@keyframes yuzu-bob {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--yz-rot, 0deg)) scaleX(var(--yz-flip, 1));
+  }
+  50% {
+    transform: translateY(-7px) rotate(calc(var(--yz-rot, 0deg) + 2deg))
+      scaleX(var(--yz-flip, 1));
+  }
+}

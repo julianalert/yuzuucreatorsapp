@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Bricolage_Grotesque, DM_Mono } from "next/font/google";
 import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
+import { Yuzu } from "@/components/Yuzu";
 import { JsonLd } from "@/components/JsonLd";
 import {
   HandleForm,
@@ -109,7 +110,8 @@ export default async function Home({
               <HandleForm id="start" inputId="handle-hero" />
             </div>
 
-            <div>
+            <div className="hero-side">
+              <Yuzu className="yz-hero" size={78} mood="happy" tilt={-9} float />
               <p className="eyebrow preview-label">
                 What your followers see when you share your link
               </p>
@@ -182,6 +184,7 @@ export default async function Home({
             </div>
 
             <div className="punch rise">
+              <Yuzu className="yz-punch" size={54} mood="wow" tilt={9} float floatDuration={4.6} />
               <div className="punch-side old">
                 <span className="big">~20h</span>
                 <span className="lbl">To build it yourself</span>
@@ -456,7 +459,10 @@ export default async function Home({
             </div>
             <div className="fit">
               <div className="fit-col fit-yes rise">
-                <h3>It works when</h3>
+                <h3>
+                  <Yuzu className="yz-fit" size={26} mood="joy" />
+                  It works when
+                </h3>
                 <ul>
                   <li>Your comments and DMs are full of people describing their own situation</li>
                   <li>
@@ -514,6 +520,10 @@ export default async function Home({
               something.
             </p>
             <HandleForm inputId="handle-foot" peel />
+          </div>
+          <div className="yz-closer" aria-hidden="true">
+            <Yuzu size={92} mood="happy" tilt={-7} float floatDuration={6.2} />
+            <Yuzu size={58} mood="wink" tilt={8} flip float floatDuration={5} />
           </div>
         </section>
         </main>
