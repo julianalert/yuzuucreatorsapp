@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { recordLinkCopied, setChecklistItem } from "@/app/dashboard/actions";
-import type { LaunchChecklist, ShareKit } from "@/lib/db/types";
+import { dismissLaunchChecklist, recordLinkCopied, setChecklistItem } from "@/app/dashboard/actions";
+import type { LaunchChecklist as LaunchChecklistState, ShareKit } from "@/lib/db/types";
 
 const KIT_TABS = [
   { key: "caption", label: "Feed caption" },
@@ -11,26 +11,28 @@ const KIT_TABS = [
   { key: "reel_script", label: "Reel script" },
 ] as const;
 
-export function LaunchKit({
+export function LaunchChecklist({
   handle,
   url,
   kit,
   checklist,
   netPerSale,
   price,
+  initialDismissed,
 }: {
   handle: string;
   url: string;
   kit: ShareKit;
-  checklist: LaunchChecklist;
+  checklist: LaunchChecklistState;
   netPerSale: string;
   price: string;
+  initialDismissed: boolean;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
-  const [tab, setTab] = useState<(typeof KIT_TABS)[number]["key"]>("caption");
+  const [dismissed, setDismissed] = useState(initialDismissed);
 
-  const done = (item: keyof LaunchChecklist) => optimistic[item] ?? Boolean(checklist[item]);
+  const done = (item: keyof LaunchChecklistState) => optimistic[item] ?? Boolean(checklist[item]);
 
   async function copy(key: string, text: string) {
     try {
@@ -46,13 +48,20 @@ export function LaunchKit({
     }
   }
 
-  function toggle(item: keyof LaunchChecklist) {
+  function toggle(item: keyof LaunchChecklistState) {
     const next = !done(item);
     setOptimistic((o) => ({ ...o, [item]: next }));
     setChecklistItem(item, next).catch(() => {});
   }
 
-  function Check({ item }: { item: keyof LaunchChecklist }) {
+  function markComplete() {
+    setDismissed(true);
+    dismissLaunchChecklist().catch(() => {});
+  }
+
+  if (dismissed) return null;
+
+  function Check({ item }: { item: keyof LaunchChecklistState }) {
     return (
       <button
         type="button"
@@ -134,7 +143,12 @@ export function LaunchKit({
   return (
     <div className="card lk">
       <div className="lk-hd">
-        <span className="micro">Launch checklist</span>
+        <div className="lk-hd-top">
+          <span className="micro">Launch checklist</span>
+          <button type="button" className="btn btn-accent btn-sm" onClick={markComplete}>
+            Mark as complete
+          </button>
+        </div>
         <h2>One post gets your first sale.</h2>
         <p className="lk-money">
           Every ${price} sale puts <b>${netPerSale}</b> in your pocket. The words are written —
@@ -154,33 +168,48 @@ export function LaunchKit({
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
 
-      <div className="lk-more">
-        <span className="micro">More ready-to-paste</span>
-        <div className="lk-tabs" role="tablist">
-          {KIT_TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.key}
-              className={`lk-tab${tab === t.key ? " on" : ""}`}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="lk-paste" style={{ marginTop: 12 }}>
-          <p style={{ whiteSpace: "pre-wrap" }}>{kit[tab]}</p>
+/** Ready-to-paste content, independent of the launch checklist above — stays
+ * on screen even after the checklist is marked complete and dismissed. */
+export function PasteKit({ kit }: { kit: ShareKit }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const [tab, setTab] = useState<(typeof KIT_TABS)[number]["key"]>("caption");
+
+  async function copy(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      return;
+    }
+    setCopied(key);
+    setTimeout(() => setCopied((c) => (c === key ? null : c)), 2000);
+  }
+
+  return (
+    <div className="card lk-more">
+      <span className="micro">Pre-made content for you to share</span>
+      <div className="lk-tabs" role="tablist">
+        {KIT_TABS.map((t) => (
           <button
+            key={t.key}
             type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => copy(tab, kit[tab])}
+            role="tab"
+            aria-selected={tab === t.key}
+            className={`lk-tab${tab === t.key ? " on" : ""}`}
+            onClick={() => setTab(t.key)}
           >
-            {copied === tab ? "Copied" : "Copy"}
+            {t.label}
           </button>
-        </div>
+        ))}
+      </div>
+      <div className="lk-paste" style={{ marginTop: 12 }}>
+        <p style={{ whiteSpace: "pre-wrap" }}>{kit[tab]}</p>
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => copy(tab, kit[tab])}>
+          {copied === tab ? "Copied" : "Copy"}
+        </button>
       </div>
     </div>
   );

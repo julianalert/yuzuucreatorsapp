@@ -41,15 +41,22 @@ export interface CreatorRow {
   display_name: string | null;
   avatar_url: string | null;
   email: string;
-  /** How the creator wants to be paid: 'paypal' | 'bank' | 'other'. */
+  /** How the creator wants to be paid — always 'bank' now. */
   payout_provider: string | null;
   /** An email or short note — never full bank numbers. */
   payout_recipient_id: string | null;
   payout_status: PayoutDetailsStatus;
+  payout_iban: string | null;
+  payout_first_name: string | null;
+  payout_last_name: string | null;
+  payout_company: string | null;
+  payout_address: string | null;
   agreement_signed_at: string | null;
   /** Activation moment: set once on the creator's first paid order. */
   first_sale_at: string | null;
   launch_checklist: LaunchChecklist;
+  /** Set once the creator dismisses the launch checklist for good. */
+  launch_checklist_dismissed_at: string | null;
   created_at: string;
 }
 

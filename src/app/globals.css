@@ -117,6 +117,9 @@ h2 {
 .btn-ghost { background: none; border: none; color: var(--sage); padding: 10px 2px; }
 .btn-ghost:hover { color: var(--ink); }
 .btn-ghost:disabled { opacity: 0.35; cursor: default; }
+.btn-accent { background: var(--zest); color: var(--ink); border: 1px solid var(--zest); padding: 11px 22px; }
+.btn-accent:hover { background: #a9bc33; border-color: #a9bc33; }
+.btn-accent:disabled { opacity: 0.5; cursor: default; }
 
 .btn-pending {
   display: inline-flex;
@@ -784,6 +787,7 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
 
 /* ── activation: launch kit ─────────────────────────────── */
 .stats.four { grid-template-columns: repeat(4, 1fr); }
+.lk-hd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .lk-hd h2 { margin-top: 12px; font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: -0.015em; }
 .lk-money { margin-top: 8px; font-size: 14.5px; color: var(--sage); }
 .lk-money b { color: var(--ink); font-weight: 600; }
@@ -839,7 +843,6 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
 }
 .lk-paste p { font-size: 14px; color: var(--ink-soft); line-height: 1.55; }
 .lk-paste .btn { margin-top: 12px; }
-.lk-more { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .lk-tabs { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 .lk-tab {
   font-family: var(--mono);

@@ -4,7 +4,7 @@ import { requireCreator } from "@/lib/auth";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AppBar } from "@/components/AppBar";
-import { LaunchKit } from "@/components/LaunchKit";
+import { LaunchChecklist, PasteKit } from "@/components/LaunchKit";
 import { fallbackShareKit } from "@/lib/share-kit";
 import { creatorBalance, MIN_PAYOUT_CENTS, AVAILABLE_AFTER_DAYS } from "@/lib/ledger";
 import { setPayoutDetails } from "./actions";
@@ -137,19 +137,6 @@ export default async function DashboardPage({
           </div>
         </div>
 
-        {!activated ? (
-          <div style={{ marginTop: 26 }}>
-            <LaunchKit
-              handle={creator.handle ?? ""}
-              url={url}
-              kit={kit}
-              checklist={creator.launch_checklist ?? {}}
-              netPerSale={netPerSale}
-              price={price}
-            />
-          </div>
-        ) : null}
-
         <div className="stats four">
           <div className="stat">
             <span className="k">Page visits</span>
@@ -183,6 +170,23 @@ export default async function DashboardPage({
           </div>
         </div>
 
+        {!activated ? (
+          <div style={{ marginTop: 26 }}>
+            {!creator.launch_checklist_dismissed_at ? (
+              <LaunchChecklist
+                handle={creator.handle ?? ""}
+                url={url}
+                kit={kit}
+                checklist={creator.launch_checklist ?? {}}
+                netPerSale={netPerSale}
+                price={price}
+                initialDismissed={false}
+              />
+            ) : null}
+            <PasteKit kit={kit} />
+          </div>
+        ) : null}
+
         <div className="card" style={{ marginTop: 26 }}>
           <span className="micro">Getting paid</span>
           <p style={{ marginTop: 12, fontSize: 14.5, color: "var(--ink-soft)", maxWidth: "62ch" }}>
@@ -194,30 +198,48 @@ export default async function DashboardPage({
           </p>
           {creator.payout_status === "ready" ? (
             <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--ink-soft)" }}>
-              Payout details confirmed: <b>{creator.payout_provider}</b> ·{" "}
-              {creator.payout_recipient_id}
+              Payout details confirmed: bank transfer · IBAN ending{" "}
+              {creator.payout_iban?.slice(-4) ?? "····"}
             </p>
           ) : creator.payout_status === "pending" ? (
             <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--sage)" }}>
-              Details received ({creator.payout_provider} · {creator.payout_recipient_id}) —
+              Details received (IBAN ending {creator.payout_iban?.slice(-4) ?? "····"}) —
               we&apos;ll confirm them before your first payout.
             </p>
           ) : null}
           <form className="payout-form" action={setPayoutDetails}>
-            <select
-              name="payout_provider"
-              defaultValue={creator.payout_provider ?? "paypal"}
-              aria-label="Payout method"
-            >
-              <option value="paypal">PayPal</option>
-              <option value="bank">Bank transfer</option>
-              <option value="other">Other</option>
-            </select>
             <input
               type="text"
-              name="payout_recipient"
-              placeholder="PayPal email, or how to reach you about payment"
-              defaultValue={creator.payout_recipient_id ?? ""}
+              name="payout_first_name"
+              placeholder="First name"
+              defaultValue={creator.payout_first_name ?? ""}
+              required
+            />
+            <input
+              type="text"
+              name="payout_last_name"
+              placeholder="Last name"
+              defaultValue={creator.payout_last_name ?? ""}
+              required
+            />
+            <input
+              type="text"
+              name="payout_company"
+              placeholder="Company (optional)"
+              defaultValue={creator.payout_company ?? ""}
+            />
+            <input
+              type="text"
+              name="payout_address"
+              placeholder="Address"
+              defaultValue={creator.payout_address ?? ""}
+              required
+            />
+            <input
+              type="text"
+              name="payout_iban"
+              placeholder="IBAN"
+              defaultValue={creator.payout_iban ?? ""}
               required
             />
             <button className="btn btn-outline btn-sm" type="submit">
@@ -225,7 +247,7 @@ export default async function DashboardPage({
             </button>
           </form>
           <p className="hint" style={{ marginTop: 10 }}>
-            An email or a short note is enough — never paste full bank account numbers here.
+            Payouts go out by bank transfer only. Your IBAN is only used to send you money.
           </p>
         </div>
 

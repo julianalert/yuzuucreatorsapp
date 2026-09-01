@@ -302,7 +302,7 @@ export async function sendLaunchNudge(
 export async function sendFirstVisitor(to: string, args: { handle: string }) {
   await send(
     to,
-    "Someone just visited your page",
+    "You just got your first visitor! 🙌",
     wrap(`
       ${paragraph(`Your first visitor just landed on <strong style="color:${C.ink};font-weight:600;">yuzuu.co/u/${args.handle}</strong>. Whatever you posted — it's working. Keep the link visible.`)}
       ${button(appUrl("/dashboard"), "Watch it live")}

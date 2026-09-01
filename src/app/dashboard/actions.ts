@@ -26,27 +26,49 @@ export async function setChecklistItem(item: string, done: boolean) {
   revalidatePath("/dashboard");
 }
 
-const PAYOUT_PROVIDERS = ["paypal", "bank", "other"] as const;
+/** Loose IBAN shape check — 2-letter country code, 2 check digits, up to 30
+ * alphanumerics, no spaces. Real validation (mod-97) happens on the admin
+ * side before a transfer goes out. */
+const IBAN_RE = /^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/;
 
 /**
- * How the creator wants their monthly payout. We store an email or short
- * note — never full bank numbers (see docs/payments.md). Saving puts the
- * details in review; an admin flips payout_status to 'ready'.
+ * Bank transfer is the only payout method. Saving puts the details in
+ * review; an admin flips payout_status to 'ready' before the first payout.
  */
 export async function setPayoutDetails(formData: FormData) {
   const creator = await requireCreator();
-  const provider = String(formData.get("payout_provider") ?? "");
-  const recipient = String(formData.get("payout_recipient") ?? "").trim().slice(0, 200);
-  if (!(PAYOUT_PROVIDERS as readonly string[]).includes(provider) || !recipient) return;
+  const field = (name: string) => String(formData.get(name) ?? "").trim();
+
+  const iban = field("payout_iban").replace(/\s+/g, "").toUpperCase().slice(0, 34);
+  const firstName = field("payout_first_name").slice(0, 100);
+  const lastName = field("payout_last_name").slice(0, 100);
+  const company = field("payout_company").slice(0, 150);
+  const address = field("payout_address").slice(0, 300);
+
+  if (!IBAN_RE.test(iban) || !firstName || !lastName || !address) return;
 
   await supabaseAdmin()
     .from("creators")
     .update({
-      payout_provider: provider,
-      payout_recipient_id: recipient,
+      payout_provider: "bank",
+      payout_iban: iban,
+      payout_first_name: firstName,
+      payout_last_name: lastName,
+      payout_company: company || null,
+      payout_address: address,
       // edits always go back through review
       payout_status: "pending",
     })
+    .eq("id", creator.id);
+  revalidatePath("/dashboard");
+}
+
+/** Creator says they're done with the launch checklist — hide it for good. */
+export async function dismissLaunchChecklist() {
+  const creator = await requireCreator();
+  await supabaseAdmin()
+    .from("creators")
+    .update({ launch_checklist_dismissed_at: new Date().toISOString() })
     .eq("id", creator.id);
   revalidatePath("/dashboard");
 }
