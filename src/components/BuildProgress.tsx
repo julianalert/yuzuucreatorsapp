@@ -115,12 +115,24 @@ export function BuildProgress({
   // index of the item currently running
   let nowIdx = items.findIndex((it) => it.stages.includes(stage ?? ""));
   if (nowIdx === -1) nowIdx = initialStatus === "queued" ? 0 : 0;
+  const pct = Math.min(100, Math.max(6, Math.round(((nowIdx + 0.5) / items.length) * 100)));
 
   return (
     <div style={{ marginTop: 34 }}>
       <div className="live-status" role="status" aria-live="polite">
         <span className="spinner" aria-hidden="true" />
-        {phase === "build" ? "Building" : "Working"} — this updates automatically
+        {phase === "build"
+          ? "Building your complete product"
+          : "Working, analyzing your audience and their needs"}
+      </div>
+      <div
+        className="progress-bar"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
       </div>
       <ul className="stages" style={{ marginTop: 18 }}>
         {items.map((it, i) => {

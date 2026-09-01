@@ -28,10 +28,17 @@ export function SampleReview({
   const [tab, setTab] = useState(0);
   const [rejecting, setRejecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [decision, setDecision] = useState<"approve" | "reject" | null>(null);
   const sample = samples[tab];
 
   return (
     <>
+      {submitting && decision === "approve" ? (
+        <div className="publish-overlay" role="status" aria-live="polite">
+          <span className="spinner spinner-lg" aria-hidden="true" />
+          <p>Publishing your product…</p>
+        </div>
+      ) : null}
       <div className="sample-switch" role="tablist" aria-label="Sample buyer">
         {samples.map((s, i) => (
           <button
@@ -73,6 +80,7 @@ export function SampleReview({
               name="decision"
               value="approve"
               disabled={submitting}
+              onClick={() => setDecision("approve")}
             >
               {submitting ? "Publishing…" : "Approve and publish"}
             </button>
@@ -116,6 +124,7 @@ export function SampleReview({
                 name="decision"
                 value="reject"
                 disabled={submitting}
+                onClick={() => setDecision("reject")}
               >
                 {submitting ? "Sending…" : "Reject and rebuild"}
               </button>

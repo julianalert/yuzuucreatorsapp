@@ -44,11 +44,11 @@ export default async function ReviewPage() {
       <div className="wrap">
         <div style={{ maxWidth: 920, margin: "0 auto" }}>
           <div className="micro">Ready for you</div>
-          <h1 style={{ marginTop: 18 }}>Read three plans before this goes live.</h1>
+          <h1 style={{ marginTop: 18 }}>Review the three samples</h1>
           <p className="lede">
-            We invented three very different buyers and wrote each their own plan, exactly how
-            every real buyer&apos;s will be written. If any of it doesn&apos;t sound like you, say
-            so and we&apos;ll rebuild it.
+            We simulated three very different buyers, took the quiz for them and wrote each their
+            own plan, exactly how every real buyer&apos;s will be written. If any of it
+            doesn&apos;t sound like you, say so and we&apos;ll rebuild it.
           </p>
 
           <SampleReview

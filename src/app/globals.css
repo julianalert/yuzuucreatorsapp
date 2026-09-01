@@ -136,7 +136,22 @@ h2 {
   border-top-color: var(--ink);
   animation: spin 0.7s linear infinite;
 }
+.spinner-lg { width: 32px; height: 32px; border-width: 3px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.publish-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(244, 245, 240, 0.92);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
 .btn-lg { padding: 14px 30px; font-size: 16px; }
 .btn-sm { padding: 9px 18px; font-size: 14px; }
 .btn-block { width: 100%; }
@@ -283,7 +298,31 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
   animation: ping 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
 }
 .stages .t { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--line-strong); }
+.stages li.done .t { color: var(--zest); }
 @keyframes ping { 0% { transform: scale(0.7); opacity: 0.9; } 100% { transform: scale(2.1); opacity: 0; } }
+
+.progress-bar { margin-top: 16px; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 999px; background: var(--zest); transition: width 0.6s ease; }
+
+/* ── keep-tab-open warning ──────────────────────────────── */
+.notice-caution {
+  background: #fdf1e6;
+  border: 1px solid #f0c19a;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #9a5323;
+}
+.notice-info {
+  background: #fdf8d8;
+  border: 1px solid #e3d17a;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #7a6a1e;
+}
 
 /* ── idea cards ─────────────────────────────────────────── */
 .ideas { display: flex; flex-direction: column; gap: 10px; margin-top: 32px; }

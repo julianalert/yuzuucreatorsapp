@@ -3,7 +3,7 @@ import { latestGuestBuild, readGuestToken, routeForGuestBuild } from "@/lib/gues
 import { IdeaPicker } from "@/components/IdeaPicker";
 import { DEFAULT_PRICE_CENTS } from "@/lib/pipeline/constants";
 import { CREATOR_KEEP_PCT } from "@/lib/seo";
-import { chooseTopicGuest, discardGuestBuild, regenerateIdeasGuest } from "../actions";
+import { chooseTopicGuest, discardGuestBuild, regenerateIdeasGuest } from "../../actions";
 
 /** Their audience's own words — the receipts behind the ideas. */
 function receiptsFrom(evidence?: Record<string, string[]>, fallback?: string[]): string[] {

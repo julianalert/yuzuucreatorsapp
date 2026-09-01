@@ -21,8 +21,8 @@ export default async function BuildingPage() {
           <div className="micro">Step 3 of 3 · Building</div>
           <h1 style={{ marginTop: 18 }}>{build.chosen_topic?.topic_title ?? "Building your product"}</h1>
           <p className="lede">
-            This will take a few minutes. Nothing goes live until you&apos;ve read the sample and
-            approved it. 
+            This will take a few minutes. Nothing goes live until you&apos;ve read the samples and
+            approved it.
           </p>
 
           <BuildProgress
@@ -32,11 +32,9 @@ export default async function BuildingPage() {
             initialStatus={build.status}
           />
 
-          <div className="card" style={{ marginTop: 30, padding: "20px 22px" }}>
-            <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.6 }}>
-              You can close this tab. We&apos;ll email you when ready.
-            </p>
-          </div>
+          <p className="notice-info" style={{ marginTop: 30 }}>
+            You can close this tab. We&apos;ll email you when ready.
+          </p>
         </div>
       </div>
     </section>
