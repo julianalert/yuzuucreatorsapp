@@ -93,7 +93,7 @@ export default async function Home({
         <header className="hero" id="top">
           <div className="wrap hero-in">
             <Yuzu className="yz-hero" size={64} mood="happy" tilt={-8} float />
-            <p className="eyebrow">For Instagram creators · 10k–1M</p>
+            <p className="eyebrow">For Instagram creators · 5k–1M</p>
             <h1>
               Earn <em>regular income</em> from your audience
             </h1>
