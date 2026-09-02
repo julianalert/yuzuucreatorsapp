@@ -9,9 +9,9 @@ import { JsonLd } from "@/components/JsonLd";
 import {
   HandleForm,
   HandleProvider,
-  LiveHandle,
   RiseObserve,
 } from "@/components/landing/HandleSync";
+// import { HeroShowcase } from "@/components/landing/HeroShowcase";
 import { LANDING_FAQ, faqPageJsonLd } from "@/lib/landing-faq";
 import { CREATOR_KEEP_PCT, PLATFORM_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
 import "./landing.css";
@@ -91,65 +91,30 @@ export default async function Home({
 
         <main>
         <header className="hero" id="top">
-          <div className="wrap hero-grid">
-            <div>
-              <p className="eyebrow">For Instagram creators · 10k–1M</p>
-              <h1>
-                Earn <em>regular income</em> from your audience
-              </h1>
-              <p className="hero-sub">
-                Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
-                quiz, sales page, personalized output. It costs you nothing and you keep{" "}
-                {CREATOR_KEEP_PCT}% of every sale!
-              </p>
-              {error ? (
-                <div className="notice warn" style={{ marginBottom: 18 }}>
-                  {GUEST_ERRORS[error] ?? "Something went wrong — try again."}
-                </div>
-              ) : null}
-              <HandleForm id="start" inputId="handle-hero" />
-            </div>
-
-            <div className="hero-side">
-              <Yuzu className="yz-hero" size={78} mood="happy" tilt={-9} float />
-              <p className="eyebrow preview-label">
-                What your followers see when you share your link
-              </p>
-              <div className="preview">
-                <div className="bar">
-                  <span className="pip" />
-                  <span className="pip" />
-                  <span className="pip" />
-                  <span className="url">
-                    yuzuu.co/u/
-                    <b>
-                      <LiveHandle />
-                    </b>
-                  </span>
-                  <span className="preview-badge">Preview</span>
-                </div>
-                <div className="preview-body">
-                  <p className="pv-eyebrow">
-                    by @
-                    <LiveHandle />
-                  </p>
-                  <p className="pv-title">The 30-Day Sleep Reset, written for your nights</p>
-                  <p className="pv-p">
-                    Six questions about how you actually sleep. Then a day-by-day plan built
-                    around your answers, not a PDF with your name at the top.
-                  </p>
-                  <div className="pv-cta">
-                    <span className="pv-price">$27</span>
-                    <span className="pv-btn">Start the quiz →</span>
-                  </div>
-                </div>
+          <div className="wrap hero-in">
+            <Yuzu className="yz-hero" size={64} mood="happy" tilt={-8} float />
+            <p className="eyebrow">For Instagram creators · 10k–1M</p>
+            <h1>
+              Earn <em>regular income</em> from your audience
+            </h1>
+            <p className="hero-sub">
+              Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
+              quiz, sales page, personalized output. It costs you nothing and you keep{" "}
+              {CREATOR_KEEP_PCT}% of every sale!
+            </p>
+            {error ? (
+              <div className="notice warn" style={{ marginBottom: 18 }}>
+                {GUEST_ERRORS[error] ?? "Something went wrong — try again."}
               </div>
-              <p className="caption preview-outcome">
-                You share yuzuu.co/u/
-                <LiveHandle />
-                . Followers take the quiz and pay. You keep {CREATOR_KEEP_PCT}%.
-              </p>
-            </div>
+            ) : null}
+            <HandleForm id="start" inputId="handle-hero" />
+
+            {/* Hidden for now — the four-screen product demo. Uncomment this
+                block (and the HeroShowcase import above) to bring it back. */}
+            {/*
+            <p className="eyebrow showcase-label">Here&apos;s what we build for you</p>
+            <HeroShowcase />
+            */}
           </div>
         </header>
 
