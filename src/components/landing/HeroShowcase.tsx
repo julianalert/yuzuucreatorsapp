@@ -1,38 +1,70 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CREATOR_KEEP_PCT } from "@/lib/seo";
-import { LiveHandle } from "./HandleSync";
 
-/** Everything the demo says, in one place — swap this block to demo a
- * different niche without touching the layout below. */
-const DEMO = {
-  handle: "refurbishedish",
-  creator: "Mia | Furniture Flips & Rescues",
-  product: "Your First Flip, Start to Sold",
-  price: 27,
-  questions: 11,
-  days: 21,
+/** Yuzuu profile pages, laid out exactly as /u/[handle] renders them. Erin's
+ * title and promise are stand-ins until hers is published; the rest is live
+ * product copy. Add a creator by appending to this array — the switcher sizes
+ * itself. */
+type Creator = {
+  handle: string;
+  name: string;
+  avatarUrl: string;
+  /** Short name for the switcher pill. */
+  short: string;
+  title: string;
+  promise: string;
+  days?: number;
+  questions: number;
 };
 
-const CREATOR_CUT = ((DEMO.price * CREATOR_KEEP_PCT) / 100).toFixed(2);
-
-const TABS = [
-  { num: "01", label: "Your profile page" },
-  { num: "02", label: "Your quiz" },
-  { num: "03", label: `Your checkout · you keep ${CREATOR_KEEP_PCT}%` },
-  { num: "04", label: "What they walk away with" },
+const CREATORS: Creator[] = [
+  {
+    handle: "refurbishedish",
+    name: "Erin Shuford • DIY Furniture Flips • MCM Refinishing",
+    short: "Erin",
+    avatarUrl:
+      "https://ietpkvqwihxwnesuzvvw.supabase.co/storage/v1/object/public/avatars/246bfafb-89ba-438b-b48e-c58f0c3dfe49.jpg?v=1788268466377",
+    title: "Your First Flip, Start to Sold",
+    promise:
+      "A personalized plan matched to the pieces you can actually find and the tools you already own — so your first flip sells instead of sitting in the garage.",
+    questions: 12,
+  },
+  {
+    handle: "seunokimi",
+    name: "Seun Okimi",
+    short: "Seun",
+    avatarUrl:
+      "https://ietpkvqwihxwnesuzvvw.supabase.co/storage/v1/object/public/avatars/d420c535-65b8-44c0-822c-fd45d23bb495.jpg?v=1788385701348",
+    title: "Wash Day Routine Personalization",
+    promise:
+      "A 14-day plan to build your own efficient wash-day routine — matched to your porosity, scalp needs, and sensitivities — so wash day takes less time and leaves less breakage.",
+    days: 14,
+    questions: 10,
+  },
+  {
+    handle: "mydisciplinedrive",
+    name: "Ben | Discipline Coach for Dads",
+    short: "Ben",
+    avatarUrl:
+      "https://ietpkvqwihxwnesuzvvw.supabase.co/storage/v1/object/public/avatars/f64e0f07-9f5b-40f0-a4b3-8f49b46030cf.jpg?v=1788267861197",
+    title: "Morning Energy Kickstart",
+    promise:
+      "A personalized 21-day morning movement plan matched to your energy blockers (poor sleep, no routine, low motivation, or physical stiffness) so waking up and getting going stops feeling like a fight.",
+    days: 21,
+    questions: 11,
+  },
 ];
 
-const ADVANCE_MS = 5200;
+const ADVANCE_MS = 4500;
 
 export function HeroShowcase() {
   const [active, setActive] = useState(0);
   const [auto, setAuto] = useState(true);
 
   useEffect(() => {
-    if (!auto) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % TABS.length), ADVANCE_MS);
+    if (CREATORS.length < 2 || !auto) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % CREATORS.length), ADVANCE_MS);
     return () => clearInterval(t);
   }, [auto]);
 
@@ -42,12 +74,14 @@ export function HeroShowcase() {
     setActive(i);
   }, []);
 
+  const current = CREATORS[active];
+
   return (
     <div className="showcase">
-      <div className="sc-tabs" role="tablist" aria-label="What Yuzuu builds for you">
-        {TABS.map((tab, i) => (
+      <div className="sc-tabs" role="tablist" aria-label="Pick a creator">
+        {CREATORS.map((creator, i) => (
           <button
-            key={tab.num}
+            key={creator.handle}
             type="button"
             role="tab"
             id={`sc-tab-${i}`}
@@ -56,9 +90,28 @@ export function HeroShowcase() {
             className={`sc-tab${active === i ? " is-on" : ""}`}
             onClick={() => pick(i)}
           >
-            <span className="sc-rule" />
-            <span className="sc-num">{tab.num}</span>
-            <span className="sc-label">{tab.label}</span>
+            {/* Sweeps across the active pill over one interval, so the
+                rotation reads as deliberate rather than as a random jump.
+                Re-keyed on `active` to restart; gone once a click takes over. */}
+            {auto && active === i ? (
+              <span
+                key={active}
+                className="sc-tab-timer"
+                style={{ animationDuration: `${ADVANCE_MS}ms` }}
+              />
+            ) : null}
+            {/* eslint-disable-next-line @next/next/no-img-element -- storage-hosted avatar, not worth next/image remote-pattern config */}
+            <img
+              className="sc-tab-face"
+              src={creator.avatarUrl}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+            <span className="sc-tab-text">
+              <b>{creator.short}</b>
+              <i>@{creator.handle}</i>
+            </span>
           </button>
         ))}
       </div>
@@ -69,230 +122,63 @@ export function HeroShowcase() {
           <span className="sc-pip" />
           <span className="sc-pip" />
           <span className="sc-url">
-            yuzuu.co/u/
-            <b>
-              <LiveHandle fallback={DEMO.handle} />
-            </b>
+            yuzuu.co/u/<b>{current.handle}</b>
           </span>
           <span className="sc-live">Live</span>
         </div>
 
-        {/* All four screens share one grid cell, so the frame is as tall as
-            the tallest screen and nothing ever gets clipped or jumps. */}
+        {/* Every creator's page sits in the same grid cell, so the frame is as
+            tall as the longest one: switching never shifts the page. */}
         <div className="sc-stack">
-          <Screen index={0} active={active}>
-            <Profile />
-          </Screen>
-          <Screen index={1} active={active}>
-            <Quiz />
-          </Screen>
-          <Screen index={2} active={active}>
-            <Checkout />
-          </Screen>
-          <Screen index={3} active={active}>
-            <Plan />
-          </Screen>
+          {CREATORS.map((creator, i) => (
+            <div
+              key={creator.handle}
+              role="tabpanel"
+              id={`sc-panel-${i}`}
+              aria-labelledby={`sc-tab-${i}`}
+              className={`sc-screen${active === i ? " is-on" : ""}`}
+            >
+              {/* Re-keyed on every switch so the fade replays each time. */}
+              <div key={active} className="sc-fade">
+                <Profile creator={creator} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function Screen({
-  index,
-  active,
-  children,
-}: {
-  index: number;
-  active: number;
-  children: React.ReactNode;
-}) {
-  const on = index === active;
-  return (
-    <div
-      role="tabpanel"
-      id={`sc-panel-${index}`}
-      aria-labelledby={`sc-tab-${index}`}
-      className={`sc-screen${on ? " is-on" : ""}`}
-    >
-      {/* Re-keyed on every switch so the fade replays each time a screen
-          comes back around. */}
-      <div key={active} className="sc-fade">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Profile() {
+function Profile({ creator }: { creator: Creator }) {
   return (
     <div className="sc-profile">
       <div className="sc-who">
-        <span className="sc-avatar" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- storage-hosted avatar, not worth next/image remote-pattern config */}
+        <img
+          className="sc-avatar"
+          src={creator.avatarUrl}
+          alt={creator.name}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
         <span>
-          <b>{DEMO.creator}</b>
-          <i>
-            @<LiveHandle fallback={DEMO.handle} /> · built from your audience
-          </i>
+          <b>{creator.name}</b>
+          <i>@{creator.handle}</i>
         </span>
       </div>
+
       <p className="sc-kicker">
-        Personalized · {DEMO.days} days · {DEMO.questions} questions first
+        Personalized · {creator.days ? `${creator.days} days · ` : ""}
+        {creator.questions} questions first
       </p>
-      <h3 className="sc-h">{DEMO.product}</h3>
-      <p className="sc-p">
-        A personalized {DEMO.days}-day plan matched to the pieces you can actually find and the
-        tools you already own — so your first flip sells instead of sitting in the garage.
-      </p>
+      <h3 className="sc-h">{creator.title}</h3>
+      <p className="sc-p">{creator.promise}</p>
+
       <div className="sc-buy">
-        <span className="sc-btn">Start the {DEMO.questions}-question quiz</span>
-        <span className="sc-note">
-          ${DEMO.price} · takes 2 minutes
-        </span>
+        <span className="sc-btn">Start the {creator.questions}-question quiz</span>
+        <span className="sc-note">Takes about 2 minutes</span>
       </div>
-    </div>
-  );
-}
-
-const OPTIONS = [
-  "A garage or a dedicated corner",
-  "A balcony or patio, weather permitting",
-  "The living room floor, sheets down",
-  "Nothing set up yet — that's the problem",
-];
-
-function Quiz() {
-  return (
-    <div className="sc-quiz">
-      <p className="sc-kicker">Question 3 of {DEMO.questions}</p>
-      <h3 className="sc-h sc-h-sm">How much space do you have to work in?</h3>
-      <p className="sc-p sc-p-sm">Go with your gut — nothing to measure here.</p>
-      <ul className="sc-opts">
-        {OPTIONS.map((opt, i) => (
-          <li key={opt} className={`sc-opt${i === 0 ? " is-picked" : ""}`}>
-            <span className="sc-box">{i === 0 ? "✓" : ""}</span>
-            {opt}
-          </li>
-        ))}
-      </ul>
-      <div className="sc-progress">
-        <span className="sc-progress-rail">
-          <span style={{ width: `${(3 / DEMO.questions) * 100}%` }} />
-        </span>
-        <span className="sc-note">About 90 seconds left</span>
-      </div>
-    </div>
-  );
-}
-
-const ANSWERS = [
-  "Garage corner",
-  "A basic tool kit",
-  "Curb finds mostly",
-  "Two evenings a week",
-  "Never sold one",
-];
-
-const INCLUDED = [
-  "7 sections written from your answers",
-  `${DEMO.days}-day plan paced to you`,
-  "A private page, yours to keep",
-];
-
-function Checkout() {
-  return (
-    <div className="sc-checkout">
-      <div className="sc-recap">
-        <p className="sc-kicker">Quiz complete · almost there</p>
-        <h3 className="sc-h sc-h-sm">Your plan is ready to be written.</h3>
-        <div className="sc-dark sc-answers">
-          <p className="sc-kicker sc-kicker-dark">What you told us</p>
-          <div className="sc-chips">
-            {ANSWERS.map((a) => (
-              <span key={a} className="sc-chip">
-                {a}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="sc-cart">
-        <p className="sc-kicker">You&apos;re getting</p>
-        <h4 className="sc-cart-title">{DEMO.product}</h4>
-        <ul className="sc-included">
-          {INCLUDED.map((line) => (
-            <li key={line}>
-              <span className="sc-tick" />
-              {line}
-            </li>
-          ))}
-        </ul>
-        <div className="sc-total">
-          <span>Total</span>
-          <b>${DEMO.price}</b>
-        </div>
-        <span className="sc-btn sc-btn-block">Pay securely</span>
-        <p className="sc-yours">
-          ${CREATOR_CUT} of that lands in your account.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const SIGNALS = [
-  { label: "Workspace", score: 7 },
-  { label: "Tool access", score: 4 },
-  { label: "Sourcing habit", score: 6 },
-  { label: "Finishing time", score: 3 },
-];
-
-const FIRST_WEEK = [
-  ["Day 1", "Pick one piece, not three"],
-  ["Day 2", "The $40 tool list you actually need"],
-  ["Day 3", "Strip test on a panel nobody sees"],
-];
-
-function Plan() {
-  return (
-    <div className="sc-dark sc-plan">
-      <p className="sc-kicker sc-kicker-dark">
-        Your copy · personalized {DEMO.days}-day plan
-      </p>
-      <h3 className="sc-h sc-h-dark">{DEMO.product}</h3>
-      <p className="sc-p sc-p-dark">
-        Written for someone with a garage corner, a basic tool kit, curb finds to work with, and
-        two free evenings a week.
-      </p>
-
-      <p className="sc-kicker sc-kicker-dark sc-kicker-gap">
-        What&apos;s actually slowing your first flip down
-      </p>
-      <div className="sc-signals">
-        {SIGNALS.map((s, i) => (
-          <div key={s.label} className="sc-signal">
-            <span className="sc-signal-label">{s.label}</span>
-            <span className="sc-track">
-              <span
-                className="sc-fill"
-                style={{ width: `${s.score * 10}%`, animationDelay: `${i * 0.07}s` }}
-              />
-            </span>
-            <span className="sc-score">{s.score}</span>
-          </div>
-        ))}
-      </div>
-
-      <p className="sc-kicker sc-kicker-dark sc-kicker-gap">Your first week</p>
-      <ol className="sc-days">
-        {FIRST_WEEK.map(([day, title]) => (
-          <li key={day}>
-            <span className="sc-day">{day}</span>
-            {title}
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import {
   HandleProvider,
   RiseObserve,
 } from "@/components/landing/HandleSync";
-// import { HeroShowcase } from "@/components/landing/HeroShowcase";
+import { HeroShowcase } from "@/components/landing/HeroShowcase";
 import { LANDING_FAQ, faqPageJsonLd } from "@/lib/landing-faq";
 import { CREATOR_KEEP_PCT, PLATFORM_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
 import "./landing.css";
@@ -107,14 +107,10 @@ export default async function Home({
                 {GUEST_ERRORS[error] ?? "Something went wrong — try again."}
               </div>
             ) : null}
-            <HandleForm id="start" inputId="handle-hero" />
+            <HandleForm id="start" inputId="handle-hero" peel />
 
-            {/* Hidden for now — the four-screen product demo. Uncomment this
-                block (and the HeroShowcase import above) to bring it back. */}
-            {/*
             <p className="eyebrow showcase-label">Here&apos;s what we build for you</p>
             <HeroShowcase />
-            */}
           </div>
         </header>
 

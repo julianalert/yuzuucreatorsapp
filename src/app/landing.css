@@ -222,7 +222,7 @@
   text-align: center;
 }
 .peel .hero h1 {
-  font-size: clamp(2.15rem, 4vw, 3.25rem);
+  font-size: clamp(2.5rem, 5.2vw, 4.15rem);
   font-variation-settings: "wdth" 92;
 }
 .peel .hero h1 em {
@@ -298,77 +298,114 @@
 }
 
 /* ---------- hero showcase ----------
-   Four screens of the product we build, stacked in one grid cell so the
-   frame is as tall as the tallest screen: nothing gets clipped, and
-   switching tabs never shifts the page. */
+   Real /u/[handle] profile pages, one per creator, stacked in a single grid
+   cell so the frame is as tall as the longest page: switching creators never
+   shifts anything below it. */
 .peel .showcase-label {
   margin: clamp(44px, 6vw, 68px) 0 16px;
 }
 .peel .showcase {
-  --sc-paper: #fff;
-  --sc-dark-line: rgba(237, 241, 225, 0.16);
-  --sc-dark-mute: rgba(237, 241, 225, 0.62);
   width: 100%;
-  max-width: 760px;
+  max-width: 720px;
   text-align: left;
 }
 
-/* tabs on top */
+/* creator switcher */
 .peel .sc-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 18px;
 }
 .peel .sc-tab {
+  position: relative;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
-  gap: 7px;
+  align-items: center;
+  gap: 10px;
   appearance: none;
-  border: 0;
-  background: none;
-  padding: 0;
-  text-align: left;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 16px 6px 6px;
   cursor: pointer;
-  color: #9aa396;
   font: inherit;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.peel .sc-tab .sc-rule {
-  height: 3px;
-  border-radius: 3px;
-  background: var(--flesh-2);
-  transition: background 0.25s ease;
+.peel .sc-tab:hover {
+  border-color: var(--rind);
 }
-.peel .sc-tab.is-on .sc-rule {
-  background: var(--rind);
-}
-.peel .sc-num {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  color: var(--slate);
-}
-.peel .sc-label {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 0.8rem;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: inherit;
-  transition: color 0.25s ease;
-}
-.peel .sc-tab.is-on .sc-label {
-  color: var(--rind);
+.peel .sc-tab.is-on {
+  border-color: var(--rind);
+  box-shadow: 3px 3px 0 var(--peel);
 }
 .peel .sc-tab:focus-visible {
   outline: 3px solid var(--leaf);
-  outline-offset: 4px;
-  border-radius: 4px;
+  outline-offset: 3px;
+}
+.peel .sc-tab-timer {
+  position: absolute;
+  inset: 0;
+  background: rgba(242, 196, 27, 0.3);
+  transform-origin: left;
+  animation: sc-sweep linear both;
+  pointer-events: none;
+}
+@keyframes sc-sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.peel .sc-tab-face,
+.peel .sc-tab-text {
+  position: relative;
+}
+.peel .sc-tab-face {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--flesh-2);
+  filter: grayscale(1);
+  opacity: 0.6;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+.peel .sc-tab.is-on .sc-tab-face {
+  filter: none;
+  opacity: 1;
+}
+.peel .sc-tab-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.peel .sc-tab-text b {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: -0.01em;
+  color: var(--slate);
+  transition: color 0.2s ease;
+}
+.peel .sc-tab.is-on .sc-tab-text b {
+  color: var(--rind);
+}
+.peel .sc-tab-text i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  color: var(--slate);
 }
 
 /* browser frame */
 .peel .sc-frame {
-  background: var(--sc-paper);
+  background: #fff;
   border: 1.5px solid var(--rind);
   border-radius: 18px;
   overflow: hidden;
@@ -436,7 +473,6 @@
 .peel .sc-screen {
   grid-area: 1 / 1;
   visibility: hidden;
-  padding: clamp(20px, 3vw, 28px);
 }
 .peel .sc-screen.is-on {
   visibility: visible;
@@ -452,7 +488,49 @@
   }
 }
 
-/* shared screen type */
+/* the profile page itself */
+.peel .sc-profile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: clamp(20px, 3vw, 28px);
+}
+.peel .sc-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+}
+.peel .sc-who span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.peel .sc-who b {
+  font-family: var(--display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.peel .sc-who i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--slate);
+}
+.peel .sc-avatar {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--flesh-2);
+  border: 1px solid var(--line);
+}
 .peel .sc-kicker {
   font-family: var(--mono);
   font-size: 0.63rem;
@@ -460,39 +538,31 @@
   text-transform: uppercase;
   color: var(--slate);
 }
-.peel .sc-kicker-dark {
-  color: var(--sc-dark-mute);
-}
-.peel .sc-kicker-gap {
-  margin-top: 20px;
-}
 .peel .sc-h {
   font-family: var(--display);
-  font-size: clamp(1.6rem, 3.4vw, 2.15rem);
+  font-size: clamp(1.55rem, 3.2vw, 2.1rem);
   line-height: 1.04;
   letter-spacing: -0.03em;
-  margin: 10px 0 0;
-}
-.peel .sc-h-sm {
-  font-size: clamp(1.25rem, 2.4vw, 1.55rem);
-  line-height: 1.12;
-}
-.peel .sc-h-dark {
-  color: var(--pith);
+  margin: 12px 0 0;
 }
 .peel .sc-p {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   line-height: 1.5;
   color: var(--slate);
-  margin-top: 12px;
-  max-width: 46ch;
+  margin-top: 13px;
+  max-width: 54ch;
 }
-.peel .sc-p-sm {
-  font-size: 0.88rem;
-  margin-top: 7px;
+.peel .sc-note {
+  font-size: 0.8rem;
+  color: var(--slate);
 }
-.peel .sc-p-dark {
-  color: var(--sc-dark-mute);
+.peel .sc-buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 24px;
 }
 .peel .sc-btn {
   display: inline-block;
@@ -504,319 +574,12 @@
   padding: 12px 20px;
   border-radius: 999px;
 }
-.peel .sc-btn-block {
-  display: block;
-  text-align: center;
-  padding: 11px;
-  border-radius: 10px;
-  font-size: 0.82rem;
-  margin-top: 10px;
-}
-.peel .sc-dark {
-  background: var(--rind);
-  border-radius: 12px;
-}
-
-/* 01 — profile page */
-.peel .sc-profile {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.peel .sc-who {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 20px;
-}
-.peel .sc-who span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.peel .sc-who b {
-  font-family: var(--display);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-.peel .sc-who i {
-  font-style: normal;
-  font-size: 0.8rem;
-  color: var(--slate);
-}
-.peel .sc-avatar {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  border-radius: 50%;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--flesh) 0 5px,
-    var(--flesh-2) 5px 10px
-  );
-}
-.peel .sc-buy {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  /* the stack is as tall as the tallest screen, so let the CTA settle at
-     the bottom instead of leaving a hole under it */
-  margin-top: auto;
-  padding-top: 22px;
-}
-.peel .sc-note {
-  font-size: 0.82rem;
-  color: var(--slate);
-}
-
-/* 02 — quiz */
-.peel .sc-opts {
-  list-style: none;
-  margin: 18px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.peel .sc-opt {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 13px 15px;
-  font-size: 0.9rem;
-  color: var(--slate);
-}
-.peel .sc-opt.is-picked {
-  border: 1.5px solid var(--rind);
-  color: var(--ink);
-}
-.peel .sc-box {
-  width: 17px;
-  height: 17px;
-  flex: none;
-  border-radius: 5px;
-  border: 1.5px solid var(--flesh-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  line-height: 1;
-}
-.peel .sc-opt.is-picked .sc-box {
-  background: var(--rind);
-  border-color: var(--rind);
-  color: var(--peel);
-}
-
-.peel .sc-quiz {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.peel .sc-progress {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: auto;
-  padding-top: 22px;
-}
-.peel .sc-progress-rail {
-  flex: 1;
-  height: 5px;
-  border-radius: 3px;
-  background: var(--flesh-2);
-  overflow: hidden;
-}
-.peel .sc-progress-rail span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--peel);
-}
-
-/* 03 — checkout */
-.peel .sc-checkout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 250px);
-  gap: 20px;
-  align-items: start;
-}
-.peel .sc-recap {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.peel .sc-answers {
-  padding: 16px;
-  margin-top: 16px;
-  flex: 1;
-}
-.peel .sc-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 12px;
-}
-.peel .sc-chip {
-  border: 1px solid var(--sc-dark-line);
-  border-radius: 999px;
-  padding: 6px 11px;
-  font-size: 0.72rem;
-  color: var(--flesh);
-}
-.peel .sc-cart {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px;
-}
-.peel .sc-cart-title {
-  font-family: var(--display);
-  font-size: 1.05rem;
-  letter-spacing: -0.02em;
-  margin: 6px 0 0;
-}
-.peel .sc-included {
-  list-style: none;
-  margin: 13px 0 0;
-  padding: 13px 0 0;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.peel .sc-included li {
-  display: flex;
-  gap: 9px;
-  font-size: 0.76rem;
-  line-height: 1.35;
-  color: var(--slate);
-}
-.peel .sc-tick {
-  width: 7px;
-  height: 7px;
-  flex: none;
-  margin-top: 4px;
-  background: var(--peel);
-}
-.peel .sc-total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-top: 14px;
-  margin-top: 14px;
-  border-top: 1px solid var(--line);
-  font-size: 0.8rem;
-  color: var(--slate);
-}
-.peel .sc-total b {
-  font-family: var(--display);
-  font-size: 1.7rem;
-  color: var(--ink);
-}
-.peel .sc-yours {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 12px;
-  padding-top: 11px;
-  border-top: 1px dashed var(--line);
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  line-height: 1.4;
-  color: var(--rind);
-}
-.peel .sc-yours::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  flex: none;
-  border-radius: 2px;
-  background: var(--peel);
-}
-
-/* 04 — the plan */
-.peel .sc-plan {
-  padding: clamp(20px, 3vw, 26px);
-}
-.peel .sc-signals {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 12px;
-}
-.peel .sc-signal {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr) 20px;
-  align-items: center;
-  gap: 12px;
-}
-.peel .sc-signal-label {
-  font-size: 0.8rem;
-  color: var(--flesh);
-}
-.peel .sc-track {
-  height: 6px;
-  border-radius: 4px;
-  background: rgba(237, 241, 225, 0.14);
-  overflow: hidden;
-}
-.peel .sc-fill {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  background: var(--peel);
-  transform-origin: left;
-  animation: sc-grow 0.6s ease both;
-}
-@keyframes sc-grow {
-  from {
-    transform: scaleX(0);
-  }
-}
-.peel .sc-score {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  text-align: right;
-  color: var(--sc-dark-mute);
-}
-.peel .sc-days {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.peel .sc-days li {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-size: 0.82rem;
-  color: var(--flesh);
-  border-top: 1px solid var(--sc-dark-line);
-  padding-top: 8px;
-}
-.peel .sc-day {
-  flex: none;
-  width: 46px;
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--sc-dark-mute);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .peel .sc-fade,
-  .peel .sc-fill {
+  .peel .sc-fade {
     animation: none;
+  }
+  .peel .sc-tab-timer {
+    display: none;
   }
 }
 
@@ -1303,12 +1066,6 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 980px) {
-  .peel .sc-checkout {
-    grid-template-columns: 1fr;
-  }
-  .peel .sc-signal {
-    grid-template-columns: 108px minmax(0, 1fr) 20px;
-  }
   .peel .tries {
     grid-template-columns: 1fr 1fr;
   }
@@ -1345,17 +1102,6 @@
     text-align: center;
     gap: 16px;
     padding: 28px 22px;
-  }
-  .peel .sc-tabs {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 10px;
-  }
-  .peel .sc-signal {
-    grid-template-columns: 1fr;
-    gap: 5px;
-  }
-  .peel .sc-score {
-    display: none;
   }
   .peel .handle {
     max-width: none;

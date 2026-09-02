@@ -69,7 +69,7 @@ export function HandleForm({
           id={inputId}
           type="text"
           name="handle"
-          placeholder="yourhandle"
+          placeholder="your instagram handle"
           autoComplete="off"
           spellCheck={false}
           required
