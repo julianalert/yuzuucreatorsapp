@@ -159,6 +159,43 @@ export default async function Home({
           </div>
         </section>
 
+        <section id="mirror" className="mirror-sec">
+          <div className="wrap">
+            <div className="mirror rise">
+              <p className="eyebrow">Sound familiar?</p>
+              <p className="mirror-line">
+                You&apos;ve had <mark className="hl">60k followers</mark> for{" "}
+                <mark className="hl d2">two years</mark>.
+              </p>
+              <p className="mirror-line dim">
+                There&apos;s a course in Notion that&apos;s been{" "}
+                <mark className="hl d3">almost done since spring</mark>.
+              </p>
+              <p className="mirror-you">
+                <span className="mirror-you-in">
+                  This is for you.
+                  <svg
+                    className="mirror-rule"
+                    viewBox="0 0 320 14"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 9.5C58 4.2 111 3.1 164 5.6c53 2.5 100 4.6 151 0.9"
+                      stroke="var(--peel-deep)"
+                      strokeWidth="4.5"
+                      strokeLinecap="round"
+                      pathLength={1}
+                    />
+                  </svg>
+                </span>
+                <Yuzu className="yz-mirror" size={46} mood="wink" tilt={7} float floatDuration={5.2} />
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section id="how">
           <div className="wrap">
             <div className="section-head rise">
@@ -288,12 +325,12 @@ export default async function Home({
         <section id="quality">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">The part that&apos;s hard to fake</p>
-              <h2>&quot;Couldn&apos;t I just do this with ChatGPT?&quot;</h2>
+              <p className="eyebrow">Quiz funnel + real personalization</p>
+              <h2>Better than the generic ebook that doesn&apos;t sell</h2>
               <p className="lede">
-                You could get a draft. What you can&apos;t get in an afternoon is a product that
-                holds up across a thousand different buyers — because that work happens before
-                anyone buys, and it happens once.
+                A quiz funnel with real personalization behind it is what sells right now. We
+                don&apos;t just make that possible — we make sure it&apos;s good enough to put your
+                name on.
               </p>
             </div>
 
