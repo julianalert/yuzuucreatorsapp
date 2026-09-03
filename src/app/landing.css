@@ -71,6 +71,15 @@
   color: var(--peel-deep);
   margin: 0 0 18px;
 }
+/* An eyebrow carrying a quoted objection rather than a category label:
+   sentence case so it reads as someone speaking (and so "ChatGPT" keeps
+   its own casing), with the tracking wound back to match. */
+.peel .eyebrow.ask {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
 .peel .muted {
   color: var(--slate);
 }
@@ -678,6 +687,113 @@
   text-align: center;
 }
 
+/* ---------- mirror (recognition interstitial) ----------
+   A pause between "here's the problem" and "here's how it works":
+   the reader should see their own shelf described back to them.
+   Centered and warm-tinted so it breaks the left-aligned rhythm of
+   the sections either side. Marker sweeps and the underline draw
+   themselves in off the shared .rise observer. */
+.peel .mirror-sec {
+  background: var(--flesh);
+  overflow: hidden;
+  /* an interstitial, not a full section — shorter than its neighbours */
+  padding: clamp(46px, 6vw, 84px) 0;
+}
+.peel .mirror {
+  position: relative;
+  z-index: 0;
+  text-align: center;
+  max-width: min(820px, 100%);
+  margin-inline: auto;
+}
+.peel .mirror .eyebrow {
+  margin-bottom: 22px;
+}
+.peel .mirror-line {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
+  font-weight: 600;
+  font-variation-settings: "wdth" 94;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--ink);
+  text-wrap: balance;
+  /* measure in em, not ch: ch would resolve against the parent's body
+     font-size and give this display text a ~19-character line. */
+  max-width: 20em;
+  margin-inline: auto;
+}
+.peel .mirror-line + .mirror-line {
+  margin-top: 0.36em;
+}
+.peel .mirror-line.dim {
+  color: #2a3f33;
+}
+
+/* Marker sweep. Painted as a background gradient rather than a
+   pseudo-element so a highlighted phrase that wraps gets one band
+   per line instead of one box around both. */
+.peel .hl {
+  background-color: transparent;
+  background-image: linear-gradient(var(--peel), var(--peel));
+  background-repeat: no-repeat;
+  background-position: 0 0.62em;
+  background-size: 0% 0.62em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: inherit;
+  padding: 0 0.06em;
+  transition: background-size 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) 0.12s;
+}
+.peel .hl.d2 {
+  transition-delay: 0.34s;
+}
+.peel .hl.d3 {
+  transition-delay: 0.62s;
+}
+.peel .rise.in .hl {
+  background-size: 100% 0.62em;
+}
+
+.peel .mirror-you {
+  margin-top: clamp(22px, 3vw, 34px);
+  position: relative;
+}
+.peel .mirror-you-in {
+  position: relative;
+  display: inline-block;
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.peel .mirror-rule {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  width: 104%;
+  max-width: none; /* beats the .peel svg reset */
+  bottom: -0.42em;
+  height: 0.34em;
+  overflow: visible;
+}
+.peel .mirror-rule path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.9s;
+}
+.peel .rise.in .mirror-rule path {
+  stroke-dashoffset: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .peel .hl,
+  .peel .mirror-rule path {
+    transition: none;
+  }
+}
+
 /* ---------- steps ---------- */
 .peel .steps {
   margin-top: 52px;
@@ -1132,6 +1248,16 @@
   position: absolute;
   top: -34px;
   right: clamp(10px, 4vw, 40px);
+}
+.peel .yz-mirror {
+  position: absolute;
+  right: clamp(-56px, -6vw, -18px);
+  bottom: -14px;
+}
+@media (max-width: 720px) {
+  .peel .yz-mirror {
+    display: none;
+  }
 }
 .peel .yz-fit {
   display: inline-block;
