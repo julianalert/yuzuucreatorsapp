@@ -95,7 +95,7 @@ export default async function Home({
             <Yuzu className="yz-hero" size={64} mood="happy" tilt={-8} float />
             <p className="eyebrow">For Instagram creators · 5k–1M</p>
             <h1>
-              Earn <em>regular income</em> from your audience
+              Done-for-you digital product, <em>for free</em>
             </h1>
             <p className="hero-sub">
               Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
@@ -162,15 +162,14 @@ export default async function Home({
         <section id="how">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">Four steps · two are yours</p>
-              <h2>What actually happens after you type your handle.</h2>
+              <p className="eyebrow">Your digital product live in 20 minutes</p>
+              <h2>Earn regular income from your audience</h2>
             </div>
 
             <div className="steps">
               <div className="step rise">
                 <span className="num">01</span>
                 <div>
-                  <span className="who who-you">Yours · 2 min</span>
                   <h3>Hand over the handle</h3>
                 </div>
                 <div className="step-body">
@@ -184,8 +183,7 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">02</span>
                 <div>
-                  <span className="who who-you">Yours · 5 min</span>
-                  <h3>Pick the product</h3>
+                  <h3>Pick the idea you like</h3>
                 </div>
                 <div className="step-body">
                   <p>
@@ -199,8 +197,7 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">03</span>
                 <div>
-                  <span className="who who-us">Ours · a few hours</span>
-                  <h3>We build the whole thing</h3>
+                  <h3>We build the product</h3>
                 </div>
                 <div className="step-body">
                   <p>
@@ -213,8 +210,7 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">04</span>
                 <div>
-                  <span className="who who-you">Yours · 15 min</span>
-                  <h3>Read three samples, then go live</h3>
+                  <h3>Review three samples, then go live</h3>
                 </div>
                 <div className="step-body">
                   <p>
@@ -222,9 +218,6 @@ export default async function Home({
                     one of your followers would. Approve, and your page goes live. Reject, tell us
                     why in a sentence, and it rebuilds. Nothing publishes without your yes.
                   </p>
-                  <span className="time">
-                    Then: your link, your sales, your buyer list, on one dashboard.
-                  </span>
                 </div>
               </div>
             </div>

@@ -68,7 +68,11 @@ async function claimLifecycleEmail(
 }
 
 async function updateBuild(buildId: string, patch: Record<string, unknown>) {
-  const { error } = await db().from("builds").update(patch).eq("id", buildId);
+  // every write is a heartbeat — the stuck-build sweep reads updated_at
+  const { error } = await db()
+    .from("builds")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", buildId);
   if (error) throw new Error(`builds update: ${error.message}`);
 }
 
@@ -1169,6 +1173,9 @@ export const planGenerate = inngest.createFunction(
 // ============================================================ lifecycle.cron
 const HOUR_MS = 3600_000;
 const DAY_MS = 24 * HOUR_MS;
+/** No single build step can outlive the serve route's maxDuration (800s), so
+ * a queued/running row untouched for this long is dead, not slow. */
+const STUCK_BUILD_MS = 45 * 60_000;
 
 /**
  * Hourly sweep for everything time-based on the road to activation:
@@ -1182,6 +1189,33 @@ const DAY_MS = 24 * HOUR_MS;
 export const lifecycleCron = inngest.createFunction(
   { id: "lifecycle-cron", retries: 1, triggers: [{ cron: "0 * * * *" }] },
   async ({ step }) => {
+    // ---- stuck builds ------------------------------------------------------
+    // A run can die without ever reaching onFailure: an SDK error thrown
+    // inside a step, or the serverless request killed mid-generation so the
+    // executor never gets a response. The row then sits on "running" forever,
+    // showing a spinner to the creator and holding their build quota. Nothing
+    // legitimate stays on queued/running without a write for this long — the
+    // waiting states (awaiting_topic, awaiting_approval) are separate statuses
+    // and every stage transition touches updated_at.
+    await step.run("reap-stuck-builds", async () => {
+      const cutoff = new Date(Date.now() - STUCK_BUILD_MS).toISOString();
+      const { data, error } = await db()
+        .from("builds")
+        .update({
+          status: "failed",
+          halted_at: "stalled",
+          error: "Build stopped responding and was closed out automatically.",
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .in("status", ["queued", "running"])
+        .lt("updated_at", cutoff)
+        .select("id, stage");
+      if (error) throw new Error(`reap stuck builds: ${error.message}`);
+      if (data?.length) console.error("[lifecycle] reaped stuck builds:", data);
+      return { reaped: data?.length ?? 0 };
+    });
+
     // ---- idea-pick reminders (7-day timeout) -------------------------------
     await step.run("idea-reminders", async () => {
       const { data } = await db()

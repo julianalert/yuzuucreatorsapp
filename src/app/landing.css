@@ -65,9 +65,10 @@
   display: block;
   font-family: var(--mono);
   font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--leaf);
+  color: var(--peel-deep);
   margin: 0 0 18px;
 }
 .peel .muted {

@@ -121,11 +121,17 @@ async function callModel(
   if (spec.provider === "anthropic") {
     if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not set");
     const client = await anthropicClient();
-    const res = await client.messages.create({
-      model: spec.model,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }],
-    });
+    // Always stream. The SDK refuses a non-streaming request whose max_tokens
+    // implies >10 min of generation (throws above ~21.3k), which is exactly
+    // where the truncation retry below lands — and long non-streaming requests
+    // are the ones that get killed by the serverless request timeout anyway.
+    const res = await client.messages
+      .stream({
+        model: spec.model,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+      })
+      .finalMessage();
     inputTokens = res.usage.input_tokens;
     outputTokens = res.usage.output_tokens;
     truncated = res.stop_reason === "max_tokens";
