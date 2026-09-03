@@ -228,7 +228,7 @@ export default async function Home({
           <div className="wrap">
             <div className="section-head rise">
               <p className="eyebrow">What your buyer gets</p>
-              <h2>Two people, same $27, two different documents.</h2>
+              <h2>Each of your buyers gets a unique report</h2>
               <p className="lede">
                 Your follower takes the quiz, pays, and ninety seconds later reads a plan written
                 around those answers. Here&apos;s the same product, two buyers.
@@ -356,9 +356,9 @@ export default async function Home({
               <p className="eyebrow">The money</p>
               <h2>We only get paid when you do.</h2>
               <p className="lede">
-                The build costs real money in compute. We cover it. If your product never sells, we
-                ate that — which is the strongest reason you&apos;ll ever get to believe we
-                won&apos;t ship you something weak.
+                If your product never sells, you never pay, which is the strongest reason
+                you&apos;ll ever get to believe we won&apos;t ship you something weak. That
+                simple.
               </p>
             </div>
 
