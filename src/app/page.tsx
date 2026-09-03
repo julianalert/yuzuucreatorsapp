@@ -325,7 +325,7 @@ export default async function Home({
         <section id="quality">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">Quiz funnel + real personalization</p>
+              <p className="eyebrow ask">&quot;Couldn&apos;t I just do this with ChatGPT?&quot;</p>
               <h2>Better than the generic ebook that doesn&apos;t sell</h2>
               <p className="lede">
                 A quiz funnel with real personalization behind it is what sells right now. We

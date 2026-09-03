@@ -71,6 +71,15 @@
   color: var(--peel-deep);
   margin: 0 0 18px;
 }
+/* An eyebrow carrying a quoted objection rather than a category label:
+   sentence case so it reads as someone speaking (and so "ChatGPT" keeps
+   its own casing), with the tracking wound back to match. */
+.peel .eyebrow.ask {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
 .peel .muted {
   color: var(--slate);
 }
