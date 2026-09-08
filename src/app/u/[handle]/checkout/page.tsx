@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { productForViewer } from "@/lib/public";
 import { getSignedInUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Wordmark } from "@/components/Wordmark";
 import { CheckoutClient, type RestoredQuiz } from "@/components/CheckoutClient";
+import { PreviewBanner } from "@/components/PreviewBanner";
 import { CheckoutSummary } from "@/components/CheckoutSummary";
 import { createOrder } from "./actions";
 
@@ -37,12 +37,12 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ handle: string }>;
-  searchParams: Promise<{ error?: string; session?: string; canceled?: string }>;
+  searchParams: Promise<{ error?: string; session?: string; canceled?: string; preview?: string }>;
 }) {
   const { handle } = await params;
-  const { error, session, canceled } = await searchParams;
+  const { error, session, canceled, preview } = await searchParams;
   const viewer = await getSignedInUser();
-  const { product, isPreview } = await productForViewer(handle, viewer?.id);
+  const { product, isPreview, previewKind } = await productForViewer(handle, viewer?.id, preview);
   if (!product) notFound();
 
   const restored = isPreview ? null : await restoredSession(session, product.blueprintId);
@@ -52,10 +52,9 @@ export default async function CheckoutPage({
   return (
     <section>
       {isPreview ? (
-        <div className="preview-note">
-          <b>Preview</b> — buyers see a Pay button here; your walkthrough never creates an order.
-          <Link href="/dashboard">Back to dashboard</Link>
-        </div>
+        <PreviewBanner kind={previewKind}>
+          buyers see a Pay button here; your walkthrough never creates an order.
+        </PreviewBanner>
       ) : null}
       <header className="bar">
         <div className="bar-in">

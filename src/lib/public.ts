@@ -1,4 +1,5 @@
 import "server-only";
+import { timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "./supabase/admin";
 import type { Blueprint, QuizQuestion } from "./blueprint/types";
 import type { BlueprintRow } from "./db/types";
@@ -108,19 +109,38 @@ export async function publishedProductByHandle(handle: string): Promise<PublicPr
   return toPublicProduct(row as BlueprintRow, creator);
 }
 
+/** Constant-time compare for the preview token, so a wrong token leaks nothing
+ * about how much of it was right. Lengths differing is itself an answer, but
+ * that only reveals the length of a random uuid, which is already public. */
+function tokenMatches(supplied: string, actual: string): boolean {
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(actual);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 /**
  * Resolve the product for a specific viewer. The creator viewing their own
  * page gets preview mode: their live page if published, otherwise their
  * latest finished-but-unpublished blueprint (the one awaiting approval) — so
  * they can walk the follower journey before going live, and their own visits
  * never count as buyer traffic.
+ *
+ * A previewToken opens that same draft to someone with no account at all: the
+ * creator a spec build was made for, who is being pitched their own product
+ * before they have ever signed in. It is deliberately the *only* thing the
+ * token does. Checkout, quiz sessions, visit tracking and the OG image all go
+ * through publishedProductByHandle(), so an unpublished product cannot be
+ * bought, measured or shared as a link preview no matter who holds the token.
  */
+export type PreviewKind = "owner" | "token" | null;
+
 export async function productForViewer(
   handle: string,
-  viewerUserId: string | null | undefined
-): Promise<{ product: PublicProduct | null; isPreview: boolean }> {
+  viewerUserId: string | null | undefined,
+  previewToken?: string | null
+): Promise<{ product: PublicProduct | null; isPreview: boolean; previewKind: PreviewKind }> {
   const creator = await creatorByHandle(handle);
-  if (!creator) return { product: null, isPreview: false };
+  if (!creator) return { product: null, isPreview: false, previewKind: null };
   const isOwner = Boolean(viewerUserId) && creator.user_id === viewerUserId;
 
   const admin = supabaseAdmin();
@@ -132,11 +152,15 @@ export async function productForViewer(
     .maybeSingle();
 
   if (published) {
-    return { product: toPublicProduct(published as BlueprintRow, creator), isPreview: isOwner };
+    return {
+      product: toPublicProduct(published as BlueprintRow, creator),
+      isPreview: isOwner,
+      previewKind: isOwner ? "owner" : null,
+    };
   }
-  if (!isOwner) return { product: null, isPreview: false };
+  if (!isOwner && !previewToken) return { product: null, isPreview: false, previewKind: null };
 
-  // owner, nothing live: preview the latest complete draft (pre-approval)
+  // nothing live: preview the latest complete draft (pre-approval)
   const { data: draft } = await admin
     .from("blueprints")
     .select("*")
@@ -145,8 +169,19 @@ export async function productForViewer(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!draft) return { product: null, isPreview: false };
-  return { product: toPublicProduct(draft as BlueprintRow, creator), isPreview: true };
+  if (!draft) return { product: null, isPreview: false, previewKind: null };
+
+  const row = draft as BlueprintRow;
+  // A non-owner needs a token matching *this* draft. Rebuilding mints a new
+  // token on the new row, which is what revokes any link already sent out.
+  if (!isOwner && !(previewToken && tokenMatches(previewToken, row.preview_token))) {
+    return { product: null, isPreview: false, previewKind: null };
+  }
+  return {
+    product: toPublicProduct(row, creator),
+    isPreview: true,
+    previewKind: isOwner ? "owner" : "token",
+  };
 }
 
 export async function listPublishedHandles(): Promise<

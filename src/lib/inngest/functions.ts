@@ -226,9 +226,11 @@ export const blueprintBuild = inngest.createFunction(
       if (!b?.creator_id) return; // still a guest — no account, no email
       const { data: creator } = await db()
         .from("creators")
-        .select("email, handle")
+        .select("email, handle, is_spec")
         .eq("id", b.creator_id)
         .single();
+      // a spec account's address is a catch-all we own — nobody is waiting on it
+      if (creator?.is_spec) return;
       if (creator?.email) await sendBuildDeclined(creator.email, creator.handle ?? handle, note);
     };
 
@@ -410,7 +412,7 @@ export const blueprintBuild = inngest.createFunction(
         return { declined: "no_viable_topic" };
       }
 
-      await step.run("await-topic-status", async () => {
+      const isSpec = (await step.run("await-topic-status", async () => {
         await updateBuild(buildId, { status: "awaiting_topic", stage: "propose" });
         // the row, not the event: a guest build may have been claimed mid-scan
         const { data: b } = await db()
@@ -418,32 +420,43 @@ export const blueprintBuild = inngest.createFunction(
           .select("creator_id")
           .eq("id", buildId)
           .single();
-        if (!b?.creator_id) return; // still a guest — no email address yet
+        if (!b?.creator_id) return false; // still a guest — no email address yet
         const { data: creator } = await db()
           .from("creators")
-          .select("email, handle")
+          .select("email, handle, is_spec")
           .eq("id", b.creator_id)
           .single();
+        if (creator?.is_spec) return true;
         if (creator?.email) await sendIdeasReady(creator.email, creator.handle ?? handle);
-      });
+        return false;
+      })) as boolean;
 
-      const topicEvt = await step.waitForEvent("wait-topic", {
-        event: "build/topic.chosen",
-        if: `async.data.buildId == "${buildId}"`,
-        timeout: "7d",
-      });
-      if (!topicEvt) {
-        await step.run("timeout-topic", () =>
-          updateBuild(buildId, {
-            status: "failed",
-            halted_at: "topic_timeout",
-            error: "No topic chosen within 7 days.",
-            completed_at: new Date().toISOString(),
-          })
-        );
-        return { failed: "topic_timeout" };
+      // A spec build has nobody to ask: the creator it was built for has never
+      // heard of us, and the admin's choice was to build at all. Take the
+      // pipeline's own first-ranked proposal and keep going. If it picks badly
+      // that shows up in the preview, which is the point of the preview.
+      let topicIndex: number;
+      if (isSpec) {
+        topicIndex = 0;
+      } else {
+        const topicEvt = await step.waitForEvent("wait-topic", {
+          event: "build/topic.chosen",
+          if: `async.data.buildId == "${buildId}"`,
+          timeout: "7d",
+        });
+        if (!topicEvt) {
+          await step.run("timeout-topic", () =>
+            updateBuild(buildId, {
+              status: "failed",
+              halted_at: "topic_timeout",
+              error: "No topic chosen within 7 days.",
+              completed_at: new Date().toISOString(),
+            })
+          );
+          return { failed: "topic_timeout" };
+        }
+        ({ topicIndex } = topicEvt.data as Events["build/topic.chosen"]);
       }
-      const { topicIndex } = topicEvt.data as Events["build/topic.chosen"];
       chosen = proposals[topicIndex] ?? proposals[0];
       await step.run("record-topic", () =>
         updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge", chosen_topic: chosen })
@@ -474,6 +487,13 @@ export const blueprintBuild = inngest.createFunction(
         }
       });
     }
+
+    // Read once here rather than reusing the propose-branch value: a rebuild
+    // copies its topic and never enters that branch.
+    const specBuild = (await step.run("resolve-spec", async () => {
+      const { data } = await db().from("creators").select("is_spec").eq("id", ownerId).single();
+      return Boolean(data?.is_spec);
+    })) as boolean;
 
     const topic = chosen!;
     // bonus ideas may have no time component at all; older transformation
@@ -780,17 +800,24 @@ export const blueprintBuild = inngest.createFunction(
       await updateBuild(buildId, { status: "awaiting_approval", stage: "gate" });
       const { data: creator } = await db()
         .from("creators")
-        .select("email")
+        .select("email, is_spec")
         .eq("id", ownerId)
         .single();
-      if (creator?.email) await sendSamplesReady(creator.email, topic.topic_title);
+      // spec: the admin watches /admin/spec, and the creator is pitched by hand
+      if (!creator?.is_spec && creator?.email) {
+        await sendSamplesReady(creator.email, topic.topic_title);
+      }
       return bpRow.id as string;
     });
 
+    // A spec build waits on a DM to a stranger, not on a creator who just
+    // watched their own build finish — 14 days is an outreach cycle, not a
+    // deadline. It still expires, so a pitch nobody answered doesn't sit
+    // parked forever holding a handle.
     const review = await step.waitForEvent("wait-review", {
       event: "build/samples.reviewed",
       if: `async.data.buildId == "${buildId}"`,
-      timeout: "14d",
+      timeout: specBuild ? "60d" : "14d",
     });
 
     if (!review) {
@@ -798,7 +825,9 @@ export const blueprintBuild = inngest.createFunction(
         updateBuild(buildId, {
           status: "failed",
           halted_at: "review_timeout",
-          error: "Samples not reviewed within 14 days.",
+          error: specBuild
+            ? "Spec build went unclaimed for 60 days."
+            : "Samples not reviewed within 14 days.",
           completed_at: new Date().toISOString(),
         })
       );
@@ -1220,14 +1249,15 @@ export const lifecycleCron = inngest.createFunction(
     await step.run("idea-reminders", async () => {
       const { data } = await db()
         .from("builds")
-        .select("id, creator_id, created_at, creators(email)")
+        .select("id, creator_id, created_at, creators(email, is_spec)")
         .eq("status", "awaiting_topic")
         // guest builds have no creator (and no email) until they're claimed
         .not("creator_id", "is", null)
         .lt("created_at", new Date(Date.now() - 3 * DAY_MS).toISOString());
       for (const b of data ?? []) {
-        const email = (b.creators as unknown as { email: string } | null)?.email;
-        if (!email) continue;
+        const c = b.creators as unknown as { email: string; is_spec: boolean } | null;
+        const email = c?.email;
+        if (!email || c?.is_spec) continue;
         const ageDays = (Date.now() - new Date(b.created_at).getTime()) / DAY_MS;
         if (ageDays >= 7.5) continue; // wait already timed out
         const daysLeft = Math.max(1, Math.ceil(7 - ageDays));
@@ -1242,11 +1272,15 @@ export const lifecycleCron = inngest.createFunction(
     await step.run("review-reminders", async () => {
       const { data } = await db()
         .from("builds")
-        .select("id, creator_id, creators(email)")
+        .select("id, creator_id, creators(email, is_spec)")
         .eq("status", "awaiting_approval");
       for (const b of data ?? []) {
-        const email = (b.creators as unknown as { email: string } | null)?.email;
-        if (!email) continue;
+        // Spec builds live in awaiting_approval for the whole outreach cycle.
+        // Unguarded, this is the query that would drip 50 nudges into the
+        // catch-all and then hand an accepting creator a backlog of them.
+        const c = b.creators as unknown as { email: string; is_spec: boolean } | null;
+        const email = c?.email;
+        if (!email || c?.is_spec) continue;
         // the wait starts when the blueprint row is persisted, not at build start
         const { data: bp } = await db()
           .from("blueprints")

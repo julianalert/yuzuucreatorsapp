@@ -5,6 +5,7 @@ import { inngest } from "@/lib/inngest/client";
 import { latestBuild, routeForBuild } from "@/lib/builds";
 import { clearGuestToken, latestGuestBuild, readGuestToken } from "@/lib/guest";
 import { clearPendingHandle } from "@/lib/pending-handle.server";
+import { releaseSpecHandle } from "@/lib/spec";
 
 /**
  * The moment signup meets the guest build. Runs right after Google auth
@@ -51,6 +52,10 @@ export async function GET() {
     }
     await clearGuestToken();
   };
+
+  // A spec account squatting this handle is our own outreach standing in the
+  // way of the signup it was meant to cause — drop the pitch, keep the signup.
+  await releaseSpecHandle(build.handle);
 
   // handle is the URL slug — one creator per handle
   const { data: taken } = await admin

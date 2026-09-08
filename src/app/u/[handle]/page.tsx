@@ -6,6 +6,7 @@ import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
 import { JsonLd } from "@/components/JsonLd";
 import { VisitPing } from "@/components/VisitPing";
+import { PreviewBanner } from "@/components/PreviewBanner";
 import { absoluteUrl, canonical, noIndex } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -46,12 +47,22 @@ export async function generateMetadata({
   };
 }
 
-export default async function SalesPage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function SalesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}) {
   const { handle } = await params;
+  const { preview } = await searchParams;
   const viewer = await getSignedInUser();
-  const { product, isPreview } = await productForViewer(handle, viewer?.id);
+  const { product, isPreview, previewKind } = await productForViewer(handle, viewer?.id, preview);
   if (!product) notFound();
 
+  // A token viewer has no session, so every hop has to re-present the token or
+  // the next page 404s on them mid-walkthrough.
+  const carry = previewKind === "token" ? `?preview=${encodeURIComponent(preview!)}` : "";
   const price = (product.priceCents / 100).toFixed(0);
   const covers = product.sectionTitles.filter((t) => !/disclaimer|safety/i.test(t)).slice(0, 3);
   const path = `/u/${product.handle}`;
@@ -59,11 +70,9 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
   return (
     <section>
       {isPreview ? (
-        <div className="preview-note">
-          <b>Preview</b> — this is exactly what your followers see. Your visits here never count
-          in your stats.
-          <Link href="/dashboard">Back to dashboard</Link>
-        </div>
+        <PreviewBanner kind={previewKind}>
+          this is exactly what your followers see. Your visits here never count in your stats.
+        </PreviewBanner>
       ) : (
         <VisitPing handle={product.handle} />
       )}
@@ -123,7 +132,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
           </div>
 
           <div style={{ marginTop: 30, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-            <Link className="btn btn-primary btn-lg" href={`/u/${product.handle}/quiz`}>
+            <Link className="btn btn-primary btn-lg" href={`/u/${product.handle}/quiz${carry}`}>
               Start the {product.questions.length}-question quiz
             </Link>
             <span style={{ fontSize: 13.5, color: "var(--sage)" }}>Takes about 2 minutes</span>
@@ -144,7 +153,7 @@ export default async function SalesPage({ params }: { params: Promise<{ handle: 
             The quiz works out which kind of person you are. The plan you get is written for that
             person: different buyers get materially different plans.
           </p>
-          <Link className="btn btn-outline" href={`/u/${product.handle}/quiz`}>
+          <Link className="btn btn-outline" href={`/u/${product.handle}/quiz${carry}`}>
             Take the quiz
           </Link>
         </div>

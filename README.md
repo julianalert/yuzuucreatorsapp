@@ -24,7 +24,7 @@ The marketing landing page lives at `/` in this repo (signed-in visitors go to `
 | `src/app/u/[handle]/` | Buyer flow: sales page → quiz → checkout (hosted Stripe Checkout) |
 | `src/app/order/[id]/` | Generating status → web plan output |
 | `src/app/dashboard/` | Creator dashboard (live link, sales, recent buyers) |
-| `src/app/admin/` | Build inspector, env-allowlisted via `ADMIN_EMAILS` |
+| `src/app/admin/` | Build inspector, payouts, and spec builds — env-allowlisted via `ADMIN_EMAILS` |
 | `supabase/migrations/` | Schema + RLS |
 | `harness/` | The original offline quality harness, kept runnable (`cd harness && npm test`) |
 
@@ -65,5 +65,10 @@ RLS model: creators can only **read** their own rows through the browser key; ev
 5. End-to-end check: sign in → run a real handle through onboarding → approve samples → take the quiz at `/u/<handle>` → fake-pay → confirm the plan renders, the PDF downloads, and the delivery email arrives.
 
 Cost controls: `PIPELINE_KILL_SWITCH=true` stops every model call instantly; `DAILY_SPEND_CAP_USD` halts new build stages once the day's tracked spend crosses it; `PER_CREATOR_BUILD_LIMIT` caps live/completed builds per account (default 1; failed and declined attempts don't count). Per-build spend is tracked on `builds.cost_usd` and shown in `/admin`.
+
+Pre-building products for creators who haven't signed up yet (the first-50 play) runs
+through `/admin/spec`: it mints an account nobody can sign into, builds the product,
+and gives you a private preview link to pitch with. Nothing publishes until the creator
+signs in and approves it themselves. Full runbook: `docs/spec-builds.md`.
 
 Payments are live: Yuzuu is the merchant of record on a plain Stripe account (no Connect). Buyers pay $27 + tax (Stripe Tax) through hosted Checkout; the webhook marks orders paid and writes a per-creator ledger; payouts are a manual monthly run in `/admin/payouts`. Full architecture, setup checklist, and payout runbook: `docs/payments.md`.

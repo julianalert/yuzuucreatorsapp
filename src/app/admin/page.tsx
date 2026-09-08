@@ -183,6 +183,9 @@ export default async function AdminPage() {
           <Wordmark href="/dashboard" />
           <span className="micro">Admin</span>
           <div className="right">
+            <Link className="btn btn-ghost btn-sm" href="/admin/spec">
+              Spec builds
+            </Link>
             <Link className="btn btn-ghost btn-sm" href="/admin/payouts">
               Payouts
             </Link>

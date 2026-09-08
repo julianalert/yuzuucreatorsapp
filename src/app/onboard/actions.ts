@@ -5,6 +5,7 @@ import { requireCreator } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { inngest } from "@/lib/inngest/client";
 import { clearPendingHandle } from "@/lib/pending-handle.server";
+import { releaseSpecHandle } from "@/lib/spec";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{1,30}$/;
 
@@ -26,6 +27,9 @@ export async function startBuild(formData: FormData) {
     .eq("creator_id", creator.id)
     .not("status", "in", "(failed,declined)");
   if ((count ?? 0) >= limit) redirect("/onboard?error=limit");
+
+  // a spec build we made for this handle must not block the real creator
+  await releaseSpecHandle(raw);
 
   // handle is the URL slug — one creator per handle
   const { data: taken } = await admin

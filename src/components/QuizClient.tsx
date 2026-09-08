@@ -13,11 +13,15 @@ export function QuizClient({
   handle,
   questions,
   isPreview = false,
+  previewToken,
 }: {
   handle: string;
   questions: PublicQuizQuestion[];
   /** The creator walking their own funnel — no session tracking. */
   isPreview?: boolean;
+  /** Set only for a spec-build preview: the viewer has no session, so the
+   * token has to ride along to the next page. */
+  previewToken?: string;
 }) {
   const router = useRouter();
   const [idx, setIdx] = useState(0);
@@ -121,7 +125,9 @@ export function QuizClient({
         QUIZ_STORAGE_KEY,
         JSON.stringify({ handle, answers, sessionId: sessionIdRef.current, email: cleanEmail })
       );
-      router.push(`/u/${handle}/checkout`);
+      router.push(
+        `/u/${handle}/checkout${previewToken ? `?preview=${encodeURIComponent(previewToken)}` : ""}`
+      );
       return;
     }
     if (!answered && q?.required) return;

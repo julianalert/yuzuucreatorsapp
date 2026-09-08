@@ -52,6 +52,9 @@ export interface CreatorRow {
   payout_company: string | null;
   payout_address: string | null;
   agreement_signed_at: string | null;
+  /** Admin pre-built this account from public Instagram; no real person owns it
+   * yet. Suppresses every lifecycle email. Cleared at handover. */
+  is_spec: boolean;
   /** Activation moment: set once on the creator's first paid order. */
   first_sale_at: string | null;
   launch_checklist: LaunchChecklist;
@@ -105,6 +108,9 @@ export interface BlueprintRow {
   approved_at: string | null;
   approved_by: string | null;
   published: boolean;
+  /** Unguessable key for sharing this draft before it is published. Renders the
+   * sales page only — never unlocks checkout, quiz or tracking. */
+  preview_token: string;
   price_cents: number;
   share_kit: ShareKit | null;
   created_at: string;

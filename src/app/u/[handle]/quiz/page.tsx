@@ -1,23 +1,29 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { productForViewer } from "@/lib/public";
 import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
 import { QuizClient } from "@/components/QuizClient";
+import { PreviewBanner } from "@/components/PreviewBanner";
 
-export default async function QuizPage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function QuizPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}) {
   const { handle } = await params;
+  const { preview } = await searchParams;
   const viewer = await getSignedInUser();
-  const { product, isPreview } = await productForViewer(handle, viewer?.id);
+  const { product, isPreview, previewKind } = await productForViewer(handle, viewer?.id, preview);
   if (!product) notFound();
 
   return (
     <section>
       {isPreview ? (
-        <div className="preview-note">
-          <b>Preview</b> — answer it like a follower would; nothing is tracked.
-          <Link href="/dashboard">Back to dashboard</Link>
-        </div>
+        <PreviewBanner kind={previewKind}>
+          answer it like a follower would; nothing is tracked.
+        </PreviewBanner>
       ) : null}
       <header className="bar">
         <div className="bar-in">
@@ -35,7 +41,12 @@ export default async function QuizPage({ params }: { params: Promise<{ handle: s
           </div>
         </div>
       </header>
-      <QuizClient handle={product.handle} questions={product.questions} isPreview={isPreview} />
+      <QuizClient
+        handle={product.handle}
+        questions={product.questions}
+        isPreview={isPreview}
+        previewToken={previewKind === "token" ? preview : undefined}
+      />
       <footer className="powered-by">
         <span>Powered by</span>
         <Wordmark size={15} />
