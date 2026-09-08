@@ -1,8 +1,7 @@
-import Link from "next/link";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { absoluteUrl } from "@/lib/seo";
-import { Wordmark } from "@/components/Wordmark";
 import { SubmitButton } from "@/components/SubmitButton";
 import { CopyLink, DiscardButton } from "./SpecRowControls";
 import { createSpecBuild, handOverSpecCreator, discardSpecCreator } from "./actions";
@@ -15,7 +14,7 @@ interface SpecRow {
   handle: string;
   email: string;
   createdAt: string;
-  build: Pick<BuildRow, "id" | "status" | "stage" | "cost_usd" | "error"> | null;
+  build: Pick<BuildRow, "id" | "status" | "stage" | "halted_at" | "cost_usd" | "error"> | null;
   previewUrl: string | null;
 }
 
@@ -32,7 +31,7 @@ async function loadSpecRows(): Promise<SpecRow[]> {
       const [{ data: build }, { data: bp }] = await Promise.all([
         admin
           .from("builds")
-          .select("id, status, stage, cost_usd, error")
+          .select("id, status, stage, halted_at, cost_usd, error")
           .eq("creator_id", c.id)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -108,131 +107,136 @@ export default async function SpecPage({
 
   return (
     <section>
-      <header className="bar">
-        <div className="bar-in wide">
-          <Wordmark href="/dashboard" />
-          <span className="micro">Admin</span>
-          <div className="right">
-            <Link className="btn btn-ghost btn-sm" href="/admin">
-              Builds
-            </Link>
-            <Link className="btn btn-ghost btn-sm" href="/admin/payouts">
-              Payouts
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AdminNav current="/admin/spec" />
 
       <div className="wrap wide">
         <h1>Spec builds</h1>
-        <p className="micro" style={{ maxWidth: 620 }}>
+        <p style={{ marginTop: 10, maxWidth: "62ch", fontSize: 15, color: "var(--ink-soft)" }}>
           Build the product first, then pitch it. The account is real but nobody can sign into
-          it, the page is not public, and it only goes live when the creator approves the
+          it, the page is not public, and it only goes live once the creator approves the
           samples themselves.
         </p>
 
-        <div className="card" style={{ marginTop: 22 }}>
-          <form action={createSpecBuild} className="stack">
-            <label className="field">
-              <span>Instagram handle</span>
-              <input name="handle" placeholder="creatorhandle" required autoComplete="off" />
+        <div className="card" style={{ marginTop: 24 }}>
+          <form action={createSpecBuild}>
+            <label className="form-label" htmlFor="handle">
+              Instagram handle
             </label>
-            <label className="field">
-              <span>What they&rsquo;re about (optional)</span>
+            <div className="field">
+              <span className="at">@</span>
               <input
-                name="self_description"
-                placeholder="leave blank to use their bio"
+                className="with-at"
+                id="handle"
+                name="handle"
+                type="text"
+                placeholder="creatorhandle"
+                spellCheck={false}
                 autoComplete="off"
+                required
               />
-            </label>
-            <SubmitButton
-              label="Build it"
-              pendingLabel="Starting…"
-              className="btn btn-primary"
-              hint={`${rows.length} open · $${spend.toFixed(2)} spent`}
-            />
+            </div>
+
+            <div style={{ marginTop: 22 }}>
+              <label className="form-label" htmlFor="sd">
+                What they&rsquo;re about{" "}
+                <span style={{ color: "var(--sage)", fontWeight: 400 }}>
+                  (optional — leave blank to use their bio)
+                </span>
+              </label>
+              <textarea
+                className="area"
+                id="sd"
+                name="self_description"
+                rows={2}
+                placeholder="sleep coaching for parents of toddlers"
+              />
+            </div>
+
+            <div style={{ marginTop: 22, display: "flex", alignItems: "center", gap: 14 }}>
+              <SubmitButton
+                label="Build it"
+                pendingLabel="Starting\u2026"
+                className="btn btn-primary"
+                hint={`${rows.length} open \u00b7 $${spend.toFixed(2)} spent`}
+              />
+            </div>
           </form>
           <Flash q={q} />
         </div>
 
-        <div className="card" style={{ marginTop: 26 }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Creator</th>
-                <th>Build</th>
-                <th>Cost</th>
-                <th>Preview</th>
-                <th>Hand over</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="micro">
-                    No spec builds open.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      @{r.handle}
-                      <br />
-                      <span className="micro">{r.email}</span>
-                    </td>
-                    <td>
-                      {r.build ? (
-                        <>
-                          {r.build.status}
-                          {r.build.stage ? <span className="micro"> · {r.build.stage}</span> : null}
-                          {r.build.error ? (
-                            <>
-                              <br />
-                              <span className="micro">{r.build.error}</span>
-                            </>
-                          ) : null}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="mono">${(r.build?.cost_usd ?? 0).toFixed(2)}</td>
-                    <td>
+        <h2 style={{ marginTop: 40 }}>Open builds</h2>
+
+        {rows.length === 0 ? (
+          <div className="card" style={{ marginTop: 14 }}>
+            <p className="dv-empty">
+              No spec builds open. Enter a handle above to build one.
+            </p>
+          </div>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            {rows.map((r) => {
+              const status = r.build?.status ?? "queued";
+              const ready = status === "awaiting_approval";
+              const broken = status === "failed" || status === "declined";
+              return (
+                <div className="card spec-item" key={r.id}>
+                  <div className="spec-head">
+                    <h3>@{r.handle}</h3>
+                    <span className={`badge${ready ? "" : broken ? " bad" : " grey"}`}>
+                      {ready ? "ready to pitch" : broken ? (r.build?.halted_at ?? status) : status}
+                    </span>
+                    <div className="spec-actions">
                       {r.previewUrl ? (
                         <CopyLink url={r.previewUrl} />
                       ) : (
-                        <span className="micro">not ready</span>
+                        <span className="micro">preview not ready</span>
                       )}
-                    </td>
-                    <td>
-                      <form action={handOverSpecCreator} className="row">
-                        <input type="hidden" name="creator_id" value={r.id} />
-                        <input
-                          name="email"
-                          type="email"
-                          placeholder="their@email.com"
-                          required
-                          autoComplete="off"
-                        />
-                        <button type="submit" className="btn btn-outline btn-sm">
-                          Hand over
-                        </button>
-                      </form>
-                    </td>
-                    <td>
                       <form action={discardSpecCreator}>
                         <input type="hidden" name="creator_id" value={r.id} />
                         <DiscardButton handle={r.handle} />
                       </form>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+
+                  <div className="spec-meta">
+                    {r.email} &middot; ${(r.build?.cost_usd ?? 0).toFixed(2)}
+                    {r.build?.stage ? ` \u00b7 ${r.build.stage}` : ""}
+                  </div>
+                  {r.build?.error ? (
+                    <p style={{ marginTop: 10, fontSize: 13.5, color: "var(--rust)" }}>
+                      {r.build.error}
+                    </p>
+                  ) : null}
+
+                  <hr className="spec-rule" />
+
+                  <label className="form-label" htmlFor={`email-${r.id}`}>
+                    Hand over to{" "}
+                    <span style={{ color: "var(--sage)", fontWeight: 400 }}>
+                      their real email &mdash; they sign in with Google at that address
+                    </span>
+                  </label>
+                  <form action={handOverSpecCreator} className="inline-form">
+                    <input type="hidden" name="creator_id" value={r.id} />
+                    <div className="field">
+                      <input
+                        id={`email-${r.id}`}
+                        name="email"
+                        type="email"
+                        placeholder="them@gmail.com"
+                        autoComplete="off"
+                        required
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-outline">
+                      Hand over
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,252 +1,251 @@
 import Link from "next/link";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { requireAdmin } from "@/lib/admin";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Wordmark } from "@/components/Wordmark";
-import type { BuildRow } from "@/lib/db/types";
+import { loadDashboard, RANGES } from "@/lib/admin-metrics";
+import { deltaPct, usd } from "@/lib/metrics";
+import {
+  CreatorStrip,
+  Funnel,
+  Histogram,
+  RangeTabs,
+  StatTile,
+  TrendChart,
+} from "@/components/admin/charts";
 
 export const dynamic = "force-dynamic";
 
-function isoDaysAgo(days: number): string {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-}
+const days = (n: number | null) => (n === null ? "—" : n.toFixed(1));
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-interface ActivationRow {
-  handle: string;
-  daysLive: number;
-  visits: number;
-  quizStarts: number;
-  sold: number;
-  daysToFirstSale: number | null;
-}
-
-async function loadActivationRows(): Promise<ActivationRow[]> {
-  const admin = supabaseAdmin();
-  const now = Date.now();
-  const { data } = await admin
-    .from("blueprints")
-    .select("id, approved_at, created_at, creators!inner(id, handle, first_sale_at)")
-    .eq("published", true)
-    .order("approved_at", { ascending: false });
-
-  return Promise.all(
-    (data ?? []).map(async (bp) => {
-      const c = bp.creators as unknown as {
-        id: string;
-        handle: string | null;
-        first_sale_at: string | null;
-      };
-      const liveAt = new Date(bp.approved_at ?? bp.created_at).getTime();
-      const [{ count: visits }, { count: quizStarts }, { count: sold }] = await Promise.all([
-        admin
-          .from("creator_events")
-          .select("id", { count: "exact", head: true })
-          .eq("creator_id", c.id)
-          .eq("type", "page_visit"),
-        admin
-          .from("quiz_sessions")
-          .select("id", { count: "exact", head: true })
-          .eq("creator_id", c.id),
-        admin
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("blueprint_id", bp.id)
-          .in("status", ["paid", "generating", "delivered"]),
-      ]);
-      return {
-        handle: c.handle ?? "—",
-        daysLive: Math.max(0, (now - liveAt) / DAY_MS),
-        visits: visits ?? 0,
-        quizStarts: quizStarts ?? 0,
-        sold: sold ?? 0,
-        daysToFirstSale: c.first_sale_at
-          ? (new Date(c.first_sale_at).getTime() - liveAt) / DAY_MS
-          : null,
-      };
-    })
-  );
-}
-
-/**
- * The north-star view: published creators × their road to the first sale.
- * Activation = first paid order within 7 days of going live.
- */
-async function ActivationSection() {
-  const rows = await loadActivationRows();
-
-  const published = rows.length;
-  const activated = rows.filter((r) => r.daysToFirstSale !== null).length;
-  const activated7d = rows.filter(
-    (r) => r.daysToFirstSale !== null && r.daysToFirstSale <= 7
-  ).length;
-  // creators live ≥7 days (or already activated) — the denominator that's had a fair shot
-  const matured = rows.filter((r) => r.daysLive >= 7 || r.daysToFirstSale !== null).length;
-
+/** Delta sized to sit beside a .stat .v headline number. */
+function InlineDelta({ value }: { value: number | null }) {
+  if (value === null) return null;
+  const cls = value === 0 ? "flat" : value > 0 ? "up" : "down";
   return (
-    <>
-      <div className="stats">
-        <div className="stat">
-          <span className="k">Published creators</span>
-          <div className="v">{published}</div>
-          <div className="sub">with a live product</div>
-        </div>
-        <div className="stat">
-          <span className="k">Activated</span>
-          <div className="v">{activated}</div>
-          <div className="sub">≥1 sale, all time</div>
-        </div>
-        <div className="stat">
-          <span className="k">Activation rate (7d)</span>
-          <div className="v">{matured ? Math.round((activated7d / matured) * 100) : 0}%</div>
-          <div className="sub">first sale within 7 days of going live</div>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: 26 }}>
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Creator</th>
-              <th>Days live</th>
-              <th>Visits</th>
-              <th>Quiz starts</th>
-              <th>Sold</th>
-              <th>Days to 1st sale</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.handle}>
-                <td>@{r.handle}</td>
-                <td className="mono">{r.daysLive.toFixed(1)}</td>
-                <td className="mono">{r.visits}</td>
-                <td className="mono">{r.quizStarts}</td>
-                <td className="mono">{r.sold}</td>
-                <td className="mono">
-                  {r.daysToFirstSale === null ? "—" : r.daysToFirstSale.toFixed(1)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <span className={`dv-delta ${cls}`} style={{ fontSize: 12, marginLeft: 6 }}>
+      {value === 0 ? "±0%" : `${value > 0 ? "↑" : "↓"}${Math.abs(value)}%`}
+    </span>
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ d?: string }>;
+}) {
   await requireAdmin();
-  const admin = supabaseAdmin();
+  const { d } = await searchParams;
+  const m = await loadDashboard(d);
 
-  const { data: buildRows } = await admin
-    .from("builds")
-    .select("*, creators(handle, email)")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  const builds = (buildRows ?? []) as (BuildRow & {
-    creators: { handle: string | null; email: string } | null;
-  })[];
-
-  const { count: orderCount } = await admin
-    .from("orders")
-    .select("id", { count: "exact", head: true });
-
-  // quiz funnel, last 30 days — each status implies the earlier ones
-  const since = isoDaysAgo(30);
-  const { data: sessionRows } = await admin
-    .from("quiz_sessions")
-    .select("status, email")
-    .gte("created_at", since);
-  const sessions = (sessionRows ?? []) as { status: string; email: string | null }[];
-  const RANK: Record<string, number> = { quiz_started: 0, quiz_completed: 1, checkout: 2, paid: 3 };
-  const reached = (rank: number) => sessions.filter((s) => (RANK[s.status] ?? 0) >= rank).length;
-  const funnel = {
-    started: sessions.length,
-    completed: reached(1),
-    checkout: reached(2),
-    paid: reached(3),
-    emails: sessions.filter((s) => s.email).length,
-  };
-  const pct = (n: number) => (funnel.started ? Math.round((n / funnel.started) * 100) : 0);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayBuilds = builds.filter((b) => new Date(b.created_at) >= today);
-  const todayCost = todayBuilds.reduce((s, b) => s + (b.cost_usd ?? 0), 0);
-  const totalCost = builds.reduce((s, b) => s + (b.cost_usd ?? 0), 0);
+  const { revenue, prevRevenue, economics, range } = m;
+  const capUsd = process.env.DAILY_SPEND_CAP_USD ?? "50";
+  const liveRows = m.creatorRows;
+  const salesInPeriod = m.trends.sales.reduce((t, b) => t + b.value, 0);
 
   return (
     <section>
-      <header className="bar">
-        <div className="bar-in wide">
-          <Wordmark href="/dashboard" />
-          <span className="micro">Admin</span>
-          <div className="right">
-            <Link className="btn btn-ghost btn-sm" href="/admin/spec">
-              Spec builds
-            </Link>
-            <Link className="btn btn-ghost btn-sm" href="/admin/payouts">
-              Payouts
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AdminNav current="/admin" />
+
       <div className="wrap wide">
-        <h1>Builds</h1>
-
-        <div className="stats">
-          <div className="stat">
-            <span className="k">Spend today</span>
-            <div className="v">${todayCost.toFixed(2)}</div>
-            <div className="sub">
-              cap ${process.env.DAILY_SPEND_CAP_USD ?? "50"} · {todayBuilds.length} builds today
-            </div>
-          </div>
-          <div className="stat">
-            <span className="k">Spend (last 50 builds)</span>
-            <div className="v">${totalCost.toFixed(2)}</div>
-            <div className="sub">
-              ${builds.length ? (totalCost / builds.length).toFixed(2) : "0"} avg per build
-            </div>
-          </div>
-          <div className="stat">
-            <span className="k">Orders</span>
-            <div className="v">{orderCount ?? 0}</div>
-            <div className="sub">all time</div>
-          </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <h1>Dashboard</h1>
+          <RangeTabs ranges={RANGES} active={range.key} />
         </div>
 
-        <h1 style={{ marginTop: 40 }}>Quiz funnel</h1>
-        <div className="stats">
-          <div className="stat">
-            <span className="k">Quizzes started</span>
-            <div className="v">{funnel.started}</div>
-            <div className="sub">last 30 days</div>
-          </div>
-          <div className="stat">
-            <span className="k">Finished quiz</span>
-            <div className="v">{funnel.completed}</div>
-            <div className="sub">
-              {pct(funnel.completed)}% of started · {funnel.emails} emails captured
-            </div>
-          </div>
-          <div className="stat">
-            <span className="k">Reached checkout</span>
-            <div className="v">{funnel.checkout}</div>
-            <div className="sub">{pct(funnel.checkout)}% of started</div>
-          </div>
-          <div className="stat">
-            <span className="k">Paid</span>
-            <div className="v">{funnel.paid}</div>
-            <div className="sub">{pct(funnel.paid)}% of started</div>
-          </div>
+        {/* ---------------------------------------------------------- headline */}
+        <div className="stats four">
+          <StatTile
+            label="Revenue"
+            value={usd(revenue.netCents)}
+            sub={
+              revenue.count
+                ? `${revenue.count} ${revenue.count === 1 ? "sale" : "sales"} · ${usd(revenue.avgOrderCents)} avg`
+                : "no sales over $5 yet"
+            }
+            delta={m.hasPrevious ? deltaPct(revenue.netCents, prevRevenue.netCents) : null}
+          />
+          <StatTile
+            label="Your margin"
+            value={usd(economics.netMarginCents)}
+            sub={`30% cut, less card fees and ${usd(economics.spendCents)} model spend`}
+          />
+          <StatTile
+            label="Live products"
+            value={String(m.publishedCount)}
+            sub={m.publishedCount ? `${m.activatedCount} with a sale` : "nothing published yet"}
+          />
+          <StatTile
+            label="Spend"
+            value={usd(economics.spendCents)}
+            sub={`${usd(m.spendTodayCents)} today · cap $${capUsd}/day`}
+            delta={m.hasPrevious ? deltaPct(economics.spendCents, m.prevSpendCents) : null}
+            invertDelta
+          />
         </div>
 
-        <h1 style={{ marginTop: 40 }}>Activation</h1>
-        <ActivationSection />
+        {/* ------------------------------------------------------------- trends */}
+        <h2 style={{ marginTop: 40 }}>Momentum</h2>
+        <div className="stats">
+          <div className="stat">
+            <span className="k">New creators</span>
+            <div className="v">
+              {m.newCreators}
+              {m.hasPrevious ? <InlineDelta value={deltaPct(m.newCreators, m.prevNewCreators)} /> : null}
+            </div>
+            <TrendChart buckets={m.trends.creators} unit="signups" />
+          </div>
+          <div className="stat">
+            <span className="k">Builds started</span>
+            <div className="v">
+              {m.buildsStarted}
+              {m.hasPrevious ? (
+                <InlineDelta value={deltaPct(m.buildsStarted, m.prevBuildsStarted)} />
+              ) : null}
+            </div>
+            <TrendChart buckets={m.trends.builds} unit="builds" />
+          </div>
+          <div className="stat">
+            <span className="k">Sales</span>
+            <div className="v">{salesInPeriod}</div>
+            <TrendChart buckets={m.trends.sales} unit="sales" />
+          </div>
+        </div>
+        <p className="dv-note">Bars are {m.trends.stepLabel}.</p>
 
-        <div className="card" style={{ marginTop: 26 }}>
+        {/* --------------------------------------------------- activation funnel */}
+        <h2 style={{ marginTop: 40 }}>Activation funnel</h2>
+        <p className="dv-note" style={{ marginTop: 4 }}>
+          Creators who signed up in this window. Bar width is share of signups; the second
+          number is conversion from the step above. Spec accounts are excluded until handover.
+        </p>
+        <div className="card" style={{ marginTop: 14 }}>
+          <Funnel steps={m.activation} />
+        </div>
+
+        {/* ------------------------------------------------------ unit economics */}
+        <h2 style={{ marginTop: 40 }}>Unit economics</h2>
+        <div className="stats four">
+          <StatTile
+            label="Cost per build"
+            value={economics.costPerBuildCents === null ? "—" : usd(economics.costPerBuildCents)}
+            sub={`${economics.buildCount} builds this period`}
+          />
+          <StatTile
+            label="Cost per live product"
+            value={
+              economics.costPerPublishedCents === null ? "—" : usd(economics.costPerPublishedCents)
+            }
+            sub="spend ÷ published products"
+          />
+          <StatTile
+            label="Cost per activated"
+            value={
+              economics.costPerActivatedCents === null ? "—" : usd(economics.costPerActivatedCents)
+            }
+            sub="spend ÷ creators with a sale"
+          />
+          <StatTile
+            label="Margin per activated"
+            value={
+              economics.marginPerActivatedCents === null
+                ? "—"
+                : usd(economics.marginPerActivatedCents)
+            }
+            sub="your cut, after card fees"
+          />
+        </div>
+        <p className="dv-note">
+          Spend includes spec builds nobody claimed — that money was really spent, and leaving
+          it out would flatter what a creator costs to acquire.
+        </p>
+
+        {/* -------------------------------------------------- days to first sale */}
+        <h2 style={{ marginTop: 40 }}>Days to first sale</h2>
+        <p className="dv-note" style={{ marginTop: 4 }}>
+          {m.dtfs.medianDays === null
+            ? "No creator has sold yet."
+            : `Median ${m.dtfs.medianDays.toFixed(1)} days from going live to first sale.`}
+        </p>
+        <div className="card" style={{ marginTop: 14 }}>
+          <Histogram buckets={m.dtfs.buckets} unit="live creators" />
+        </div>
+
+        {/* --------------------------------------------------------- buyer funnel */}
+        <h2 style={{ marginTop: 40 }}>Buyer funnel</h2>
+        <div className="card" style={{ marginTop: 14 }}>
+          <Funnel steps={m.quiz} />
+        </div>
+
+        {/* ------------------------------------------------------- best creators */}
+        <h2 style={{ marginTop: 40 }}>Creators</h2>
+        <p className="dv-note" style={{ marginTop: 4 }}>
+          Lifetime numbers for every live product, best first.
+        </p>
+        <div className="card" style={{ marginTop: 14 }}>
+          {liveRows.length === 0 ? (
+            <p className="dv-empty">No published products yet.</p>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Creator</th>
+                  <th>Days live</th>
+                  <th>Visits</th>
+                  <th>Quiz starts</th>
+                  <th>Sold</th>
+                  <th>Revenue</th>
+                  <th>Days to 1st sale</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveRows.map((r) => (
+                  <tr key={r.id}>
+                    <td>@{r.handle}</td>
+                    <td className="mono">{days(r.daysLive)}</td>
+                    <td className="mono">{r.visits}</td>
+                    <td className="mono">{r.quizStarts}</td>
+                    <td className="mono">{r.sold}</td>
+                    <td className="mono">{r.revenueCents ? usd(r.revenueCents) : "—"}</td>
+                    <td className="mono">{days(r.daysToFirstSale)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* --------------------------------------------------- per-creator funnel */}
+        <h2 style={{ marginTop: 40 }}>Funnel per creator</h2>
+        <div className="card" style={{ marginTop: 14 }}>
+          {liveRows.length === 0 ? (
+            <p className="dv-empty">Nothing live to break down.</p>
+          ) : (
+            liveRows.map((r) => (
+              <CreatorStrip
+                key={r.id}
+                handle={r.handle}
+                segments={[
+                  { label: "visits", value: r.visits },
+                  { label: "quiz", value: r.quizStarts },
+                  { label: "finished", value: r.quizFinished },
+                  { label: "checkout", value: r.checkouts },
+                  { label: "sold", value: r.sold },
+                ]}
+              />
+            ))
+          )}
+        </div>
+
+        {/* --------------------------------------------------------------- builds */}
+        <h2 style={{ marginTop: 40 }}>Builds</h2>
+        <div className="card" style={{ marginTop: 14 }}>
           <table className="tbl">
             <thead>
               <tr>
@@ -260,7 +259,7 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {builds.map((b) => (
+              {m.builds.map((b) => (
                 <tr key={b.id}>
                   <td>@{b.creators?.handle ?? "—"}</td>
                   <td className="mono">{b.status}</td>

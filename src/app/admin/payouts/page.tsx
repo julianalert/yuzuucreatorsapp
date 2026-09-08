@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Wordmark } from "@/components/Wordmark";
 import { balanceFromEntries, MIN_PAYOUT_CENTS } from "@/lib/ledger";
 import { generateDraftRun, markPayoutDetailsReady } from "./actions";
 import type { LedgerEntryRow, PayoutRow } from "@/lib/db/types";
@@ -63,12 +63,7 @@ export default async function AdminPayoutsPage({
 
   return (
     <section>
-      <header className="bar">
-        <div className="bar-in wide">
-          <Wordmark href="/admin" />
-          <span className="micro">Admin · Payouts</span>
-        </div>
-      </header>
+      <AdminNav current="/admin/payouts" />
       <div className="wrap wide">
         <h1>Payouts</h1>
         <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--sage)", maxWidth: "68ch" }}>

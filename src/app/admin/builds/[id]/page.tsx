@@ -1,8 +1,7 @@
-import Link from "next/link";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Wordmark } from "@/components/Wordmark";
 import type { BuildRow } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
@@ -71,17 +70,7 @@ export default async function AdminBuildPage({ params }: { params: Promise<{ id:
 
   return (
     <section>
-      <header className="bar">
-        <div className="bar-in wide">
-          <Wordmark href="/dashboard" />
-          <span className="micro">Admin · build {id.slice(0, 8)}</span>
-          <div className="right">
-            <Link className="btn btn-ghost btn-sm" href="/admin">
-              All builds
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AdminNav current="/admin" crumb={`build ${id.slice(0, 8)}`} />
       <div className="wrap wide">
         <h1>Build inspector</h1>
 

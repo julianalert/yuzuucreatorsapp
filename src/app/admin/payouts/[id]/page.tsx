@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Wordmark } from "@/components/Wordmark";
 import { payableEntries } from "@/lib/ledger";
 import { confirmPayoutAction, markPaidAction } from "../actions";
 import type { LedgerEntryRow, PayoutRow } from "@/lib/db/types";
@@ -57,12 +57,7 @@ export default async function PayoutStatementPage({
 
   return (
     <section>
-      <header className="bar">
-        <div className="bar-in wide">
-          <Wordmark href="/admin/payouts" />
-          <span className="micro">Payout statement</span>
-        </div>
-      </header>
+      <AdminNav current="/admin/payouts" crumb="payout statement" />
       <div className="wrap">
         <div className="micro">
           {payout.status === "draft" ? "Draft — nothing locked yet" : `Status: ${payout.status}`}
