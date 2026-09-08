@@ -431,32 +431,30 @@ export const blueprintBuild = inngest.createFunction(
         return false;
       })) as boolean;
 
-      // A spec build has nobody to ask: the creator it was built for has never
-      // heard of us, and the admin's choice was to build at all. Take the
-      // pipeline's own first-ranked proposal and keep going. If it picks badly
-      // that shows up in the preview, which is the point of the preview.
-      let topicIndex: number;
-      if (isSpec) {
-        topicIndex = 0;
-      } else {
-        const topicEvt = await step.waitForEvent("wait-topic", {
-          event: "build/topic.chosen",
-          if: `async.data.buildId == "${buildId}"`,
-          timeout: "7d",
-        });
-        if (!topicEvt) {
-          await step.run("timeout-topic", () =>
-            updateBuild(buildId, {
-              status: "failed",
-              halted_at: "topic_timeout",
-              error: "No topic chosen within 7 days.",
-              completed_at: new Date().toISOString(),
-            })
-          );
-          return { failed: "topic_timeout" };
-        }
-        ({ topicIndex } = topicEvt.data as Events["build/topic.chosen"]);
+      // A spec build waits for a pick too — the admin makes it from
+      // /admin/spec. The angle is the highest-leverage decision in the build,
+      // so it is worth twenty seconds of a human rather than always taking the
+      // first-ranked proposal. It just waits longer: a batch of pitches gets
+      // reviewed when the admin gets to it, not the moment the ideas land.
+      const topicEvt = await step.waitForEvent("wait-topic", {
+        event: "build/topic.chosen",
+        if: `async.data.buildId == "${buildId}"`,
+        timeout: isSpec ? "30d" : "7d",
+      });
+      if (!topicEvt) {
+        await step.run("timeout-topic", () =>
+          updateBuild(buildId, {
+            status: "failed",
+            halted_at: "topic_timeout",
+            error: isSpec
+              ? "No idea picked for this spec build within 30 days."
+              : "No topic chosen within 7 days.",
+            completed_at: new Date().toISOString(),
+          })
+        );
+        return { failed: "topic_timeout" };
       }
+      const { topicIndex } = topicEvt.data as Events["build/topic.chosen"];
       chosen = proposals[topicIndex] ?? proposals[0];
       await step.run("record-topic", () =>
         updateBuild(buildId, { ...STAGE_STATUS, stage: "knowledge", chosen_topic: chosen })

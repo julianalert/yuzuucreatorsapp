@@ -96,6 +96,37 @@ export async function createSpecBuild(formData: FormData) {
 }
 
 /**
+ * Pick the angle for a spec build. Mirrors chooseTopic() in the creator's own
+ * onboarding flow — same event, same status transition — except an admin is
+ * making the call on behalf of a creator who has not seen it yet.
+ */
+export async function chooseSpecTopic(formData: FormData) {
+  await requireAdmin();
+  const buildId = String(formData.get("build_id") ?? "");
+  const topicIndex = Number(formData.get("topic_index"));
+  if (!Number.isInteger(topicIndex) || topicIndex < 0) back("that is not a valid idea");
+
+  const admin = supabaseAdmin();
+  const { data: build } = await admin
+    .from("builds")
+    .select("id, status, creator_id, creators(handle, is_spec)")
+    .eq("id", buildId)
+    .maybeSingle();
+  if (!build) back("no such build");
+
+  const creator = build.creators as unknown as { handle: string | null; is_spec: boolean } | null;
+  // this action is admin-only and spec-only; a real creator picks their own
+  if (!creator?.is_spec) back("that build belongs to a real creator");
+  if (build.status !== "awaiting_topic") back(`that build is already ${build.status}`);
+
+  await admin.from("builds").update({ status: "running", stage: "knowledge" }).eq("id", buildId);
+  await inngest.send({ name: "build/topic.chosen", data: { buildId, topicIndex } });
+
+  revalidatePath("/admin/spec");
+  redirect(`/admin/spec?picked=${encodeURIComponent(creator.handle ?? "")}`);
+}
+
+/**
  * The creator said yes. Point the account at their real address so their next
  * "Sign in with Google" links an identity to this user rather than making a
  * new one, and stop treating it as spec so normal lifecycle mail resumes.

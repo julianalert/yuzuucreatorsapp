@@ -23,8 +23,10 @@ anything unforeseen.
 1. **Build.** `/admin/spec`, enter a handle. This creates the auth user
    (`email_confirm: true`, no password, no OAuth identity), a `creators` row with
    `is_spec = true`, and fires `build/requested`.
-2. **The pipeline auto-picks.** A spec build skips the idea-pick wait and takes the
-   first-ranked proposal — nobody is there to choose. It then halts at
+2. **Pick the angle.** The build parks at `awaiting_topic` and `/admin/spec` shows the
+   four proposals with their promise, reasoning and audience segments. Hit *Build this* on
+   one. The angle is the highest-leverage decision in the build and only ~$0.08 is spent
+   before you make it, so a weak set of ideas is cheap to discard. It then runs to
    `awaiting_approval` like any other build, with `published = false`.
 3. **Pitch.** Copy the preview link from the table:
    `/u/<handle>?preview=<token>`. It renders the sales page, quiz and checkout in
@@ -51,8 +53,9 @@ anything unforeseen.
 - **Handover needs a confirmed email.** Supabase refuses to auto-link an OAuth
   identity to an unverified address — that would be a pre-account-takeover. Both
   admin calls pass `email_confirm: true`.
-- **The review wait is 60 days for spec builds**, not 14. It is an outreach cycle,
-  not a deadline. It still expires so an unanswered pitch does not hold a handle
+- **The waits are longer for spec builds**: 30 days to pick an idea (a batch gets
+  reviewed when you get to it) and 60 days for review, because that one is an outreach
+  cycle, not a deadline. Both still expire, so an unanswered pitch does not hold a handle
   forever.
 - **A front-door signup beats a pitch.** If someone signs up for a handle we
   spec-built, `releaseSpecHandle()` deletes the spec account so our own outreach

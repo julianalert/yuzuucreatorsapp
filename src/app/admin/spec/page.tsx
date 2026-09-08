@@ -4,8 +4,14 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { absoluteUrl } from "@/lib/seo";
 import { SubmitButton } from "@/components/SubmitButton";
 import { CopyLink, DiscardButton } from "./SpecRowControls";
-import { createSpecBuild, handOverSpecCreator, discardSpecCreator } from "./actions";
+import {
+  createSpecBuild,
+  chooseSpecTopic,
+  handOverSpecCreator,
+  discardSpecCreator,
+} from "./actions";
 import type { BuildRow } from "@/lib/db/types";
+import type { TopicProposal } from "@/lib/blueprint/types";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +20,10 @@ interface SpecRow {
   handle: string;
   email: string;
   createdAt: string;
-  build: Pick<BuildRow, "id" | "status" | "stage" | "halted_at" | "cost_usd" | "error"> | null;
+  build: Pick<
+    BuildRow,
+    "id" | "status" | "stage" | "halted_at" | "cost_usd" | "error" | "topic_proposals"
+  > | null;
   previewUrl: string | null;
 }
 
@@ -31,7 +40,7 @@ async function loadSpecRows(): Promise<SpecRow[]> {
       const [{ data: build }, { data: bp }] = await Promise.all([
         admin
           .from("builds")
-          .select("id, status, stage, halted_at, cost_usd, error")
+          .select("id, status, stage, halted_at, cost_usd, error, topic_proposals")
           .eq("creator_id", c.id)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -70,7 +79,9 @@ function Flash({ q }: { q: Record<string, string | undefined> }) {
             tone: "ok",
             text: `@${q.handed} handed over. They sign in with Google at that address and the product is waiting.`,
           }
-        : q.discarded
+        : q.picked
+          ? { tone: "ok", text: `Building @${q.picked} with that idea.` }
+          : q.discarded
           ? { tone: "ok", text: `@${q.discarded} deleted. The handle is free again.` }
           : null;
   if (!msg) return null;
@@ -178,12 +189,20 @@ export default async function SpecPage({
               const status = r.build?.status ?? "queued";
               const ready = status === "awaiting_approval";
               const broken = status === "failed" || status === "declined";
+              const needsPick = status === "awaiting_topic";
+              const proposals = (r.build?.topic_proposals?.proposals ?? []) as TopicProposal[];
               return (
                 <div className="card spec-item" key={r.id}>
                   <div className="spec-head">
                     <h3>@{r.handle}</h3>
                     <span className={`badge${ready ? "" : broken ? " bad" : " grey"}`}>
-                      {ready ? "ready to pitch" : broken ? (r.build?.halted_at ?? status) : status}
+                      {ready
+                        ? "ready to pitch"
+                        : needsPick
+                          ? "pick an idea"
+                          : broken
+                            ? (r.build?.halted_at ?? status)
+                            : status}
                     </span>
                     <div className="spec-actions">
                       {r.previewUrl ? (
@@ -206,6 +225,49 @@ export default async function SpecPage({
                     <p style={{ marginTop: 10, fontSize: 13.5, color: "var(--rust)" }}>
                       {r.build.error}
                     </p>
+                  ) : null}
+
+                  {needsPick && proposals.length ? (
+                    <>
+                      <hr className="spec-rule" />
+                      <label className="form-label">
+                        Pick the angle{" "}
+                        <span style={{ color: "var(--sage)", fontWeight: 400 }}>
+                          &mdash; everything after this is the expensive half of the build
+                        </span>
+                      </label>
+                      <div className="spec-ideas">
+                        {proposals.map((p, i) => (
+                          <div className="spec-idea" key={i}>
+                            {p.bonus ? (
+                              <span
+                                className="chip chip-bonus"
+                                style={{ display: "inline-block", marginBottom: 9 }}
+                              >
+                                Wild card
+                              </span>
+                            ) : null}
+                            <h4>{p.topic_title}</h4>
+                            <div className="promise">{p.promise}</div>
+                            {p.why_this_works ? <div className="why">{p.why_this_works}</div> : null}
+                            <div className="spec-idea-foot">
+                              {(p.segmentation_preview ?? []).slice(0, 3).map((w) => (
+                                <span className="chip" key={w}>
+                                  {w}
+                                </span>
+                              ))}
+                              <form action={chooseSpecTopic}>
+                                <input type="hidden" name="build_id" value={r.build!.id} />
+                                <input type="hidden" name="topic_index" value={i} />
+                                <button type="submit" className="btn btn-accent btn-sm">
+                                  Build this
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : null}
 
                   <hr className="spec-rule" />
