@@ -1,4 +1,5 @@
 import { AdminNav } from "@/components/admin/AdminNav";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -73,6 +74,11 @@ export default async function AdminBuildPage({ params }: { params: Promise<{ id:
       <AdminNav current="/admin" crumb={`build ${id.slice(0, 8)}`} />
       <div className="wrap wide">
         <h1>Build inspector</h1>
+        <div style={{ marginTop: 14 }}>
+          <Link className="btn btn-ghost btn-sm" href={`/admin/builds/${id}/samples`}>
+            See the samples
+          </Link>
+        </div>
 
         <div className="card" style={{ marginTop: 26 }}>
           <table className="tbl">

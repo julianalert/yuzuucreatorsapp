@@ -1,4 +1,5 @@
 import { AdminNav } from "@/components/admin/AdminNav";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { absoluteUrl } from "@/lib/seo";
@@ -205,6 +206,14 @@ export default async function SpecPage({
                             : status}
                     </span>
                     <div className="spec-actions">
+                      {ready && r.build ? (
+                        <Link
+                          className="btn btn-ghost btn-sm"
+                          href={`/admin/builds/${r.build.id}/samples`}
+                        >
+                          See samples
+                        </Link>
+                      ) : null}
                       {r.previewUrl ? (
                         <CopyLink url={r.previewUrl} />
                       ) : (
