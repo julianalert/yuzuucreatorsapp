@@ -70,7 +70,7 @@ export default async function SalesPage({
   return (
     <section>
       {isPreview ? (
-        <PreviewBanner kind={previewKind}>
+        <PreviewBanner kind={previewKind} samplesHref={`/u/${product.handle}/samples${carry}`}>
           this is exactly what your followers see. Your visits here never count in your stats.
         </PreviewBanner>
       ) : (

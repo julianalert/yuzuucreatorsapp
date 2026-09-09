@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { SampleTabs } from "@/components/admin/SampleTabs";
+import { SampleTabs } from "@/components/SampleTabs";
 import type { SampleView } from "@/components/SampleReview";
 import type { Blueprint } from "@/lib/blueprint/types";
 import type { SampleRow } from "@/lib/db/types";
