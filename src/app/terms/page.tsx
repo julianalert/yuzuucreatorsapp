@@ -6,7 +6,7 @@ import { canonical } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "Terms of Service — Yuzuu",
   description:
-    "Terms for using Yuzuu: who can join, how builds and payouts work, ownership, buyer purchases, and leaving.",
+    "Terms for using Yuzuu: who can join, how builds, previews and payouts work, ownership, buyer purchases, and leaving.",
   ...canonical("/terms"),
 };
 
@@ -28,9 +28,9 @@ export default function TermsPage() {
         <div className="doc">
           <span className="micro">Legal</span>
           <h1 style={{ marginTop: 14 }}>Terms of Service</h1>
-          <p className="lede">Last updated August 2026 · yuzuu.co</p>
+          <p className="lede">Last updated September 2026 · yuzuu.co</p>
 
-          
+
           <h2 style={{ marginTop: 30 }}>1. What Yuzuu is</h2>
           <p>
             Yuzuu (&quot;we&quot;, &quot;us&quot;) builds a personalized digital product for
@@ -54,7 +54,28 @@ export default function TermsPage() {
             </li>
           </ul>
 
-          <h2>3. The build, and your approval</h2>
+          <h2>3. How a build gets started</h2>
+          <p>
+            Most builds start with you: you type an Instagram handle into yuzuu.co, and we start
+            researching it before you&apos;ve created an account. That in-progress build is held
+            against your browser until you sign in with Google, at which point it becomes yours
+            and this agreement applies to it.
+          </p>
+          <p>
+            Sometimes we start one ourselves. To show a creator what we&apos;d build rather than
+            just describe it, we occasionally research a public Instagram account and build a
+            product from it before that person has ever used Yuzuu, then reach out with a private
+            link to the result. That page is never public — it only renders behind a link we send
+            directly to the account it was built for, and it can&apos;t take payment, run the
+            quiz, or otherwise act like a live product. Nothing about it is published, and no
+            terms bind that account, until the person it&apos;s for signs in and reviews it under
+            Section 4 like any other build. If you&apos;d rather we didn&apos;t, tell us and
+            we&apos;ll delete the account and everything we built — no questions asked. If you
+            sign up for a handle we&apos;ve already built a preview for, your signup takes
+            priority and the preview is discarded automatically.
+          </p>
+
+          <h2>4. The build, and your approval</h2>
           <p>
             You give us a handle and pick a product direction from the options we propose. We
             research, draft, and test the product against a set of internal checks before you
@@ -69,7 +90,7 @@ export default function TermsPage() {
             build quality, not a judgment of you or your content, and we&apos;ll tell you why.
           </p>
 
-          <h2>4. Fees and payouts</h2>
+          <h2>5. Fees and payouts</h2>
           <p>
             There&apos;s no upfront fee to build your product. Buyers pay Yuzuu directly —
             payments are processed by Stripe on Yuzuu&apos;s account, with any applicable
@@ -80,13 +101,14 @@ export default function TermsPage() {
           </p>
           <p>
             A sale becomes payable 14 days after purchase, once its refund window closes.
-            Payouts go out monthly once your balance reaches $50 — below that it rolls into the
-            next month. Refunds and chargebacks reduce your balance by your share of the
-            refunded sale; if that makes the balance negative, it carries into future sales.
-            Your live balance and every line behind it are always visible in your dashboard.
+            Payouts go out monthly by bank transfer, once your balance reaches $50 — below that
+            it rolls into the next month. Refunds and chargebacks reduce your balance by your
+            share of the refunded sale; if that makes the balance negative, it carries into
+            future sales. Your live balance and every line behind it are always visible in your
+            dashboard.
           </p>
 
-          <h2>5. Ownership</h2>
+          <h2>6. Ownership</h2>
           <p>
             You own the product, the page, and your buyer list. You can export your buyer list at
             any time, and if you stop using Yuzuu you keep the last version of your product
@@ -94,7 +116,7 @@ export default function TermsPage() {
             the underlying pipeline, templates, and technology used to build it.
           </p>
 
-          <h2>6. What you can sell through Yuzuu</h2>
+          <h2>7. What you can sell through Yuzuu</h2>
           <p>
             Your product has to be something we actually built and you approved — you can&apos;t
             use the page or checkout we provide to sell something else entirely. Content that
@@ -104,7 +126,7 @@ export default function TermsPage() {
             or deceptive about what a buyer is actually getting.
           </p>
 
-          <h2>7. Buyer purchases and refunds</h2>
+          <h2>8. Buyer purchases and refunds</h2>
           <p>
             Buyers purchase from Yuzuu, the merchant of record: Yuzuu operates the checkout,
             processes the payment, delivers the product, and handles support and refunds. The
@@ -115,7 +137,7 @@ export default function TermsPage() {
             proportion as the original split.
           </p>
 
-          <h2>8. Leaving</h2>
+          <h2>9. Leaving</h2>
           <p>
             You can stop using Yuzuu at any time — there&apos;s no contract and no lock-in. You
             keep your buyer list and the last version of your product content. We may suspend or
@@ -123,14 +145,14 @@ export default function TermsPage() {
             connected handle, or is used to sell something we didn&apos;t build.
           </p>
 
-          <h2>9. No professional advice</h2>
+          <h2>10. No professional advice</h2>
           <p>
             Personalized plans generated through Yuzuu are informational content written to match
             a buyer&apos;s quiz answers. They aren&apos;t medical, financial, legal, or other
             licensed professional advice, and neither you nor Yuzuu should present them as such.
           </p>
 
-          <h2>10. Disclaimers and limitation of liability</h2>
+          <h2>11. Disclaimers and limitation of liability</h2>
           <p>
             Yuzuu is provided &quot;as is.&quot; We work hard to keep builds accurate and on-voice
             for you, but we don&apos;t guarantee any particular sales outcome. To the extent
@@ -139,14 +161,14 @@ export default function TermsPage() {
             before the claim arose.
           </p>
 
-          <h2>11. Changes to these terms</h2>
+          <h2>12. Changes to these terms</h2>
           <p>
             We may update these terms as the product changes. If a change is material, we&apos;ll
             let you know by email or in your dashboard before it takes effect. Continuing to use
             Yuzuu after that means you accept the update.
           </p>
 
-          <h2>12. Contact</h2>
+          <h2>13. Contact</h2>
           <p>
             Questions about these terms go to{" "}
             hello (at) yuzuu (dot) co.
