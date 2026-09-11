@@ -96,6 +96,7 @@ export default async function DashboardPage({
   const price = (blueprint.price_cents / 100).toFixed(0);
   const netPerSale = ((blueprint.price_cents * CREATOR_KEEP_PCT) / 100 / 100).toFixed(2);
   const url = `yuzuu.co/u/${creator.handle}`;
+  const quizUrl = `${url}/quiz`;
   const initial = creator.display_name?.[0] ?? creator.email[0];
 
   const kit =
@@ -175,7 +176,7 @@ export default async function DashboardPage({
             {!creator.launch_checklist_dismissed_at ? (
               <LaunchChecklist
                 handle={creator.handle ?? ""}
-                url={url}
+                url={quizUrl}
                 kit={kit}
                 checklist={creator.launch_checklist ?? {}}
                 netPerSale={netPerSale}
