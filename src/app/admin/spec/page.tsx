@@ -258,7 +258,12 @@ export default async function SpecPage({
                             ) : null}
                             <h4>{p.topic_title}</h4>
                             <div className="promise">{p.promise}</div>
-                            {p.why_this_works ? <div className="why">{p.why_this_works}</div> : null}
+                            {p.why_this_works ? (
+                              <div className="why">
+                                <span className="who-label">Why their audience</span>
+                                {p.why_this_works}
+                              </div>
+                            ) : null}
                             <div className="spec-idea-foot">
                               {(p.segmentation_preview ?? []).slice(0, 3).map((w) => (
                                 <span className="chip" key={w}>

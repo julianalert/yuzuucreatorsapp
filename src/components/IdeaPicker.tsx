@@ -151,7 +151,12 @@ export function IdeaPicker({
               <span className="idea-money">
                 ${priceUsd} per sale — <b>${keepUsd} goes to you</b>
               </span>
-              {p.why_this_works ? <span className="idea-why">{p.why_this_works}</span> : null}
+              {p.why_this_works ? (
+                <span className="idea-why">
+                  <span className="who-label">Why your audience</span>
+                  {p.why_this_works}
+                </span>
+              ) : null}
               {p.segmentation_preview?.length ? (
                 <span className="who-group">
                   <span className="who-label">Works for</span>

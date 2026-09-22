@@ -1,6 +1,10 @@
 /**
  * Pipeline stages. The audience/topic prompts were tuned against real harness
- * runs — do not "improve" their wording in passing.
+ * runs — do not "improve" their wording in passing. The one deliberate
+ * revision since: the topic prompts now separate buyer-facing copy (title,
+ * promise) from creator-facing rationale and cap the length of each, because
+ * the unconstrained versions produced sales copy that read like a scoring
+ * memo (see PROPOSAL_REGISTERS).
  *
  * Downstream of the topic choice, the pipeline builds the per-product
  * machinery for fully personalized generation: an output template (section
@@ -71,11 +75,46 @@ Return JSON only:
   );
 }
 
+/**
+ * Who reads each proposal field. Shared by the topic and bonus prompts so the
+ * wild card matches the safe ideas. The promise doubles as the sales-page
+ * lede, the meta description and the share-kit copy, so it is the field a
+ * buyer actually meets.
+ */
+const PROPOSAL_REGISTERS = `Two different people read what you return. Write each field for its reader.
+
+BUYER-FACING — topic_title and promise appear on the sales page, in link previews and in the creator's posts. The reader is one person from the audience, on their phone, deciding whether to buy.
+- topic_title: a product name, 3 to 6 words, specific to the problem. Vary the shape across the set — do not give every title the same template.
+- promise: ONE sentence, 20 words maximum, written in the second person. Say what changes for them, using the audience's own words from audience_words. Vary the openings — do not start every promise with "You". Never describe the mechanics: no mention of a quiz, of personalization, of a plan or document being written for them, or of what they will not need to buy. Mention the duration only when it is the hook. No em dashes, no colons, no semicolons.
+
+CREATOR-FACING — everything else is read only by the creator choosing between ideas. Keep it short.
+- why_this_works: ONE sentence, 25 words maximum, telling the creator why their audience will buy this. Do not quote comments, defend the duration, or restate the scores.
+- segmentation_preview: buyer situations, each 2 to 5 words, written like a chip label.
+- risk: one sentence.`;
+
+/** Words in a string, for the length log. */
+function wordCount(s: string | undefined): number {
+  return (s ?? "").trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * The prompt caps the buyer-facing fields, but models drift. Scrub em dashes
+ * (they are banned from all buyer-facing text) and log the lengths so drift
+ * shows up in the build logs before it shows up on a sales page.
+ */
+function tidyProposal<T extends Partial<TopicProposal>>(p: T, label: string): T {
+  const clean = stripEmDashes(p);
+  console.info(
+    `[propose] ${label}: title ${wordCount(clean.topic_title)}w, promise ${wordCount(clean.promise)}w, why ${wordCount(clean.why_this_works)}w`
+  );
+  return clean;
+}
+
 export async function proposeTopics(
   audienceCard: AudienceCard,
   ctx: Ctx = {}
 ): Promise<TopicProposals> {
-  return ask(
+  const res: TopicProposals = await ask(
     "build",
     `You are proposing digital product topics for this creator.
 
@@ -93,12 +132,18 @@ Generate 8 candidates internally. Score each 1-10 on:
 
 Reject any candidate below 6 on segmentability or below 5 on acuteness regardless of total.
 
+${PROPOSAL_REGISTERS}
+
 Return JSON only:
-{"proposals":[{"topic_title":"...","promise":"...","duration_days":n,"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations needing different plans"],"risk":"..."}]}
+{"proposals":[{"topic_title":"...","promise":"...","duration_days":n,"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations, 2-5 words each"],"risk":"..."}]}
 
 Return the top ${TOPIC_COUNT}. If fewer than ${TOPIC_COUNT} survive the rejection rules, return fewer and add {"insufficient": true}.${feedbackBlock(ctx)}`,
     ctx
   );
+  return {
+    ...res,
+    proposals: (res.proposals ?? []).map((p, i) => tidyProposal(p, `topic ${i + 1}`)),
+  };
 }
 
 /**
@@ -110,7 +155,7 @@ export async function proposeBonusTopic(
   existing: TopicProposal[],
   ctx: Ctx = {}
 ): Promise<TopicProposal> {
-  return ask(
+  const res: TopicProposal = await ask(
     "build",
     `You already proposed these safe product ideas for this creator:
 
@@ -135,10 +180,14 @@ Hard constraints (the delivery machine is fixed):
 
 Score it 1-10 on the same dimensions (resolvability = "the product can honestly deliver its promise"). If the idea has a natural time component, include duration_days (14-90); if it isn't time-boxed, omit duration_days entirely.
 
+${PROPOSAL_REGISTERS}
+For this idea, why_this_works says in one sentence why it is the unexpected-but-right one.
+
 Return JSON only:
-{"topic_title":"...","promise":"...","duration_days":n (optional),"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"one sentence on why this is the unexpected-but-right idea","segmentation_preview":["4-6 buyer situations needing different content"],"risk":"..."}${feedbackBlock(ctx)}`,
+{"topic_title":"...","promise":"...","duration_days":n (optional),"scores":{"acuteness":n,"segmentability":n,"resolvability":n,"credibility":n},"why_this_works":"...","segmentation_preview":["4-6 buyer situations, 2-5 words each"],"risk":"..."}${feedbackBlock(ctx)}`,
     ctx
   );
+  return tidyProposal(res, "bonus");
 }
 
 export async function buildKnowledgePack(

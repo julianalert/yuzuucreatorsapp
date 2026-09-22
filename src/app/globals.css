@@ -371,7 +371,7 @@ textarea.area:focus { outline: none; border-color: var(--ink); box-shadow: inset
 .idea[aria-checked="true"] .tick { border-color: var(--ink); }
 .idea[aria-checked="true"] .tick i { transform: scale(1); }
 .idea h3 { font-family: var(--display); font-weight: 400; font-size: 20px; line-height: 1.25; letter-spacing: -0.012em; }
-.idea .promise { margin-top: 6px; font-size: 14.5px; color: var(--sage); line-height: 1.5; display: block; }
+.idea .promise { margin-top: 8px; font-size: 16px; color: var(--ink-soft); line-height: 1.5; display: block; }
 .idea .who-group { margin-top: 14px; display: block; }
 .idea .who-label {
   display: block;
@@ -529,7 +529,16 @@ table.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
 .spec-idea { border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 18px; background: var(--paper); }
 .spec-idea h4 { font-family: var(--display); font-size: 17.5px; font-weight: 500; letter-spacing: -0.01em; }
 .spec-idea .promise { margin-top: 6px; font-size: 14px; color: var(--ink-soft); }
-.spec-idea .why { margin-top: 8px; font-size: 13px; color: var(--sage); line-height: 1.55; }
+.spec-idea .why { margin-top: 10px; font-size: 13px; color: var(--sage); line-height: 1.5; }
+.spec-idea .who-label {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
 .spec-idea-foot { margin-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .spec-idea-foot form { margin-left: auto; }
 
@@ -865,13 +874,11 @@ section:has(> footer.powered-by) { min-height: 100vh; display: flex; flex-direct
 }
 .idea .idea-money b { color: var(--ink); font-weight: 600; }
 .idea .idea-why {
-  margin-top: 10px;
+  margin-top: 14px;
   display: block;
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  line-height: 1.55;
-  padding-left: 10px;
-  border-left: 2px solid var(--zest);
+  font-size: 13px;
+  color: var(--sage);
+  line-height: 1.5;
 }
 .receipts { margin-top: 26px; }
 .receipt-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }

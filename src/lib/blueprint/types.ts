@@ -38,8 +38,9 @@ export interface TopicProposal {
     resolvability: number;
     credibility: number;
   };
+  /** Creator-facing: one sentence on why the audience will buy. Never shown to buyers. */
   why_this_works: string;
-  /** Informational only — shown on the ideas page so the creator can judge fit. */
+  /** Informational only — shown on the ideas page as short chips so the creator can judge fit. */
   segmentation_preview: string[];
   risk: string;
 }
