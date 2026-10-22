@@ -866,9 +866,9 @@ export default function Home() {
           <span className="foot-built">
             Platform built by{" "}
             <a href="https://www.visionbds.com" target="_blank" rel="noopener">
-              service business
+              VisionBDS.com
             </a>{" "}
-            owners, for service business owners
+            for service business owners
           </span>
           <span className="sp">© 2026 Yuzuu</span>
           <Link href="/privacy">Privacy</Link>
