@@ -9,8 +9,9 @@ export const SITE_ORIGIN = (
 export const CREATOR_KEEP_PCT = 70;
 export const PLATFORM_KEEP_PCT = 100 - CREATOR_KEEP_PCT;
 
-export const SITE_TITLE = "Yuzuu — Earn regular income from your audience";
-export const SITE_DESCRIPTION = `Yuzuu studies your audience, proposes product ideas, and builds the whole thing: quiz, sales page, personalized output. It costs you nothing and you keep ${CREATOR_KEEP_PCT}% of every sale.`;
+export const SITE_TITLE = "Yuzuu — More booked jobs, less admin for home service businesses";
+export const SITE_DESCRIPTION =
+  "Yuzuu takes every client request from first message to paid invoice: it collects the details, prices by your rules, books the right slot, follows up quotes and collects payment. Early access for home service businesses.";
 
 export function absoluteUrl(path = "/"): string {
   if (!path || path === "/") return SITE_ORIGIN;

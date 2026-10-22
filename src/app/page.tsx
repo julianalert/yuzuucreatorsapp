@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Bricolage_Grotesque, DM_Mono } from "next/font/google";
-import { getSignedInUser } from "@/lib/auth";
 import { Wordmark } from "@/components/Wordmark";
 import { Yuzu } from "@/components/Yuzu";
 import { JsonLd } from "@/components/JsonLd";
-import {
-  HandleForm,
-  HandleProvider,
-  RiseObserve,
-} from "@/components/landing/HandleSync";
-import { HeroShowcase } from "@/components/landing/HeroShowcase";
+import { RiseObserve, WaitlistForm } from "@/components/landing/Waitlist";
+import { HeroDemo } from "@/components/landing/HeroDemo";
 import { LANDING_FAQ, faqPageJsonLd } from "@/lib/landing-faq";
-import { CREATOR_KEEP_PCT, PLATFORM_KEEP_PCT, SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
+import { TRADES } from "@/lib/trades";
+import { SITE_DESCRIPTION, SITE_TITLE, canonical } from "@/lib/seo";
 import "./landing.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -33,147 +28,235 @@ export const metadata: Metadata = {
   ...canonical("/"),
 };
 
-/** Why a guest build ended back on the homepage. Keys are builds.halted_at
- * values (or statuses) carried in ?error= by the guest flow. */
-const GUEST_ERRORS: Record<string, string> = {
-  handle:
-    "That doesn't look like an Instagram handle — letters, numbers, dots and underscores only.",
-  limit: "You've hit the limit of builds from this browser. Sign up to continue, or get in touch.",
-  profile_restricted:
-    "Instagram restricts this profile to logged-in viewers, so we can't read it from outside. Check Settings → Account privacy on Instagram, then try again.",
-  thin_content:
-    "That account came back with too little public content for us to read the audience. If it's private, make it public and try again.",
-  audience_confidence:
-    "We couldn't read this audience confidently enough from what's public — we'd rather decline than build something mediocre.",
-  no_viable_topic:
-    "We couldn't find a product angle personalizable enough for this audience. Some niches just don't split into different buyer situations yet.",
-  declined: "We couldn't build from that account yet. Try another handle.",
-  failed: "The scan stopped partway. Try again — this is usually transient.",
-};
+/** The four journeys every home-service business needs, in the order a
+ * visitor meets them in the hero demo. */
+const JOURNEYS = [
+  {
+    tag: "Fixed price",
+    name: "Standard service",
+    eg: "Annual boiler service, sofa cleaning, chimney sweep",
+    flow: ["Questions", "Price by your rules", "Slot", "Payment or deposit", "Job"],
+  },
+  {
+    tag: "Diagnosis",
+    name: "Diagnose first",
+    eg: "Breakdown, leak, faulty appliance",
+    flow: ["Qualify", "Call-out terms", "Slot request", "Confirmation", "Diagnosis"],
+  },
+  {
+    tag: "Quote",
+    name: "Project on quote",
+    eg: "Air conditioning install, painting, renovation",
+    flow: ["Photos & details", "Site visit if needed", "Quote", "Follow-ups", "Signature & deposit", "Planning"],
+  },
+  {
+    tag: "Recurring",
+    name: "Recurring service",
+    eg: "Cleaning, gardening, pool care",
+    flow: ["First qualification", "Frequency", "Recurring schedule", "Visit tracking", "Billing & renewal"],
+  },
+] as const;
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ code?: string; error?: string }>;
-}) {
-  // Fallback for OAuth providers that land the `code` on the bare homepage
-  // instead of /auth/callback (happens when the redirect URL used at
-  // sign-in isn't in Supabase's allow-listed Redirect URLs) — forward it so
-  // sign-in still completes instead of silently failing.
-  const { code, error } = await searchParams;
-  if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/onboard`);
+/** The case board columns, left to right, with a few believable cards each. */
+const BOARD: { col: string; count: number; cards: { who: string; what: string; meta: string; note: string; tone?: "you" | "ok" }[] }[] = [
+  {
+    col: "New request",
+    count: 3,
+    cards: [
+      { who: "Lucas M.", what: "Leaking tap", meta: "Northside · Diagnosis", note: "Qualifying · 2 of 4 answers" },
+      { who: "Grace P.", what: "Gutter cleaning", meta: "Eastfield · Fixed price", note: "Priced by rules · $140" },
+    ],
+  },
+  {
+    col: "Missing info",
+    count: 2,
+    cards: [
+      { who: "Omar K.", what: "Ceiling repaint", meta: "Old Town · Quote", note: "Waiting on 2 photos · nudged once" },
+    ],
+  },
+  {
+    col: "To quote",
+    count: 2,
+    cards: [
+      { who: "Anna L.", what: "Heat pump, 3 rooms", meta: "Riverside · Quote", note: "Visit done · draft ready for you", tone: "you" },
+    ],
+  },
+  {
+    col: "To confirm",
+    count: 1,
+    cards: [
+      { who: "Jade T.", what: "Boiler service", meta: "Northside · $119", note: "Slot offered · Thu 9:00" },
+    ],
+  },
+  {
+    col: "Planned",
+    count: 6,
+    cards: [
+      { who: "Emma R.", what: "Sofa cleaning", meta: "Fri 14:00 · Riverside", note: "Deposit paid · reminder Thu", tone: "ok" },
+      { who: "Henri D.", what: "Pool care, weekly", meta: "Mondays · visit 5 of 16", note: "Route: 3 stops, 41 min" },
+    ],
+  },
+  {
+    col: "Done",
+    count: 4,
+    cards: [
+      { who: "Sam W.", what: "Chimney sweep", meta: "Westbrook · $95", note: "Review requested", tone: "ok" },
+    ],
+  },
+  {
+    col: "To pay",
+    count: 1,
+    cards: [
+      { who: "Paul B.", what: "Breakdown repair", meta: "Eastfield · $310", note: "Payment link sent · day 2" },
+    ],
+  },
+];
 
-  const user = await getSignedInUser();
-  if (user) redirect("/dashboard");
+const FEED: { t: string; text: React.ReactNode; you?: boolean }[] = [
+  { t: "07:12", text: <>Proposed 3 slots to <b>Jade T.</b>, all inside Northside and 25 min from your 8:00 job</> },
+  { t: "07:40", text: <>Asked <b>Omar K.</b> for a photo of the ceiling stain, with an example of what helps</> },
+  { t: "09:05", text: <>Sent quote follow-up #2 to <b>Anna L.</b> (opened twice, no reply yet)</> },
+  { t: "11:30", text: <>Needs you: approve <b>Anna L.</b>’s revised quote, $6,840, above your $5k auto-send limit</>, you: true },
+  { t: "13:02", text: <>Reminded <b>Emma R.</b> about Friday 14:00, parking info included</> },
+  { t: "16:48", text: <>Asked <b>Sam W.</b> for a review, two hours after the job was closed</> },
+  { t: "17:15", text: <>Stopped follow-ups for <b>Lucas M.</b>: he replied, the case moved on</> },
+];
 
+const ASKS = [
+  "Can you come Friday?",
+  "How much for a chimney sweep?",
+  "Do you work weekends?",
+  "The heater’s making that noise again",
+  "Can I get a quote for the fence?",
+  "Is 14:00 still on?",
+  "Can I pay the deposit by card?",
+  "Do you cover Riverside?",
+  "Here are the photos you asked for",
+  "Can we move it to next week?",
+];
+
+export default function Home() {
   return (
     <div className={`peel ${bricolage.variable} ${dmMono.variable}`}>
       <JsonLd data={faqPageJsonLd()} />
-      <HandleProvider>
-        <RiseObserve />
+      <RiseObserve />
 
-        <nav className="nav">
-          <div className="wrap nav-in">
-            <Wordmark href="#top" />
-            <div className="nav-links">
-              <a href="#how">How it works</a>
-              <a href="#money">Pricing</a>
-              <a href="#faq">FAQs</a>
-            </div>
-            <div className="nav-end">
-              <Link href="/auth">Log in</Link>
-              <a className="btn btn-peel" href="#claim">
-                Claim a build
-              </a>
-            </div>
+      <nav className="nav">
+        <div className="wrap nav-in">
+          <Wordmark href="#top" />
+          <div className="nav-links">
+            <a href="#how">How it works</a>
+            <a href="#journeys">Journeys</a>
+            <a href="#platform">Platform</a>
+            <a href="#faq">FAQ</a>
           </div>
-        </nav>
+          <div className="nav-end">
+            <a className="btn btn-peel" href="#join">
+              Join the waitlist
+            </a>
+          </div>
+        </div>
+      </nav>
 
-        <main>
+      <main>
+        {/* ---------- hero ---------- */}
         <header className="hero" id="top">
           <div className="wrap hero-in">
             <Yuzu className="yz-hero" size={64} mood="happy" tilt={-8} float />
-            <p className="eyebrow">For Instagram creators · 5k–1M</p>
+            <p className="eyebrow">Early access · for home service businesses</p>
             <h1>
-              Done-for-you digital product, <em>for free</em>
+              More booked jobs. <em>Less admin.</em>
             </h1>
             <p className="hero-sub">
-              Yuzuu studies your audience, proposes product ideas, and builds the whole thing:
-              quiz, sales page, personalized output. It costs you nothing and you keep{" "}
-              {CREATOR_KEEP_PCT}% of every sale!
+              A client gets in touch. Yuzuu collects the right details, prices the job by your
+              rules, books the slot, chases the quote and follows the case all the way to payment.
+              You step in when your expertise is needed. Nowhere else.
             </p>
-            {error ? (
-              <div className="notice warn" style={{ marginBottom: 18 }}>
-                {GUEST_ERRORS[error] ?? "Something went wrong — try again."}
-              </div>
-            ) : null}
-            <HandleForm id="start" inputId="handle-hero" peel />
+            <WaitlistForm inputId="email-hero" source="hero" peel />
 
-            <p className="eyebrow showcase-label">Here&apos;s what we build for you</p>
-            <HeroShowcase />
+            <p className="eyebrow showcase-label">One request, start to paid. Watch it run.</p>
+            <HeroDemo />
           </div>
         </header>
 
+        {/* ---------- problem ---------- */}
         <section id="problem">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">The shelf is empty</p>
-              <h2>You&apos;ve had the audience for a while. Where&apos;s the revenue?</h2>
+              <p className="eyebrow">The job around the job</p>
+              <h2>You’re great at the work. It’s everything around it that eats your week.</h2>
               <p className="lede">
-                Not a criticism. It&apos;s just that making something people pay for is a second
-                job, and you already have one.
+                Nobody starts a plumbing business to answer texts at 10pm. Yet that’s where the
+                hours go: between the call you missed and the invoice you haven’t sent.
               </p>
             </div>
 
             <div className="tries rise">
               <div className="try">
-                <h3>Brand deals</h3>
-                <p>Paid once. Then you&apos;re back in the DMs pitching the next one.</p>
+                <span className="try-n">01 · Inquiry</span>
+                <h3>The missed call</h3>
+                <p>
+                  Your hands are in a boiler when the phone rings. By the time you call back,
+                  they’ve booked someone else.
+                </p>
               </div>
               <div className="try">
-                <h3>Affiliate links</h3>
-                <p>A few percent of something you didn&apos;t make, for an audience you did.</p>
+                <span className="try-n">02 · Details</span>
+                <h3>The vague request</h3>
+                <p>
+                  “How much for a new bathroom?” Three blurry photos across three messages. No
+                  address, no budget, no timing.
+                </p>
               </div>
               <div className="try">
-                <h3>The course</h3>
-                <p>Module 3 has been &quot;almost done&quot; since spring.</p>
+                <span className="try-n">03 · Quote</span>
+                <h3>The silent quote</h3>
+                <p>
+                  An evening of pricing, sent. Then nothing. You’re not a salesman, so you don’t
+                  chase, and the job goes to whoever calls first.
+                </p>
               </div>
               <div className="try">
-                <h3>Course platforms</h3>
-                <p>You paid $99 and got a blank page and a login.</p>
+                <span className="try-n">04 · Payment</span>
+                <h3>The job nobody invoiced</h3>
+                <p>
+                  The work is done. The invoice isn’t. Or it is, and it’s six weeks late, and
+                  you’re the one who has to ask.
+                </p>
               </div>
             </div>
 
             <div className="punch rise">
               <Yuzu className="yz-punch" size={54} mood="wow" tilt={9} float floatDuration={4.6} />
               <div className="punch-side old">
-                <span className="big">~20h</span>
-                <span className="lbl">To build it yourself</span>
+                <span className="big">5 tools</span>
+                <span className="lbl">Phone, inbox, calendar, quotes, invoices</span>
               </div>
               <span className="punch-vs">vs</span>
               <div className="punch-side win">
-                <span className="big">~20min</span>
-                <span className="lbl">To build it with us</span>
+                <span className="big">1 place</span>
+                <span className="lbl">Where every case moves on its own</span>
               </div>
             </div>
           </div>
         </section>
 
+        {/* ---------- agitate ---------- */}
         <section id="mirror" className="mirror-sec">
           <div className="wrap">
             <div className="mirror rise">
               <p className="eyebrow">Sound familiar?</p>
               <p className="mirror-line">
-                You&apos;ve had <mark className="hl">60k followers</mark> for{" "}
-                <mark className="hl d2">two years</mark>.
+                It’s <mark className="hl">9:40pm</mark>. You’re pricing a job from{" "}
+                <mark className="hl d2">three blurry photos</mark>.
               </p>
               <p className="mirror-line dim">
-                There&apos;s a course in Notion that&apos;s been{" "}
-                <mark className="hl d3">almost done since spring</mark>.
+                Two quotes haven’t answered in a week. One invoice is{" "}
+                <mark className="hl d3">from June</mark>.
               </p>
               <p className="mirror-you">
                 <span className="mirror-you-in">
-                  This is for you.
+                  The work followed you home.
                   <svg
                     className="mirror-rule"
                     viewBox="0 0 320 14"
@@ -190,29 +273,39 @@ export default async function Home({
                     />
                   </svg>
                 </span>
-                <Yuzu className="yz-mirror" size={46} mood="wink" tilt={7} float floatDuration={5.2} />
+                <Yuzu className="yz-mirror" size={46} mood="sleepy" tilt={7} float floatDuration={5.2} />
               </p>
             </div>
           </div>
         </section>
 
+        {/* ---------- solution: the full journey ---------- */}
         <section id="how">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">Your digital product live in 20 minutes</p>
-              <h2>Earn regular income from your audience</h2>
+              <p className="eyebrow">The difference, start to finish</p>
+              <h2>A client gets in touch. Yuzuu takes it from there.</h2>
+              <p className="lede">
+                The system gathers the right information, organizes what comes next and follows the
+                case until it’s paid. Here’s who does what.
+              </p>
             </div>
 
             <div className="steps">
               <div className="step rise">
                 <span className="num">01</span>
                 <div>
-                  <h3>Hand over the handle</h3>
+                  <h3>They get in touch</h3>
                 </div>
-                <div className="step-body">
+                <div className="step-body duo">
                   <p>
-                    Yuzuu reads your captions and comments to learn what your audience keeps asking
-                    for, in the words they use.
+                    <span className="who who-us">Yuzuu</span>
+                    Answers in seconds, day or night. Asks the questions you would ask, gets the
+                    address, the equipment and the missing photo.
+                  </p>
+                  <p>
+                    <span className="who who-you">You</span>
+                    Nothing yet. Keep working.
                   </p>
                 </div>
               </div>
@@ -220,13 +313,17 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">02</span>
                 <div>
-                  <h3>Pick the idea you like</h3>
+                  <h3>It gets priced</h3>
                 </div>
-                <div className="step-body">
+                <div className="step-body duo">
                   <p>
-                    You get three ideas, each with a promise, a price and the receipts — the
-                    comments that prove people want it. Plus one wild card. Pick one. Or throw all
-                    four back and we go again.
+                    <span className="who who-us">Yuzuu</span>
+                    Prices standard jobs from your rules. For projects, it books the site visit,
+                    prepares the quote, then follows it up until there’s a clear yes or no.
+                  </p>
+                  <p>
+                    <span className="who who-you">You</span>
+                    Check the quotes that deserve your eye. One tap to send.
                   </p>
                 </div>
               </div>
@@ -234,12 +331,17 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">03</span>
                 <div>
-                  <h3>We build the product</h3>
+                  <h3>It gets booked</h3>
                 </div>
-                <div className="step-body">
+                <div className="step-body duo">
                   <p>
-                    Research, quiz, buyer types, content bank, sales page, checkout. Every stage
-                    scored and rejected until it passes. Go do your day.
+                    <span className="who who-us">Yuzuu</span>
+                    Offers slots that fit your service area, the job’s duration, travel time, the
+                    right technician and real availability.
+                  </p>
+                  <p>
+                    <span className="who who-you">You</span>
+                    Show up. The client is expecting you, and you know what you’re walking into.
                   </p>
                 </div>
               </div>
@@ -247,13 +349,17 @@ export default async function Home({
               <div className="step rise">
                 <span className="num">04</span>
                 <div>
-                  <h3>Review three samples, then go live</h3>
+                  <h3>It gets done, and paid</h3>
                 </div>
-                <div className="step-body">
+                <div className="step-body duo">
                   <p>
-                    Three full plans for three different buyers land in your inbox. Read them like
-                    one of your followers would. Approve, and your page goes live. Reject, tell us
-                    why in a sentence, and it rebuilds. Nothing publishes without your yes.
+                    <span className="who who-us">Yuzuu</span>
+                    Reminds the client the day before, collects the deposit or the balance, files
+                    the photos on the client record and asks for a review.
+                  </p>
+                  <p>
+                    <span className="who who-you">You</span>
+                    Do the work you’re good at. Go home on time.
                   </p>
                 </div>
               </div>
@@ -261,225 +367,460 @@ export default async function Home({
           </div>
         </section>
 
-        <section id="buyer">
+        {/* ---------- four journeys ---------- */}
+        <section id="journeys">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">What your buyer gets</p>
-              <h2>Each of your buyers gets a unique report</h2>
+              <p className="eyebrow">Four journeys, built in</p>
+              <h2>With or without a quote. Every kind of job gets its own path.</h2>
               <p className="lede">
-                Your follower takes the quiz, pays, and ninety seconds later reads a plan written
-                around those answers. Here&apos;s the same product, two buyers.
+                Home services don’t all sell the same way. A cleaning visit isn’t a breakdown, and a
+                breakdown isn’t an installation. Yuzuu handles all four from day one.
               </p>
             </div>
 
-            <div className="swap">
-              <article className="person rise">
-                <header>
-                  <h3>Maya, 34</h3>
-                  <span>Falls asleep fine, wakes at 3am, two kids</span>
-                </header>
-                <dl className="qa">
-                  <dt>Hardest part</dt>
-                  <dd>Waking in the night</dd>
-                  <dt>Evenings look like</dt>
-                  <dd>Bedtime routine until 9:30, then work</dd>
-                  <dt>Has tried</dt>
-                  <dd>Magnesium, blackout blinds</dd>
-                </dl>
-                <div className="plan">
-                  <h4>Her plan opens with</h4>
-                  <ul>
-                    <li>A 3am protocol: what to do in the first four minutes awake</li>
-                    <li>Week 1 built around a 9:30 start, not a 7pm one</li>
-                    <li>Skips the magnesium chapter — she&apos;s already there</li>
-                  </ul>
-                </div>
-              </article>
+            <div className="journeys">
+              {JOURNEYS.map((j) => (
+                <article key={j.tag} className="journey rise">
+                  <span className="tag">{j.tag}</span>
+                  <h3>{j.name}</h3>
+                  <p className="journey-eg">{j.eg}</p>
+                  <ol className="flow">
+                    {j.flow.map((s) => (
+                      <li key={s}>{s}</li>
+                    ))}
+                  </ol>
+                </article>
+              ))}
+            </div>
 
-              <article className="person rise">
-                <header>
-                  <h3>Tom, 27</h3>
-                  <span>Can&apos;t switch off, phone in bed, works late shifts</span>
-                </header>
-                <dl className="qa">
-                  <dt>Hardest part</dt>
-                  <dd>Falling asleep at all</dd>
-                  <dt>Evenings look like</dt>
-                  <dd>Home at 11pm, wired</dd>
-                  <dt>Has tried</dt>
-                  <dd>Nothing yet</dd>
-                </dl>
-                <div className="plan">
-                  <h4>His plan opens with</h4>
-                  <ul>
-                    <li>A wind-down that starts at 11pm, because that&apos;s when he gets home</li>
-                    <li>Phone rules he&apos;ll actually keep, phased over ten days</li>
-                    <li>A shift-work chapter Maya never sees</li>
-                  </ul>
+            <div className="per-service rise">
+              <div className="per-copy">
+                <p className="eyebrow">Per service, not per trade</p>
+                <h3>The same business can use all of them.</h3>
+                <p>
+                  A heating engineer sells a fixed-price annual service, handles breakdowns that
+                  need a diagnosis, and quotes installations. One client can go through all three
+                  in the same year. So you choose the journey for each service, and the client
+                  record keeps it all together.
+                </p>
+              </div>
+              <div className="svc-frame" aria-label="Example: service settings for a heating business">
+                <div className="svc-head">
+                  <b>Services</b>
+                  <span>Bright Heat Co.</span>
                 </div>
-              </article>
+                <div className="svc-row">
+                  <span className="svc-name">
+                    Annual boiler service<i>60 min · $119</i>
+                  </span>
+                  <span className="pill pill-a">Fixed price</span>
+                </div>
+                <div className="svc-row">
+                  <span className="svc-name">
+                    Breakdown<i>$89 call-out · off the repair</i>
+                  </span>
+                  <span className="pill pill-b">Diagnosis</span>
+                </div>
+                <div className="svc-row">
+                  <span className="svc-name">
+                    Heat pump installation<i>Photos + site visit</i>
+                  </span>
+                  <span className="pill pill-c">Quote</span>
+                </div>
+                <div className="svc-row">
+                  <span className="svc-name">
+                    Maintenance plan<i>Yearly · auto-renews</i>
+                  </span>
+                  <span className="pill pill-d">Recurring</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="quality">
+        {/* ---------- platform: management showcase ---------- */}
+        <section id="platform" className="platform-sec">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow ask">&quot;Couldn&apos;t I just do this with ChatGPT?&quot;</p>
-              <h2>Better than the generic ebook that doesn&apos;t sell</h2>
+              <p className="eyebrow">One screen for the whole operation</p>
+              <h2>Every client, every case, every visit. In one place.</h2>
               <p className="lede">
-                A quiz funnel with real personalization behind it is what sells right now. We
-                don&apos;t just make that possible — we make sure it&apos;s good enough to put your
-                name on.
+                No more digging through texts, emails and paper notes to work out where a job
+                stands. Every case sits in one column, and it moves on its own.
+              </p>
+            </div>
+
+            <div className="board-frame rise">
+              <div className="sc-bar">
+                <span className="sc-pip" />
+                <span className="sc-pip" />
+                <span className="sc-pip" />
+                <span className="sc-url">
+                  app.yuzuu.co/<b>cases</b>
+                </span>
+                <span className="sc-live">This week</span>
+              </div>
+              <div className="board-top">
+                <div className="board-metrics">
+                  <div>
+                    <span>Booked this week</span>
+                    <b>23 jobs</b>
+                  </div>
+                  <div>
+                    <span>Quotes out</span>
+                    <b>$18.4k</b>
+                  </div>
+                  <div>
+                    <span>To collect</span>
+                    <b>$1,240</b>
+                  </div>
+                  <div className="is-you">
+                    <span>Needs you</span>
+                    <b>2 items</b>
+                  </div>
+                </div>
+              </div>
+              <div className="board" tabIndex={0} aria-label="Example case board">
+                {BOARD.map((c) => (
+                  <div key={c.col} className="board-col">
+                    <div className="board-col-head">
+                      <span>{c.col}</span>
+                      <i>{c.count}</i>
+                    </div>
+                    {c.cards.map((card) => (
+                      <div key={card.who} className="card">
+                        <b>{card.who}</b>
+                        <span className="card-what">{card.what}</span>
+                        <span className="card-meta">{card.meta}</span>
+                        <span className={`card-note${card.tone ? ` is-${card.tone}` : ""}`}>
+                          {card.note}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="core rise">
+              <div className="core-item">
+                <span className="tag">Client record</span>
+                <h3>One file per client</h3>
+                <p>Contact details, addresses, equipment, photos, conversations and full history.</p>
+              </div>
+              <div className="core-item">
+                <span className="tag">Case tracking</span>
+                <h3>Know where every job stands</h3>
+                <p>New, missing info, to quote, to confirm, planned, done, to pay. Nothing slips.</p>
+              </div>
+              <div className="core-item">
+                <span className="tag">Field booking</span>
+                <h3>A calendar that knows the road</h3>
+                <p>Service area, job duration, travel time, skills and availability, all checked.</p>
+              </div>
+              <div className="core-item">
+                <span className="tag">Agents</span>
+                <h3>Follow-up that runs itself</h3>
+                <p>Missing photos, slot proposals, quote chasers, reminders and review requests.</p>
+              </div>
+              <div className="core-item">
+                <span className="tag">Client space</span>
+                <h3>A portal your clients use</h3>
+                <p>Reply, send documents, accept a quote, pay and find their history.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- agents ---------- */}
+        <section id="agents">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Agents work. You do the job.</p>
+              <h2>Every message answered. Every case followed up.</h2>
+              <p className="lede">
+                Clients write when it suits them: on the way home, on a Sunday, at 11pm. Yuzuu
+                agents reply with the right answer and keep each case moving, and they stop the
+                moment the client replies.
+              </p>
+            </div>
+          </div>
+
+          <div className="asks rise" aria-label="Examples of client messages">
+            <div className="asks-track">
+              {[...ASKS, ...ASKS].map((a, i) => (
+                <span key={i} className="ask-pill" aria-hidden={i >= ASKS.length}>
+                  “{a}”
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="wrap">
+            <div className="agents rise">
+              <div className="feed-frame">
+                <div className="feed-head">
+                  <b>Agent activity</b>
+                  <span>Today · 7 actions · 1 needs you</span>
+                </div>
+                <ul className="feed">
+                  {FEED.map((f) => (
+                    <li key={f.t} className={f.you ? "is-you" : undefined}>
+                      <time>{f.t}</time>
+                      <span>{f.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <ul className="agent-jobs">
+                <li>
+                  <span className="tag">Missing info</span>
+                  Asks for the photo, the model number or the address, and explains why.
+                </li>
+                <li>
+                  <span className="tag">Booking</span>
+                  Proposes slots that actually work on your route, not just empty calendar space.
+                </li>
+                <li>
+                  <span className="tag">Quote follow-up</span>
+                  Checks in politely until there’s a yes or a no. Never a vague “just checking in.”
+                </li>
+                <li>
+                  <span className="tag">Reminders</span>
+                  Confirms the day before, with access and parking details, so you’re not knocking
+                  on an empty house.
+                </li>
+                <li>
+                  <span className="tag">Reviews</span>
+                  Asks happy clients for a review at the right moment, after the job, not after the
+                  invoice.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- client space ---------- */}
+        <section id="clients" className="clients-sec">
+          <div className="wrap clients">
+            <div className="clients-copy rise">
+              <p className="eyebrow">The client side</p>
+              <h2>Your clients get a space of their own.</h2>
+              <p className="lede">
+                No app to download, no password to forget. One link where they can follow their
+                job, reply, send photos, accept a quote and pay.
+              </p>
+              <ul className="ticks">
+                <li>Answer a question or send a document in one tap</li>
+                <li>Accept a quote and pay the deposit on the spot</li>
+                <li>See the date, the technician and what to prepare</li>
+                <li>Find every invoice and visit report, years later</li>
+              </ul>
+            </div>
+
+            <div className="phone rise" aria-label="Example: a client's space on their phone">
+              <div className="phone-in">
+                <div className="ph-top">
+                  <span className="ph-biz">Bright Heat Co.</span>
+                  <span className="ph-hi">Hi Anna</span>
+                </div>
+                <div className="ph-card ph-quote">
+                  <span className="ph-k">Quote Q-218 · ready</span>
+                  <b>Heat pump, 3 rooms</b>
+                  <span className="ph-price">$6,840</span>
+                  <span className="ph-btn">Accept &amp; pay $2,052 deposit</span>
+                  <span className="ph-btn ghost">Ask a question</span>
+                </div>
+                <div className="ph-card">
+                  <span className="ph-k">Next visit</span>
+                  <b>Install · Mar 12, 8:00</b>
+                  <span className="ph-sub">Mark + 1 · clear access to the back wall</span>
+                </div>
+                <div className="ph-card ph-list">
+                  <span className="ph-k">Documents</span>
+                  <span>📷 Site visit photos (4)</span>
+                  <span>📄 Quote Q-218.pdf</span>
+                  <span>🧾 Diagnosis invoice · paid</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- reliability ---------- */}
+        <section id="rules">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Why you can trust it</p>
+              <h2>The AI talks. Your rules decide.</h2>
+              <p className="lede">
+                AI is great at understanding a messy request and keeping a conversation going. It
+                shouldn’t be inventing prices or promising dates. So it doesn’t.
               </p>
             </div>
 
             <div className="gates">
               <div className="gate rise">
-                <span className="tag">Evidence</span>
-                <h3>Every claim traces to your audience</h3>
+                <span className="tag">Prices</span>
+                <h3>Prices come from your rules</h3>
                 <p>
-                  If your followers never said it, it doesn&apos;t go in. Nothing gets invented to
-                  fill a page.
+                  Standard jobs are priced from the rules you set: size, options, zone, urgency.
+                  Never a number the AI made up.
                 </p>
               </div>
               <div className="gate rise">
-                <span className="tag">The swap test</span>
-                <h3>Different buyers, different plans</h3>
+                <span className="tag">Availability</span>
+                <h3>Slots come from your real calendar</h3>
                 <p>
-                  We compare generated plans against each other. Not different enough, and the
-                  build goes back to the drawing board.
+                  Duration, travel between jobs, team skills and service area are checked before a
+                  slot is ever offered.
                 </p>
               </div>
               <div className="gate rise">
-                <span className="tag">No filler</span>
-                <h3>Every question changes something</h3>
+                <span className="tag">Permissions</span>
+                <h3>You decide what goes out alone</h3>
                 <p>
-                  If an answer doesn&apos;t visibly change a section of the plan, the question gets
-                  cut. Quizzes that ask for nothing are how people learn to distrust them.
+                  Quotes above a limit, discounts, refunds, exceptions: they wait for your OK. You
+                  set the line.
                 </p>
               </div>
               <div className="gate rise">
-                <span className="tag">Safety</span>
-                <h3>Health, money and legal get a stricter pass</h3>
+                <span className="tag">Manners</span>
+                <h3>Follow-ups stop when the client answers</h3>
                 <p>
-                  No diagnoses, no guaranteed outcomes, no advice that should come from a
-                  professional. Your name is on it.
+                  No reminder after they’ve paid. No chaser after they’ve said no. Persistent,
+                  never pushy.
                 </p>
               </div>
               <div className="gate rise">
-                <span className="tag">Frozen at launch</span>
-                <h3>Nothing is improvised at checkout</h3>
+                <span className="tag">Traceable</span>
+                <h3>Every action is on the record</h3>
                 <p>
-                  The product is locked before it goes live. At purchase, the model writes from
-                  that locked brief — it isn&apos;t inventing your product while a buyer waits.
+                  What was sent, when, and why, saved on the client file. You can always see what
+                  happened.
                 </p>
               </div>
               <div className="gate rise">
-                <span className="tag">We say no</span>
-                <h3>Some accounts get declined</h3>
+                <span className="tag">Handover</span>
+                <h3>You step in with full context</h3>
                 <p>
-                  If the material isn&apos;t there, we tell you and build nothing. A bad product
-                  with your face on it costs you more than no product.
+                  When a case needs your expertise, it lands with the photos, the answers and the
+                  history. No “can you repeat that?”
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="money">
+        {/* ---------- before / after ---------- */}
+        <section id="week">
           <div className="wrap">
             <div className="section-head rise">
-              <p className="eyebrow">The money</p>
-              <h2>We only get paid when you do.</h2>
+              <p className="eyebrow">Your week</p>
+              <h2>Same trade. Same clients. Different week.</h2>
+            </div>
+            <div className="fit">
+              <div className="fit-col fit-no rise">
+                <h3>Today</h3>
+                <ul>
+                  <li>Replying to texts between two jobs, or from the van</li>
+                  <li>Pricing at night from photos you had to ask for twice</li>
+                  <li>Quotes that go quiet because chasing feels like begging</li>
+                  <li>A calendar that looks free but ignores travel time</li>
+                  <li>Clients who forgot you were coming</li>
+                  <li>Chasing payments for work finished weeks ago</li>
+                </ul>
+              </div>
+              <div className="fit-col fit-yes rise">
+                <h3>
+                  <Yuzu className="yz-fit" size={26} mood="joy" />
+                  With Yuzuu
+                </h3>
+                <ul>
+                  <li>Every request answered and qualified, even at 11pm</li>
+                  <li>Standard jobs priced and booked without you</li>
+                  <li>Quotes followed up until there’s a clear yes or no</li>
+                  <li>Slots that fit your zone, your route and your team</li>
+                  <li>Reminders out the day before, so no-shows drop</li>
+                  <li>Deposits upfront and payment collected at the job</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- trades ---------- */}
+        <section id="trades" className="trades-sec">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Who it’s for</p>
+              <h2>Built for the businesses that come to your door.</h2>
               <p className="lede">
-                If your product never sells, you never pay, which is the strongest reason
-                you&apos;ll ever get to believe we won&apos;t ship you something weak. That
-                simple.
+                From owner-operators to growing crews. Fixed prices, call-outs, quotes or
+                recurring visits.
+              </p>
+            </div>
+            <ul className="trades rise">
+              {TRADES.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ---------- early access ---------- */}
+        <section id="early">
+          <div className="wrap">
+            <div className="section-head rise">
+              <p className="eyebrow">Early access</p>
+              <h2>Get in before the doors open.</h2>
+              <p className="lede">
+                We’re opening Yuzuu in waves, trade by trade, so every business gets a proper setup
+                instead of a blank screen and a login.
               </p>
             </div>
 
             <div className="money">
               <div className="split rise">
                 <div className="row">
-                  <span className="k">Cost to build</span>
-                  <span className="v hot">$0</span>
+                  <span className="k">Joining the waitlist</span>
+                  <span className="v hot">Free</span>
                 </div>
                 <div className="row">
-                  <span className="k">You keep, per sale</span>
-                  <span className="v">{CREATOR_KEEP_PCT}%</span>
-                </div>
-                <div className="row">
-                  <span className="k">We keep</span>
-                  <span className="v">{PLATFORM_KEEP_PCT}%</span>
-                </div>
-                <div className="row">
-                  <span className="k">Monthly fee</span>
+                  <span className="k">Card needed</span>
                   <span className="v">None</span>
                 </div>
                 <div className="row">
-                  <span className="k">Minimum term</span>
+                  <span className="k">Commitment</span>
                   <span className="v">None</span>
+                </div>
+                <div className="row">
+                  <span className="k">Emails before your spot opens</span>
+                  <span className="v">Zero</span>
                 </div>
                 <p className="later" style={{ color: "rgba(251, 252, 245, 0.62)" }}>
-                  Split is on the price before tax — card fees come out of our side, not yours.
-                  Refunds come out of both sides the same way. Paid out monthly from $50.
+                  Pricing is published before early access opens. Waitlist members see it first.
                 </p>
               </div>
 
               <div className="owns rise">
-                <h3>What&apos;s yours, permanently</h3>
+                <h3>What early members get</h3>
                 <ul>
-                  <li>The product. It&apos;s built from your material and your voice.</li>
-                  <li>The buyer list. Export it whenever you want, no ask.</li>
-                  <li>The right to leave. Walk away with the list and the last build.</li>
+                  <li>First access, ahead of the public launch.</li>
+                  <li>Setup done with you: your services, your price rules, your journeys.</li>
+                  <li>A direct line to the people building it. Your feedback shapes what ships.</li>
                 </ul>
-                <a className="btn btn-peel owns-cta" href="#claim">
-                  Claim a build
+                <a className="btn btn-peel owns-cta" href="#join">
+                  Join the waitlist
                 </a>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="fit">
-          <div className="wrap">
-            <div className="section-head rise">
-              <p className="eyebrow">Honest fit</p>
-              <h2>This doesn&apos;t work for everyone yet.</h2>
-            </div>
-            <div className="fit">
-              <div className="fit-col fit-yes rise">
-                <h3>
-                  <Yuzu className="yz-fit" size={26} mood="joy" />
-                  It works when
-                </h3>
-                <ul>
-                  <li>Your comments and DMs are full of people describing their own situation</li>
-                  <li>
-                    Your topic fits &quot;here&apos;s where you are, here&apos;s your next 30
-                    days&quot; — sleep, habits, training, language, money, plants, focus,
-                    confidence
-                  </li>
-                  <li>You&apos;d be comfortable putting your name on a document you didn&apos;t type</li>
-                  <li>You&apos;ll actually post about it once it&apos;s live</li>
-                </ul>
-              </div>
-              <div className="fit-col fit-no rise">
-                <h3>Not yet when</h3>
-                <ul>
-                  <li>Your niche is software tutorials or anything that needs screens and steps</li>
-                  <li>You sell physical products and want this to be one</li>
-                  <li>Your audience watches but never asks — big numbers, no questions</li>
-                  <li>
-                    You want to art-direct the page. Every Yuzuu page looks the same on purpose.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
+        {/* ---------- faq ---------- */}
         <section id="faq">
           <div className="wrap">
             <div className="section-head rise">
@@ -497,37 +838,43 @@ export default async function Home({
           </div>
         </section>
 
-        <section className="closer" id="claim">
+        {/* ---------- closer ---------- */}
+        <section className="closer" id="join">
           <div className="wrap">
             <p className="eyebrow" style={{ color: "var(--peel)" }}>
-              Nothing to lose
+              Early access
             </p>
             <h2>
-              Give us twenty minutes. <span>We give you a full product to earn money.</span>
+              Get your evenings back. <span>Let Yuzuu handle the rest.</span>
             </h2>
             <p className="lede">
-              You&apos;ll know within a few minutes whether there&apos;s a product in your
-              audience. If there isn&apos;t, we&apos;ll tell you that instead of selling you
-              something.
+              Join the waitlist. We’ll open access in waves and email you once, when it’s your
+              turn.
             </p>
-            <HandleForm inputId="handle-foot" peel />
+            <WaitlistForm inputId="email-foot" source="closer" peel withTrade />
           </div>
           <div className="yz-closer" aria-hidden="true">
             <Yuzu size={92} mood="happy" tilt={-7} float floatDuration={6.2} />
             <Yuzu size={58} mood="wink" tilt={8} flip float floatDuration={5} />
           </div>
         </section>
-        </main>
+      </main>
 
-        <footer>
-          <div className="wrap foot">
-            <Wordmark href="#top" size={17} />
-            <span className="sp">© 2026 Yuzuu</span>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-          </div>
-        </footer>
-      </HandleProvider>
+      <footer>
+        <div className="wrap foot">
+          <Wordmark href="#top" size={17} />
+          <span className="foot-built">
+            Platform built by{" "}
+            <a href="https://www.visionbds.com" target="_blank" rel="noopener">
+              service business
+            </a>{" "}
+            owners, for service business owners
+          </span>
+          <span className="sp">© 2026 Yuzuu</span>
+          <Link href="/privacy">Privacy</Link>
+          <a href="mailto:hello@yuzuu.co">hello@yuzuu.co</a>
+        </div>
+      </footer>
     </div>
   );
 }
